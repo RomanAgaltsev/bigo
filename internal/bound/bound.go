@@ -1,3 +1,5 @@
+// Package bound models asymptotic (big-O) cost as antichains of poly-log
+// monomials, with the operations needed to combine and compare them.
 package bound
 
 import (
@@ -58,14 +60,15 @@ func reduce(ms []Monomial) []Monomial {
 		if skip {
 			continue
 		}
-		keep := out[:0:0]
+		keep := make([]Monomial, 0, len(out)+1)
 		for _, k := range out {
 			if Dominates(m, k) { // m strictly covers k, drop k
 				continue
 			}
 			keep = append(keep, k)
 		}
-		out = append(keep, m)
+		keep = append(keep, m)
+		out = keep
 	}
 	return out
 }
