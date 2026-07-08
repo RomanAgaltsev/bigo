@@ -1,3 +1,5 @@
+// Package annotation parses bigo directive comments (//bigo:...) into structured
+// verbs and their associated asymptotic bounds.
 package annotation
 
 import (

@@ -200,7 +200,8 @@ func (p *parser) parseFactor() (bound.Monomial, error) {
 func (p *parser) parseLog() (bound.Monomial, error) {
 	p.next() // consume 'log'
 	var v string
-	if p.accept(tLParen) {
+	switch {
+	case p.accept(tLParen):
 		if p.cur().kind != tIdent {
 			return bound.Monomial{}, fmt.Errorf("expected variable after 'log('")
 		}
@@ -209,10 +210,10 @@ func (p *parser) parseLog() (bound.Monomial, error) {
 		if !p.accept(tRParen) {
 			return bound.Monomial{}, fmt.Errorf("expected ')' after log argument")
 		}
-	} else if p.cur().kind == tIdent {
+	case p.cur().kind == tIdent:
 		v = p.cur().text
 		p.next()
-	} else {
+	default:
 		return bound.Monomial{}, fmt.Errorf("expected variable after 'log'")
 	}
 	logPow, err := p.optExponent()
