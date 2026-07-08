@@ -1,0 +1,5 @@
+/bin/
+*.out
+coverage.out
+# Code repos keep docs in the private vault (E:\GIT\docs); never commit docs here.
+/docs/
