@@ -112,5 +112,3 @@ func Parse(text string) (Directive, error) {
 	}
 	return d, nil
 }
-
-func parseWhere(string) (map[bound.Var]SizeRef, error) { return map[bound.Var]SizeRef{}, nil }
