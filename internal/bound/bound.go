@@ -121,3 +121,18 @@ func (b Bound) String() string {
 	sort.Strings(ss)
 	return "O(" + strings.Join(ss, " + ") + ")"
 }
+
+// Mul multiplies two bounds: the loop operation (trip-count * body). It forms
+// the pairwise products of the two antichains, then reduce. T is absorbing.
+func (b Bound) Mul(o Bound) Bound {
+	if b.top || o.top {
+		return Top()
+	}
+	prod := make([]Monomial, 0, len(b.terms)+len(o.terms))
+	for _, x := range b.terms {
+		for _, y := range o.terms {
+			prod = append(prod, x.Mul(y))
+		}
+	}
+	return Bound{terms: reduce(prod)}
+}
