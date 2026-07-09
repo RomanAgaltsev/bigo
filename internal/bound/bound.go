@@ -45,6 +45,11 @@ func (b Bound) Terms() []Monomial {
 	return b.terms
 }
 
+// Vars returns the monomial's variables in canonical sorted order.
+func (m Monomial) Vars() []Var {
+	return m.vars()
+}
+
 // reduce keeps only the maximal monomials: any monomial dominated by other
 // (equal counts as dominated) is dropped, so the result is an antichain.
 func reduce(ms []Monomial) []Monomial {
