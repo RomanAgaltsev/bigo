@@ -20,6 +20,10 @@ jobs:
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+          # GITHUB_TOKEN cannot open PRs unless the repo-level "Allow GitHub
+          # Actions to create and approve pull requests" switch is on, and PRs it
+          # opens never trigger the checks main requires. A PAT avoids both.
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
 
   goreleaser:
     needs: release-please
