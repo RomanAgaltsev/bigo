@@ -9,8 +9,15 @@ import (
 	"github.com/RomanAgaltsev/bigo/internal/tripcount"
 )
 
-// Infer returns the function's intraprocedural time bound.
-func Infer(fn *ssa.Function) bound.Bound {
+// CostModel resolves the cost of a call in canonical size variables.
+type CostModel interface {
+	CallCost(c *ssa.CallCommon) bound.Bound
+}
+
+// Infer returns the function's intraprocedural time bound, delegating call costs
+// to model. Model: Σ_blocks blockCost(b) × Π(trip-counts of enclosing loops);
+// ⊤ is absorbing, so any ⊤ call cost inside a loop makes the function ⊤.
+func Infer(fn *ssa.Function, model CostModel) bound.Bound {
 	if fn == nil || len(fn.Blocks) == 0 {
 		return bound.Constant()
 	}
@@ -23,7 +30,7 @@ func Infer(fn *ssa.Function) bound.Bound {
 		for _, lp := range forest.EnclosingLoops(b) {
 			factor = factor.Mul(tripcount.Of(lp))
 		}
-		contrib := blockCost(b).Mul(factor)
+		contrib := blockCost(b, model).Mul(factor)
 		if !started {
 			total = contrib
 			started = true
@@ -34,21 +41,13 @@ func Infer(fn *ssa.Function) bound.Bound {
 	return total
 }
 
-// blockCost os O(1) unless the block contains an unresolved call (any call other
-// than the len/cap builtins, in which case it is Top (unverifiable).
-func blockCost(b *ssa.BasicBlock) bound.Bound {
+// blockCost is O(1) plus the model's cost for each call in the block.
+func blockCost(b *ssa.BasicBlock, model CostModel) bound.Bound {
+	cost := bound.Constant()
 	for _, instr := range b.Instrs {
-		call, ok := instr.(*ssa.Call)
-		if !ok {
-			continue
+		if call, ok := instr.(*ssa.Call); ok {
+			cost = cost.Join(model.CallCost(&call.Call))
 		}
-		if bi, ok := call.Call.Value.(*ssa.Builtin); ok {
-			switch bi.Name() {
-			case "len", "cap":
-				continue
-			}
-		}
-		return bound.Top()
 	}
-	return bound.Constant()
+	return cost
 }

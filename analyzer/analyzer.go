@@ -17,6 +17,18 @@ import (
 
 var reportMode bool
 
+type builtinModel struct{}
+
+func (builtinModel) CallCost(c *ssa.CallCommon) bound.Bound {
+	if b, ok := c.Value.(*ssa.Builtin); ok {
+		switch b.Name() {
+		case "len", "cap":
+			return bound.Constant()
+		}
+	}
+	return bound.Top()
+}
+
 // Analyzer is the bigo complexity analyzer.
 var Analyzer = newAnalyzer()
 
@@ -52,7 +64,7 @@ func run(pass *analysis.Pass) (any, error) {
 			if fn == nil {
 				continue
 			}
-			inferred := engine.Infer(fn)
+			inferred := engine.Infer(fn, builtinModel{})
 
 			if reportMode && !inferred.IsTop() {
 				pass.Reportf(decl.Pos(), "inferred complexity %s", inferred.String())
