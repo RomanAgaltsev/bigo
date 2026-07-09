@@ -26,3 +26,7 @@ func TestAnalyzerNegative(t *testing.T) {
 func TestAnalyzerInterproc(t *testing.T) {
 	analysistest.Run(t, analysistest.TestData(), Analyzer, "interproc")
 }
+
+func TestAnalyzerMultivar(t *testing.T) {
+	analysistest.Run(t, analysistest.TestData(), Analyzer, "multivar")
+}

@@ -13,6 +13,11 @@ tasks:
     desc: Run golangci-lint
     cmds:
       - golangci-lint run
+  lint:custom:
+    desc: Build the custom golangci-lint (with the bigo plugin) and run bigo on this repo
+    cmds:
+      - golangci-lint custom
+      - '{{if eq OS "windows"}}./bin/custom-gcl.exe{{else}}./bin/custom-gcl{{end}} run -c .golangci.custom.yml'
   tidy:
     desc: Tidy modules
     cmds:

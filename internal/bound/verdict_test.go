@@ -31,6 +31,11 @@ func TestCheck(t *testing.T) {
 		{"n^3 vs n^2+m^2 is unknown not exceeds", Of(Mono("n", 3, 0)), Of(Mono("n", 2, 0), Mono("m", 2, 0)), Unknown},
 		// A sum where one term is a clear violation: O(n + n^3) vs O(n^2) -> Exceeds.
 		{"sum with a violating term exceeds", Of(Term("n"), Mono("n", 3, 0)), Of(Mono("n", 2, 0)), Exceeds},
+		// n·m strictly dominates the sole budget term n, so the violation is provable
+		// (hold n fixed, grow m past any constant) even though the bound is multi-variable.
+		{"n*m exceeds n", Of(Term("n").Mul(Term("m"))), Of(Term("n")), Exceeds},
+		// Neither n·m nor n^2 dominates the other: truly incomparable -> Unknown.
+		{"n*m vs n^2 is incomparable", Of(Term("n").Mul(Term("m"))), Of(Mono("n", 2, 0)), Unknown},
 	}
 	for _, tt := range tests {
 		if got := Check(tt.inferred, tt.budget); got != tt.want {
