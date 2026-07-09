@@ -7,6 +7,12 @@ linters:
     - revive
     - gocritic
     - misspell
+    - bigo
+  settings:
+    custom:
+      bigo:
+        type: module
+        description: Checks //bigo:max asymptotic complexity budgets.
 formatters:
   enable:
     - gofmt
