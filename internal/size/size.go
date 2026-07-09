@@ -3,6 +3,10 @@
 package size
 
 import (
+	"go/types"
+
+	"golang.org/x/tools/go/ssa"
+
 	"github.com/RomanAgaltsev/bigo/internal/annotation"
 	"github.com/RomanAgaltsev/bigo/internal/bound"
 )
@@ -32,4 +36,27 @@ func FromRef(r annotation.SizeRef) bound.Var {
 	default:
 		return Num(r.Param)
 	}
+}
+
+// Value returns the canonical size variable of an SSA value when it is a
+// parameter whose size is meaningful (slice/map/array/string -> len,
+// integer -> the value itself) and false otherwise.
+func Value(v ssa.Value) (bound.Var, bool) {
+	p, ok := v.(*ssa.Parameter)
+	if !ok {
+		return "", false
+	}
+	switch p.Type().Underlying().(type) {
+	case *types.Slice, *types.Map, *types.Array:
+		return Len(p.Name()), true
+	}
+	if b, ok := p.Type().Underlying().(*types.Basic); ok {
+		switch {
+		case b.Info()&types.IsString != 0:
+			return Len(p.Name()), true
+		case b.Info()&types.IsInteger != 0:
+			return Num(p.Name()), true
+		}
+	}
+	return "", false
 }
