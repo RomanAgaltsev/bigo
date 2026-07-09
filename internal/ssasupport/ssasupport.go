@@ -19,13 +19,17 @@ func Build(src string) (*ssa.Package, *token.FileSet, error) {
 	if err != nil {
 		return nil, nil, fmt.Errorf("parse: %w", err)
 	}
+	// go/ssa requires Instances to resolve calls to generic functions, and
+	// FileVersions to apply per-file language version rules.
 	info := &types.Info{
-		Types:      map[ast.Expr]types.TypeAndValue{},
-		Defs:       map[*ast.Ident]types.Object{},
-		Uses:       map[*ast.Ident]types.Object{},
-		Implicits:  map[ast.Node]types.Object{},
-		Selections: map[*ast.SelectorExpr]*types.Selection{},
-		Scopes:     map[ast.Node]*types.Scope{},
+		Types:        map[ast.Expr]types.TypeAndValue{},
+		Defs:         map[*ast.Ident]types.Object{},
+		Uses:         map[*ast.Ident]types.Object{},
+		Implicits:    map[ast.Node]types.Object{},
+		Instances:    map[*ast.Ident]types.Instance{},
+		Selections:   map[*ast.SelectorExpr]*types.Selection{},
+		Scopes:       map[ast.Node]*types.Scope{},
+		FileVersions: map[*ast.File]string{},
 	}
 	conf := types.Config{Importer: importer.Default()}
 	tpkg, err := conf.Check("input", fset, []*ast.File{f}, info)
