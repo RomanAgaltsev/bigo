@@ -30,7 +30,7 @@ func (f *Forest) LoopOf(header *ssa.BasicBlock) *Loop {
 	return f.loopOf[header]
 }
 
-// dominates reports whether a dominates b by walking b's immidiate-dominator
+// dominates reports whether a dominates b by walking b's immediate-dominator
 // chain. A block dominates itslef.
 func dominates(a, b *ssa.BasicBlock) bool {
 	for x := b; x != nil; x = x.Idom() {

@@ -14,3 +14,11 @@ func TestAnalyzerSmoke(t *testing.T) {
 func TestAnalyzerBudgets(t *testing.T) {
 	analysistest.Run(t, analysistest.TestData(), Analyzer, "budget")
 }
+
+func TestAnalyzerPositive(t *testing.T) {
+	analysistest.Run(t, analysistest.TestData(), Analyzer, "positive")
+}
+
+func TestAnalyzerNegative(t *testing.T) {
+	analysistest.Run(t, analysistest.TestData(), Analyzer, "negative")
+}
