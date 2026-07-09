@@ -11,23 +11,12 @@ import (
 
 	"github.com/RomanAgaltsev/bigo/internal/annotation"
 	"github.com/RomanAgaltsev/bigo/internal/bound"
+	"github.com/RomanAgaltsev/bigo/internal/callsummary"
 	"github.com/RomanAgaltsev/bigo/internal/engine"
 	"github.com/RomanAgaltsev/bigo/internal/normalize"
 )
 
 var reportMode bool
-
-type builtinModel struct{}
-
-func (builtinModel) CallCost(c *ssa.CallCommon) bound.Bound {
-	if b, ok := c.Value.(*ssa.Builtin); ok {
-		switch b.Name() {
-		case "len", "cap":
-			return bound.Constant()
-		}
-	}
-	return bound.Top()
-}
 
 // Analyzer is the bigo complexity analyzer.
 var Analyzer = newAnalyzer()
@@ -45,8 +34,8 @@ func newAnalyzer() *analysis.Analyzer {
 
 func run(pass *analysis.Pass) (any, error) {
 	ssaInfo := pass.ResultOf[buildssa.Analyzer].(*buildssa.SSA)
+	resolver := callsummary.New()
 
-	// Index SSA functions by their *ast.FuncDecl syntax for annotation lookup.
 	byDecl := map[*ast.FuncDecl]*ssa.Function{}
 	for _, fn := range ssaInfo.SrcFuncs {
 		if decl, ok := fn.Syntax().(*ast.FuncDecl); ok {
@@ -64,12 +53,11 @@ func run(pass *analysis.Pass) (any, error) {
 			if fn == nil {
 				continue
 			}
-			inferred := engine.Infer(fn, builtinModel{})
+			inferred := engine.Infer(fn, resolver)
 
 			if reportMode && !inferred.IsTop() {
 				pass.Reportf(decl.Pos(), "inferred complexity %s", inferred.String())
 			}
-
 			dir, ok := directiveOf(decl)
 			if !ok || dir.Verb != annotation.Max {
 				continue

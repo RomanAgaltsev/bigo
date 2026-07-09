@@ -22,3 +22,7 @@ func TestAnalyzerPositive(t *testing.T) {
 func TestAnalyzerNegative(t *testing.T) {
 	analysistest.Run(t, analysistest.TestData(), Analyzer, "negative")
 }
+
+func TestAnalyzerInterproc(t *testing.T) {
+	analysistest.Run(t, analysistest.TestData(), Analyzer, "interproc")
+}
