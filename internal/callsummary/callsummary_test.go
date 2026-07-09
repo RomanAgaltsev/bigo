@@ -56,6 +56,13 @@ type D interface{ Do(int) int }
 func f(xs []int, d D) int { s := 0; for i := 0; i < len(xs); i++ { s += d.Do(xs[i]) }; return s }`,
 			"unverifiable",
 		},
+		{
+			"external call not in the table is unverifiable",
+			`package input
+import "os"
+func f(k string) string { return os.Getenv(k) }`,
+			"unverifiable",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

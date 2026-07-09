@@ -34,7 +34,10 @@ func (r *Resolver) CallCost(c *ssa.CallCommon) bound.Bound {
 	if callee == nil {
 		return bound.Top() // interface / closure / dynamic dispatch
 	}
-	if callee.Pkg == nil { // external (no source): unknown
+	// No body to analyze: external (declared from export data) or an
+	// instantiation of one. Pkg is not a proxy for this: instances always have a
+	// nil Pkg, and imported functions have a non-nil Pkg with no blocks.
+	if len(callee.Blocks) == 0 {
 		return bound.Top()
 	}
 	return r.callUser(callee, c.Args)
