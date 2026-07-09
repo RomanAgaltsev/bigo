@@ -46,7 +46,10 @@ jobs:
       - uses: actions/checkout@v7
       - uses: securego/gosec@master
         with:
-          args: ./...
+          # gosec walks the filesystem itself, so unlike the go tool it descends
+          # into testdata. Those are analyzer fixtures, not shipped code, and
+          # some intentionally do not compile.
+          args: -exclude-dir=testdata ./...
 
   dependency-review:
     if: github.event_name == 'pull_request'
