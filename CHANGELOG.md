@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/RomanAgaltsev/bigo/compare/v1.0.0...v1.1.0) (2026-07-09)
+
+
+### Features
+
+* mvp engine ([#6](https://github.com/RomanAgaltsev/bigo/issues/6)) ([a71c9f6](https://github.com/RomanAgaltsev/bigo/commit/a71c9f6cfb439e118c29077828a68c28d9648739))
+
 ## 1.0.0 (2026-07-09)
 
 
