@@ -1,0 +1,9 @@
+version: v2.12.2
+name: custom-gcl
+destination: ./bin
+plugins:
+  # path is the local module root (the directory holding go.mod), and import is
+  # the package whose init() calls register.Plugin.
+  - module: github.com/RomanAgaltsev/bigo
+    import: github.com/RomanAgaltsev/bigo/plugin
+    path: .

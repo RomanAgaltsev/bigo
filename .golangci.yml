@@ -1,3 +1,9 @@
+# Config for the stock golangci-lint binary (`task lint`).
+#
+# bigo itself is NOT enabled here. It is a module plugin, so it exists only in
+# the custom binary built by `golangci-lint custom` (see .custom-gcl.yml).
+# Declaring it under linters.settings.custom makes the stock binary fail with
+# `plugin "bigo" not found`. To run bigo on this repo: `task lint:custom`.
 version: "2"
 run:
   timeout: 5m

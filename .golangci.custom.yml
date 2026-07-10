@@ -1,0 +1,19 @@
+# Config for the custom golangci-lint binary built from .custom-gcl.yml, which is
+# the only binary with the bigo module plugin compiled in. Run via `task lint:custom`.
+#
+# Consumers who want bigo in their own project copy the linters.settings.custom
+# block below into their .golangci.yml and build their own binary the same way.
+#
+# Only bigo runs here; the standard linters are covered by `task lint`.
+version: "2"
+run:
+  timeout: 5m
+linters:
+  default: none
+  enable:
+    - bigo
+  settings:
+    custom:
+      bigo:
+        type: module
+        description: Checks //bigo:max asymptotic complexity budgets.

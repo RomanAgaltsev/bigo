@@ -5,6 +5,7 @@ import (
 
 	"github.com/RomanAgaltsev/bigo/internal/annotation"
 	"github.com/RomanAgaltsev/bigo/internal/bound"
+	"github.com/RomanAgaltsev/bigo/internal/ssasupport"
 )
 
 func TestCanonicalSizeVars(t *testing.T) {
@@ -31,6 +32,33 @@ func TestFromRef(t *testing.T) {
 	for _, c := range cases {
 		if got := FromRef(c.ref); got != c.want {
 			t.Errorf("FromRef(%v) = %q, want %q", c.ref, got, c.want)
+		}
+	}
+}
+
+func TestValue(t *testing.T) {
+	const src = `package input
+func f(xs []int, n int, s string, x float64) {}`
+	pkg, _, err := ssasupport.Build(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fn := ssasupport.Func(pkg, "f")
+	params := fn.Params
+	cases := []struct {
+		i    int
+		want bound.Var
+		ok   bool
+	}{
+		{0, "len(xs)", true}, // slice
+		{1, "n", true},       // int
+		{2, "len(s)", true},  // string
+		{3, "", false},       // float64: not a size
+	}
+	for _, c := range cases {
+		got, ok := Value(params[c.i])
+		if ok != c.ok || got != c.want {
+			t.Errorf("Value(param %d) = (%q,%v), want (%q,%v)", c.i, got, ok, c.want, c.ok)
 		}
 	}
 }
