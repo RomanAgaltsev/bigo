@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.1](https://github.com/RomanAgaltsev/bigo/compare/v1.3.0...v1.3.1) (2026-07-10)
+
+
+### Bug Fixes
+
+* reject variable offsets in loop conditions (wrong bound) ([#17](https://github.com/RomanAgaltsev/bigo/issues/17)) ([df25ed6](https://github.com/RomanAgaltsev/bigo/commit/df25ed6844070ba35013099baa9d4f18b8ae6235))
+
 ## [1.3.0](https://github.com/RomanAgaltsev/bigo/compare/v1.2.2...v1.3.0) (2026-07-10)
 
 
