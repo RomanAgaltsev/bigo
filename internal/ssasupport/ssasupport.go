@@ -1,4 +1,4 @@
-// Package ssasupport builds SSA from single-file source, for test and tooling.
+// Package ssasupport builds SSA from single-file source, for tests and tooling.
 package ssasupport
 
 import (

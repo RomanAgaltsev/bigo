@@ -4,6 +4,7 @@ package annotation
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/RomanAgaltsev/bigo/internal/bound"
@@ -64,6 +65,9 @@ type Directive struct {
 	Raw      string
 }
 
+// whereWord matches the where keyword with mandatory surrounding whitespace.
+var whereWord = regexp.MustCompile(`\swhere\s`)
+
 // Parse parses a single //bigo: comment line. Like //go: directives, the
 // prefix must be exact — `// bigo:` with a space is prose, not a directive.
 func Parse(text string) (Directive, error) {
@@ -97,8 +101,14 @@ func Parse(text string) (Directive, error) {
 		return Directive{}, fmt.Errorf("unknown bigo verb %q", verbTok)
 	}
 
-	exprPart, wherePart, _ := strings.Cut(rest, "where")
+	// The grammar is `bigexpr SP "where" SP bindings` — split on the word,
+	// not the substring, so O(nowhere) parses as a variable.
+	exprPart, wherePart := rest, ""
+	if loc := whereWord.FindStringIndex(rest); loc != nil {
+		exprPart, wherePart = rest[:loc[0]], rest[loc[1]:]
+	}
 	b, err := parseBigO(strings.TrimSpace(exprPart))
+
 	if err != nil {
 		return Directive{}, err
 	}

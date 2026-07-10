@@ -61,7 +61,10 @@ func lex(s string) ([]token, error) {
 			for j < len(s) && s[j] >= '0' && s[j] <= '9' {
 				j++
 			}
-			n, _ := strconv.Atoi(s[i:j])
+			n, err := strconv.Atoi(s[i:j])
+			if err != nil {
+				return nil, fmt.Errorf("integer %q out of range", s[i:j])
+			}
 			toks = append(toks, token{kind: tNum, num: n})
 			i = j
 		case isIdentStart(c):
@@ -230,6 +233,9 @@ func (p *parser) optExponent() (int, error) {
 	}
 	if p.cur().kind != tNum {
 		return 0, fmt.Errorf("expected integer exponent after '^'")
+	}
+	if n := p.cur().num; n > 64 {
+		return 0, fmt.Errorf("exponent %d too large (max 64)", n)
 	}
 	n := p.cur().num
 	p.next()
