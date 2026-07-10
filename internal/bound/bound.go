@@ -73,8 +73,8 @@ func reduce(ms []Monomial) []Monomial {
 	return out
 }
 
-// Join returns the dominant terms of both bounds ((sequential-sum and branch-max
-// are the same asymptotic operation). T is absorbing.
+// Join returns the dominant terms of both bounds (sequential-sum and branch-max
+// are the same asymptotic operation). ⊤ is absorbing.
 func (b Bound) Join(o Bound) Bound {
 	if b.top || o.top {
 		return Top()
