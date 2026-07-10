@@ -67,3 +67,11 @@ func UsesInterfaceCost(xs []int, d Doer) int {
 	}
 	return s
 }
+
+// A budget on a declared-only function cannot be verified: there is no body to
+// analyze. Review finding B5 fixed the engine, but the analyzer used to skip
+// bodyless declarations before checking, so the symptom survived (finding S3).
+// The fix a user wants here is //bigo:cost, which the diagnostic recommends.
+
+//bigo:max O(1)
+func BodylessBudget(n int) int // want `cannot verify budget O\(1\): function has no analyzable body`
