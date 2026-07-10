@@ -53,3 +53,17 @@ func StillBlocked(xs []int) int { // want `cannot verify budget O\(len\(xs\)\): 
 	}
 	return s
 }
+
+type Doer interface {
+	//bigo:cost O(1)
+	Do(x int) int
+}
+
+//bigo:max O(n)
+func UsesInterfaceCost(xs []int, d Doer) int {
+	s := 0
+	for i := 0; i < len(xs); i++ {
+		s += d.Do(xs[i])
+	}
+	return s
+}

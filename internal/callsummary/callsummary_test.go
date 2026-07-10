@@ -1,6 +1,7 @@
 package callsummary
 
 import (
+	"go/types"
 	"testing"
 
 	"github.com/RomanAgaltsev/bigo/internal/bound"
@@ -156,5 +157,31 @@ func f(n int) int { return opaque(n) }`
 	r := New(map[*ssa.Function]bound.Bound{opaque: bound.Of(bound.Term("k"))})
 	if got, want := engine.Infer(f, r).String(), "O(n)"; got != want {
 		t.Errorf("Infer = %q, want %q", got, want)
+	}
+}
+
+func TestInterfaceMethodCost(t *testing.T) {
+	const src = `package input
+type D interface{ Do(x int) int }
+func f(xs []int, d D) int {
+	s := 0
+	for i := 0; i < len(xs); i++ { s += d.Do(xs[i]) }
+	return s
+}`
+	pkg, _, err := ssasupport.Build(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	f := ssasupport.Func(pkg, "f")
+	// Find the *types.Func for D.Do.
+	dType := pkg.Pkg.Scope().Lookup("D").Type().Underlying().(*types.Interface)
+	do := dType.Method(0)
+	r := NewWithMethods(nil, map[*types.Func]bound.Bound{do: bound.Constant()})
+	if got, want := engine.Infer(f, r).String(), "O(len(xs))"; got != want {
+		t.Errorf("Infer = %q, want %q", got, want)
+	}
+	// Without the method cost the same call must stay unverifiable.
+	if got := engine.Infer(f, New(nil)).String(); got != "unverifiable" {
+		t.Errorf("Infer without method cost = %q, want unverifiable", got)
 	}
 }

@@ -15,9 +15,10 @@ import (
 
 // Resolver implements engine.CostModel.
 type Resolver struct {
-	memo      map[*ssa.Function]bound.Bound
-	onStack   map[*ssa.Function]bool
-	overrides map[*ssa.Function]bound.Bound
+	memo        map[*ssa.Function]bound.Bound
+	onStack     map[*ssa.Function]bool
+	overrides   map[*ssa.Function]bound.Bound
+	methodCosts map[*types.Func]bound.Bound
 }
 
 // New returns a resolver. overrides maps functions to asserted summaries (from
@@ -32,6 +33,17 @@ func New(overrides map[*ssa.Function]bound.Bound) *Resolver {
 		onStack:   map[*ssa.Function]bool{},
 		overrides: overrides,
 	}
+}
+
+// NewWithMethods is New plus asserted costs for interface methods, keyed by
+// the interface method object (//bigo:cost on the method declaration).
+func NewWithMethods(overrides map[*ssa.Function]bound.Bound, methodCosts map[*types.Func]bound.Bound) *Resolver {
+	r := New(overrides)
+	if methodCosts == nil {
+		methodCosts = map[*types.Func]bound.Bound{}
+	}
+	r.methodCosts = methodCosts
+	return r
 }
 
 // override returns the asserted summary for fn, looking through generic
@@ -54,7 +66,17 @@ func (r *Resolver) CallCost(c *ssa.CallCommon) bound.Bound {
 	}
 	callee := c.StaticCallee()
 	if callee == nil {
-		return bound.Top() // interface / closure / dynamic dispatch (Task 13 adds method costs)
+		if c.Method != nil { // invoke mode: interface method call
+			if summary, ok := r.methodCosts[c.Method]; ok {
+				sig := c.Method.Type().(*types.Signature)
+				names := make([]string, sig.Params().Len())
+				for i := range names {
+					names[i] = sig.Params().At(i).Name()
+				}
+				return substArgs(summary, names, c.Args)
+			}
+		}
+		return bound.Top() // closure / func value / unannotated interface
 	}
 	if _, ok := r.override(callee); ok {
 		return r.callUser(callee, c.Args) // summary() will return the override

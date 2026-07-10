@@ -97,7 +97,59 @@ func run(pass *analysis.Pass) (any, error) {
 			overrides[fd.fn] = b
 		}
 	}
-	resolver := callsummary.New(overrides)
+	methodCosts := map[*types.Func]bound.Bound{}
+	for _, file := range pass.Files {
+		for _, d := range file.Decls {
+			gd, ok := d.(*ast.GenDecl)
+			if !ok {
+				continue
+			}
+			for _, spec := range gd.Specs {
+				ts, ok := spec.(*ast.TypeSpec)
+				if !ok {
+					continue
+				}
+				it, ok := ts.Type.(*ast.InterfaceType)
+				if !ok {
+					continue
+				}
+				for _, field := range it.Methods.List {
+					if field.Doc == nil || len(field.Names) == 0 {
+						continue
+					}
+					for _, cmt := range field.Doc.List {
+						if !strings.HasPrefix(cmt.Text, "//bigo:") {
+							continue
+						}
+						dir, err := annotation.Parse(cmt.Text)
+						if err != nil {
+							pass.Reportf(field.Pos(), "invalid //bigo: directive: %v", err)
+							continue
+						}
+						if dir.Verb != annotation.Cost && dir.Verb != annotation.Ignore {
+							pass.Reportf(field.Pos(), "only //bigo:cost and //bigo:ignore apply to interface methods")
+							continue
+						}
+						obj, ok := pass.TypesInfo.Defs[field.Names[0]].(*types.Func)
+						if !ok {
+							continue
+						}
+						if dir.Verb == annotation.Ignore {
+							methodCosts[obj] = bound.Constant()
+							continue
+						}
+						b, err := normalize.BudgetSig(dir, obj.Type().(*types.Signature))
+						if err != nil {
+							pass.Reportf(field.Pos(), "invalid //bigo:cost: %v", err)
+							continue
+						}
+						methodCosts[obj] = b
+					}
+				}
+			}
+		}
+	}
+	resolver := callsummary.NewWithMethods(overrides, methodCosts)
 
 	// Pass 3: infer and check.
 	report := func(decl *ast.FuncDecl, fn *ssa.Function) (bound.Bound, []engine.Cause) {
@@ -135,7 +187,7 @@ func checkBudget(pass *analysis.Pass, decl *ast.FuncDecl, fn *ssa.Function, infe
 		pass.Reportf(decl.Pos(), "complexity %s exceeds budget %s", inferred.String(), budget.String())
 	case bound.Unknown:
 		if inferred.IsTop() {
-			pass.Reportf(decl.Pos(), "cannot verify budget %s: %s", budget.String(), causeText(pass, causes, fn))
+			pass.Reportf(decl.Pos(), "cannot verify budget %s: %s (annotate the callee with //bigo:cost or //bigo:ignore)", budget.String(), causeText(pass, causes, fn))
 		} else {
 			pass.Reportf(decl.Pos(), "cannot verify budget %s: inferred %s is not comparable", budget.String(), inferred.String())
 		}
