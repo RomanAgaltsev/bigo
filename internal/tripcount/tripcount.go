@@ -69,7 +69,13 @@ func classify(loop *loopnest.Loop, cmp *ssa.BinOp) (ssa.Value, bool) {
 
 // isIncreasingInduction reports whether v advances by a positive constant once
 // per iteration: either the header phi itself (`for i := 0; i < N; i++`) or
-// that phi's in-header increment (the `for range` shape compares phi+1).
+// that phi plus a constant (the `for range` shape compares phi+1).
+//
+// The offset must be constant, and that is soundness rather than precision:
+// `phi + j` for a variable j makes the condition `phi < bound - j`, so the
+// trip count is bound-offset, not O(bound) — for j < 0 the loop runs more
+// than `bound` times. It is the same defect as a non-constant start value,
+// entering through the comparison operand instead of the phi's init edge.
 func isIncreasingInduction(loop *loopnest.Loop, v ssa.Value) bool {
 	if isInductionPhi(loop, v) {
 		return true
@@ -78,7 +84,8 @@ func isIncreasingInduction(loop *loopnest.Loop, v ssa.Value) bool {
 	if !ok || bo.Op != token.ADD {
 		return false
 	}
-	return isInductionPhi(loop, bo.X) || isInductionPhi(loop, bo.Y)
+	return (isInductionPhi(loop, bo.X) && isConstant(bo.Y)) ||
+		(isInductionPhi(loop, bo.Y) && isConstant(bo.X))
 }
 
 // isInductionPhi reports whether v is a header phi that starts at a constant
