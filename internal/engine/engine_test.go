@@ -111,3 +111,23 @@ func f(xs []int) {
 		t.Errorf("Infer = %q, want unverifiable", got)
 	}
 }
+
+func TestBodylessFunctionIsUnverifiable(t *testing.T) {
+	const src = `package input
+func g(n int) int
+func f() int { return 0 }`
+	pkg, _, err := ssasupport.Build(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	g := ssasupport.Func(pkg, "g")
+	if g == nil {
+		t.Fatal("g not found")
+	}
+	if got := Infer(g, builtinModel{}); !got.IsTop() {
+		t.Errorf("Infer(bodyless) = %q, want Top — no body means nothing is known", got.String())
+	}
+	if got := Infer(nil, builtinModel{}); !got.IsTop() {
+		t.Errorf("Infer(nil) = %q, want Top", got.String())
+	}
+}

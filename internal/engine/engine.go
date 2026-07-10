@@ -19,7 +19,7 @@ type CostModel interface {
 // ⊤ is absorbing, so any ⊤ call cost inside a loop makes the function ⊤.
 func Infer(fn *ssa.Function, model CostModel) bound.Bound {
 	if fn == nil || len(fn.Blocks) == 0 {
-		return bound.Constant()
+		return bound.Top() // no body: nothing is known (assembly, external linkage)
 	}
 	forest := loopnest.Build(fn)
 
