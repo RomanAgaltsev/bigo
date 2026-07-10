@@ -46,7 +46,9 @@ func dominates(a, b *ssa.BasicBlock) bool {
 // has no header and no trip count, so callers must treat the function as
 // unverifiable rather than costing its blocks loop-free.
 func (f *Forest) UncoveredCycle(fn *ssa.Function) bool {
-	// Iterative Tarjan SCC over the block graph.
+	// Tarjan SCC over the block graph. connect recurses; Go grows goroutine
+	// stacks on demand, so the depth is bounded by the block count, not by a
+	// fixed system stack.
 	index := make(map[*ssa.BasicBlock]int, len(fn.Blocks))
 	low := make(map[*ssa.BasicBlock]int, len(fn.Blocks))
 	onStack := make(map[*ssa.BasicBlock]bool, len(fn.Blocks))
