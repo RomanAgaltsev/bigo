@@ -62,7 +62,7 @@ func TestReportModeUsesStdoutNotDiagnostics(t *testing.T) {
 	// ZERO diagnostics (analysistest fails on any unexpected diagnostic —
 	// that is the exit-code guarantee).
 	analysistest.Run(t, analysistest.TestData(), Analyzer, "smoke")
-	w.Close()
+	_ = w.Close()
 	os.Stdout = old
 	out, err := io.ReadAll(r)
 	if err != nil {

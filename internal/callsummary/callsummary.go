@@ -60,6 +60,8 @@ func (r *Resolver) override(fn *ssa.Function) (bound.Bound, bool) {
 	return bound.Bound{}, false
 }
 
+// CallCost resolves a call's cost: cost table first, then user-function summary,
+// else ⊤ (unverifiable).
 func (r *Resolver) CallCost(c *ssa.CallCommon) bound.Bound {
 	if b, ok := costtable.Lookup(c); ok {
 		return b
