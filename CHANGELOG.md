@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/RomanAgaltsev/bigo/compare/v1.1.0...v1.2.0) (2026-07-10)
+
+
+### Features
+
+* cost tables, interprocedural, plugin ([#8](https://github.com/RomanAgaltsev/bigo/issues/8)) ([bda0a8e](https://github.com/RomanAgaltsev/bigo/commit/bda0a8e064f53449162b3995bbfca99619cbfe54))
+
 ## [1.1.0](https://github.com/RomanAgaltsev/bigo/compare/v1.0.0...v1.1.0) (2026-07-09)
 
 
