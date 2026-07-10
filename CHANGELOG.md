@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.2](https://github.com/RomanAgaltsev/bigo/compare/v1.2.1...v1.2.2) (2026-07-10)
+
+
+### Bug Fixes
+
+* cap/len substitution and irreducible-CFG soundness ([#12](https://github.com/RomanAgaltsev/bigo/issues/12)) ([78b9929](https://github.com/RomanAgaltsev/bigo/commit/78b9929a9f6f013dc1af8c112b51a61e57f6fd68))
+
 ## [1.2.1](https://github.com/RomanAgaltsev/bigo/compare/v1.2.0...v1.2.1) (2026-07-10)
 
 
