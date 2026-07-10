@@ -38,3 +38,7 @@ func TestAnalyzerEdge(t *testing.T) {
 func TestAnalyzerConcurrent(t *testing.T) {
 	analysistest.Run(t, analysistest.TestData(), Analyzer, "concurrent")
 }
+
+func TestAnalyzerCostIgnore(t *testing.T) {
+	analysistest.Run(t, analysistest.TestData(), Analyzer, "costignore")
+}

@@ -15,31 +15,53 @@ import (
 
 // Resolver implements engine.CostModel.
 type Resolver struct {
-	memo    map[*ssa.Function]bound.Bound
-	onStack map[*ssa.Function]bool
+	memo      map[*ssa.Function]bound.Bound
+	onStack   map[*ssa.Function]bool
+	overrides map[*ssa.Function]bound.Bound
 }
 
-// New returns an empty resolver.
-func New() *Resolver {
+// New returns a resolver. overrides maps functions to asserted summaries (from
+// //bigo:cost and //bigo:ignore), expressed in the callee's own canonical
+// param size vars; nil is allowed. Overrides win over body analysis.
+func New(overrides map[*ssa.Function]bound.Bound) *Resolver {
+	if overrides == nil {
+		overrides = map[*ssa.Function]bound.Bound{}
+	}
 	return &Resolver{
-		memo:    map[*ssa.Function]bound.Bound{},
-		onStack: map[*ssa.Function]bool{},
+		memo:      map[*ssa.Function]bound.Bound{},
+		onStack:   map[*ssa.Function]bool{},
+		overrides: overrides,
 	}
 }
 
-// CallCost resolves a call's cost: cost table first, then user-function summary,
-// else ⊤ (unverifiable).
+// override returns the asserted summary for fn, looking through generic
+// instantiations to their origin (annotations sit on the origin declaration).
+func (r *Resolver) override(fn *ssa.Function) (bound.Bound, bool) {
+	if b, ok := r.overrides[fn]; ok {
+		return b, true
+	}
+	if o := fn.Origin(); o != nil && o != fn {
+		if b, ok := r.overrides[o]; ok {
+			return b, true
+		}
+	}
+	return bound.Bound{}, false
+}
+
 func (r *Resolver) CallCost(c *ssa.CallCommon) bound.Bound {
 	if b, ok := costtable.Lookup(c); ok {
 		return b
 	}
 	callee := c.StaticCallee()
 	if callee == nil {
-		return bound.Top() // interface / closure / dynamic dispatch
+		return bound.Top() // interface / closure / dynamic dispatch (Task 13 adds method costs)
+	}
+	if _, ok := r.override(callee); ok {
+		return r.callUser(callee, c.Args) // summary() will return the override
 	}
 	// No body to analyze: external (declared from export data) or an
-	// instantiation of one. Pkg is not a proxy for this: instances always have a
-	// nil Pkg, and imported functions have a non-nil Pkg with no blocks.
+	// instantiation of one. Pkg is not a proxy for this: instances always have
+	// a nil Pkg, and imported functions have a non-nil Pkg with no blocks.
 	if len(callee.Blocks) == 0 {
 		return bound.Top()
 	}
@@ -108,8 +130,13 @@ func dependsOnVar(b bound.Bound, v bound.Var) bool {
 	return false
 }
 
-// summary returns engine.Infer(fn, r), memoized, with recursion -> ⊤.
+// summary returns the function's asserted or inferred bound, memoized, with
+// recursion -> ⊤. An override (//bigo:cost, //bigo:ignore) short-circuits
+// body analysis entirely — that is the point of the annotation.
 func (r *Resolver) summary(fn *ssa.Function) bound.Bound {
+	if b, ok := r.override(fn); ok {
+		return b
+	}
 	if b, ok := r.memo[fn]; ok {
 		return b
 	}

@@ -23,7 +23,7 @@ func f(xs []int) int { return sum(xs) }`
 	if fn == nil {
 		t.Fatal("f not found")
 	}
-	if got, want := engine.Infer(fn, New()).String(), "O(len(xs))"; got != want {
+	if got, want := engine.Infer(fn, New(nil)).String(), "O(len(xs))"; got != want {
 		t.Errorf("Infer = %q, want %q (generic sum should resolve at instantiation)", got, want)
 	}
 }
