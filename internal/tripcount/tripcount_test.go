@@ -127,3 +127,43 @@ func f(n int) int { s := 0; for i := -5; i < n; i++ { s++ }; return s }`,
 		})
 	}
 }
+
+func TestOfRejectsVariableOffsetInComparison(t *testing.T) {
+	// `i+j < n` is `i < n-j`: for j < 0 the loop runs more than n times, so a
+	// bound of O(n) is a wrong bound, not an imprecise one.
+	tests := []struct{ name, src string }{
+		{
+			"induction plus parameter offset (trip count is n-j)",
+			`package input
+func f(n, j int) int { s := 0; for i := 0; i+j < n; i++ { s++ }; return s }`,
+		},
+		{
+			"induction plus parameter offset against a length",
+			`package input
+func f(xs []int, k int) int { s := 0; for i := 0; i+k < len(xs); i++ { s++ }; return s }`,
+		},
+		{
+			"offset written on the left of the induction variable",
+			`package input
+func f(n, j int) int { s := 0; for i := 0; j+i < n; i++ { s++ }; return s }`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := Of(firstLoop(t, tt.src)); !got.IsTop() {
+				t.Errorf("Of = %q, want Top (trip count is bound-offset, not O(bound))", got.String())
+			}
+		})
+	}
+}
+
+func TestOfAcceptsConstantOffsetInComparison(t *testing.T) {
+	// A constant offset shifts the trip count by O(1) and stays in the same
+	// asymptotic class. This is the shape the `for range` lowering compares,
+	// so it must keep working.
+	const src = `package input
+func f(n int) int { s := 0; for i := 0; i+1 < n; i++ { s++ }; return s }`
+	if got, want := Of(firstLoop(t, src)).String(), "O(n)"; got != want {
+		t.Errorf("Of = %q, want %q", got, want)
+	}
+}
