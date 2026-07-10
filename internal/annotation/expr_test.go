@@ -43,4 +43,15 @@ func TestParseBigOErrors(t *testing.T) {
 	}
 }
 
+func TestParseBigOExponentLimits(t *testing.T) {
+	for _, in := range []string{"O(n^99999999999999999999)", "O(n^65)"} {
+		if _, err := parseBigO(in); err == nil {
+			t.Errorf("parseBigO(%q) expected error, got nil", in)
+		}
+	}
+	if _, err := parseBigO("O(n^64)"); err != nil {
+		t.Errorf("parseBigO(O(n^64)) unexpected error: %v", err)
+	}
+}
+
 var _ = bound.One // keep import if unused above

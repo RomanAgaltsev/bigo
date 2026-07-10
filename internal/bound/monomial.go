@@ -9,13 +9,13 @@ import (
 // Var is a symbolic size variable, e.g. "n", "m", or "len(a)".
 type Var string
 
-// Factor is the exponent of the one variable within a monomial: v^Pow · (log v)^Log.
+// Factor is the exponent of one variable within a monomial: v^Pow · (log v)^Log.
 type Factor struct {
 	Pow int
 	Log int
 }
 
-// Monomial is a products of variable factors. The empty Monomial is O(1).
+// Monomial is a product of variable factors. The empty Monomial is O(1).
 // Invariant: factors never stores a zero Factor{0, 0}.
 type Monomial struct {
 	factors map[Var]Factor
@@ -73,6 +73,11 @@ func (m Monomial) vars() []Var {
 	return vs
 }
 
+// Vars returns the monomial's variables in canonical sorted order.
+func (m Monomial) Vars() []Var {
+	return m.vars()
+}
+
 // Mul multiplies two monomials by adding their per-variable exponents.
 func (m Monomial) Mul(o Monomial) Monomial {
 	res := make(map[Var]Factor, len(m.factors)+len(o.factors))
@@ -89,7 +94,7 @@ func (m Monomial) Mul(o Monomial) Monomial {
 	return newMono(res)
 }
 
-// Equal reports whether two monomials identical factors.
+// Equal reports whether two monomials have identical factors.
 func (m Monomial) Equal(o Monomial) bool {
 	if len(m.factors) != len(o.factors) {
 		return false
@@ -102,7 +107,7 @@ func (m Monomial) Equal(o Monomial) bool {
 	return true
 }
 
-// String renders the monomial in canonical (variable-sorted) from.
+// String renders the monomial in canonical from.
 func (m Monomial) String() string {
 	if len(m.factors) == 0 {
 		return "1"

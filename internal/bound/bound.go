@@ -45,12 +45,7 @@ func (b Bound) Terms() []Monomial {
 	return b.terms
 }
 
-// Vars returns the monomial's variables in canonical sorted order.
-func (m Monomial) Vars() []Var {
-	return m.vars()
-}
-
-// reduce keeps only the maximal monomials: any monomial dominated by other
+// reduce keeps only the maximal monomials: any monomial dominated by another
 // (equal counts as dominated) is dropped, so the result is an antichain.
 func reduce(ms []Monomial) []Monomial {
 	var out []Monomial
@@ -78,7 +73,7 @@ func reduce(ms []Monomial) []Monomial {
 	return out
 }
 
-// Join returns the dominant terms of both bounds (sequantial-sum and branch-max)
+// Join returns the dominant terms of both bounds ((sequential-sum and branch-max
 // are the same asymptotic operation). T is absorbing.
 func (b Bound) Join(o Bound) Bound {
 	if b.top || o.top {
@@ -131,12 +126,12 @@ func (b Bound) String() string {
 }
 
 // Mul multiplies two bounds: the loop operation (trip-count * body). It forms
-// the pairwise products of the two antichains, then reduce. T is absorbing.
+// the pairwise products of the two antichains, then reduces. ⊤ is absorbing.
 func (b Bound) Mul(o Bound) Bound {
 	if b.top || o.top {
 		return Top()
 	}
-	prod := make([]Monomial, 0, len(b.terms)+len(o.terms))
+	prod := make([]Monomial, 0, len(b.terms)*len(o.terms))
 	for _, x := range b.terms {
 		for _, y := range o.terms {
 			prod = append(prod, x.Mul(y))

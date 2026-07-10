@@ -1,4 +1,4 @@
-// Package loopnest detects natural loops nad their nesting from SSA.
+// Package loopnest detects natural loops and their nesting from SSA.
 package loopnest
 
 import "golang.org/x/tools/go/ssa"
@@ -31,7 +31,7 @@ func (f *Forest) LoopOf(header *ssa.BasicBlock) *Loop {
 }
 
 // dominates reports whether a dominates b by walking b's immediate-dominator
-// chain. A block dominates itslef.
+// chain. A block dominates itself.
 func dominates(a, b *ssa.BasicBlock) bool {
 	for x := b; x != nil; x = x.Idom() {
 		if x == a {

@@ -67,5 +67,20 @@ func TestParseDirectives(t *testing.T) {
 		}
 	})
 
+	t.Run("var containing 'where' is not a clause split", func(t *testing.T) {
+		d, err := Parse("//bigo:max O(nowhere)")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if got := d.Budget.String(); got != "O(nowhere)" {
+			t.Errorf("Budget = %q, want O(nowhere)", got)
+		}
+	})
+	t.Run("where without surrounding spaces is rejected", func(t *testing.T) {
+		if _, err := Parse("//bigo:max O(n)where n=len(a)"); err == nil {
+			t.Errorf("expected error: grammar requires SP where SP")
+		}
+	})
+
 	var _ = bound.Var("n")
 }

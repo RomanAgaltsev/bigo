@@ -50,6 +50,21 @@ func f(s string) bool { return strings.Contains(s, "x") }`, "O(len(s))", true},
 		{"unknown stdlib not in table", `package input
 import "math"
 func f(x float64) float64 { return math.Sqrt(x) }`, "O(1)", false},
+		{"slices.Max is linear", `package input
+import "slices"
+func f(xs []int) int { return slices.Max(xs) }`, "O(len(xs))", true},
+		{"slices.BinarySearch is log", `package input
+import "slices"
+func f(xs []int, v int) bool { _, ok := slices.BinarySearch(xs, v); return ok }`, "O(log(len(xs)))", true},
+		{"strings.Repeat is s times count", `package input
+import "strings"
+func f(s string, count int) string { return strings.Repeat(s, count) }`, "O(count len(s))", true},
+		{"strings.ToLower is linear", `package input
+import "strings"
+func f(s string) string { return strings.ToLower(s) }`, "O(len(s))", true},
+		{"maps iterator construction is O(1)", `package input
+import "maps"
+func f(m map[string]int) { _ = maps.Keys(m) }`, "O(1)", true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -1,12 +1,12 @@
 package bound
 
-// Verdict is the three-valued result of comparing an inferred vound to a budget.
+// Verdict is the three-valued result of comparing an inferred bound to a budget.
 type Verdict int
 
 const (
-	// Within means the inferred bound is provable no larger than the budget.
+	// Within means the inferred bound is provably no larger than the budget.
 	Within Verdict = iota
-	// Exceeds means the inferred bound provable violates the budget.
+	// Exceeds means the inferred bound provably violates the budget.
 	Exceeds
 	// Unknown means the comparison cannot be decided soundly (annotate to resolve).
 	Unknown
