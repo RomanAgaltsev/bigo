@@ -62,3 +62,22 @@ func f(xs []int, n int, s string, x float64) {}`
 		}
 	}
 }
+
+func TestValueClass(t *testing.T) {
+	const src = `package input
+func f(xs []int, n int, s string) {}`
+	pkg, _, err := ssasupport.Build(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fn := ssasupport.Func(pkg, "f")
+	if v, c, ok := ValueClass(fn.Params[0]); !ok || v != "len(xs)" || c != Length {
+		t.Errorf("slice: got (%q,%v,%v), want (len(xs), Length, true)", v, c, ok)
+	}
+	if v, c, ok := ValueClass(fn.Params[1]); !ok || v != "n" || c != Numeric {
+		t.Errorf("int: got (%q,%v,%v), want (n, Numeric, true)", v, c, ok)
+	}
+	if v, c, ok := ValueClass(fn.Params[2]); !ok || v != "len(s)" || c != Length {
+		t.Errorf("string: got (%q,%v,%v), want (len(s), Length, true)", v, c, ok)
+	}
+}

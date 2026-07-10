@@ -72,3 +72,26 @@ func f(k string) string { return os.Getenv(k) }`,
 		})
 	}
 }
+
+func TestCapBoundedCalleeSubstitutesCap(t *testing.T) {
+	// cap(ys) in the callee must become cap(xs) — NOT len(xs); a length is
+	// not an upper bound on a capacity (review finding B3).
+	const src = `package input
+func fill(ys []int) int { s := 0; for i := 0; i < cap(ys); i++ { s++ }; return s }
+func f(xs []int) int { return fill(xs) }`
+	if got, want := inferF(t, src), "O(cap(xs))"; got != want {
+		t.Errorf("Infer = %q, want %q", got, want)
+	}
+}
+
+func TestCapBoundedCalleeWithNonParamArgIsTop(t *testing.T) {
+	// The argument is a local slice, so its cap is not expressible in the
+	// caller's size vars; the summary depends on cap -> unverifiable.
+	const src = `package input
+func fill(ys []int) int { s := 0; for i := 0; i < cap(ys); i++ { s++ }; return s }
+func mk() []int
+func f() int { return fill(mk()) }`
+	if got := inferF(t, src); got != "unverifiable" {
+		t.Errorf("Infer = %q, want unverifiable", got)
+	}
+}

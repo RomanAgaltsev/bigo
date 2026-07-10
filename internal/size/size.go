@@ -38,25 +38,42 @@ func FromRef(r annotation.SizeRef) bound.Var {
 	}
 }
 
-// Value returns the canonical size variable of an SSA value when it is a
-// parameter whose size is meaningful (slice/map/array/string -> len,
-// integer -> the value itself) and false otherwise.
-func Value(v ssa.Value) (bound.Var, bool) {
+// Class is the kind of size a value contributes to a bound.
+type Class int
+
+const (
+	// Length marks slice/map/array/string values, sized by len().
+	Length Class = iota
+	// Numeric marks integer values, sized by their own magnitude.
+	Numeric
+)
+
+// ValueClass returns the canonical size variable of an SSA value and which
+// kind of size it denotes: a parameter of slice/map/array/string type yields
+// (len(p), Length); an integer parameter yields (p, Numeric).
+func ValueClass(v ssa.Value) (bound.Var, Class, bool) {
 	p, ok := v.(*ssa.Parameter)
 	if !ok {
-		return "", false
+		return "", 0, false
 	}
 	switch p.Type().Underlying().(type) {
 	case *types.Slice, *types.Map, *types.Array:
-		return Len(p.Name()), true
+		return Len(p.Name()), Length, true
 	}
 	if b, ok := p.Type().Underlying().(*types.Basic); ok {
 		switch {
 		case b.Info()&types.IsString != 0:
-			return Len(p.Name()), true
+			return Len(p.Name()), Length, true
 		case b.Info()&types.IsInteger != 0:
-			return Num(p.Name()), true
+			return Num(p.Name()), Numeric, true
 		}
 	}
-	return "", false
+	return "", 0, false
+}
+
+// Value returns the canonical size variable of an SSA value when it is a
+// parameter whose size is meaningful, and false otherwise.
+func Value(v ssa.Value) (bound.Var, bool) {
+	av, _, ok := ValueClass(v)
+	return av, ok
 }

@@ -3,11 +3,14 @@
 package callsummary
 
 import (
+	"go/types"
+
+	"golang.org/x/tools/go/ssa"
+
 	"github.com/RomanAgaltsev/bigo/internal/bound"
 	"github.com/RomanAgaltsev/bigo/internal/costtable"
 	"github.com/RomanAgaltsev/bigo/internal/engine"
 	"github.com/RomanAgaltsev/bigo/internal/size"
-	"golang.org/x/tools/go/ssa"
 )
 
 // Resolver implements engine.CostModel.
@@ -48,26 +51,61 @@ func (r *Resolver) callUser(callee *ssa.Function, args []ssa.Value) bound.Bound 
 	if summary.IsTop() {
 		return bound.Top()
 	}
-	rename := map[bound.Var]bound.Var{}
+	names := make([]string, len(callee.Params))
 	for i, p := range callee.Params {
+		names[i] = p.Name()
+	}
+	return substArgs(summary, names, args)
+}
+
+// substArgs rewrites a callee summary into caller size variables, kind for
+// kind. len(p) becomes the argument's length var. cap(p) becomes cap(arg)
+// only when the argument is itself a slice parameter (the slice header is
+// copied, so the capacities are equal) — a length is NOT an upper bound on a
+// capacity, so no other substitution for cap is sound. A numeric p becomes
+// the argument's numeric var. Any parameter the summary depends on that the
+// caller cannot express makes the whole call unverifiable.
+func substArgs(summary bound.Bound, paramNames []string, args []ssa.Value) bound.Bound {
+	rename := map[bound.Var]bound.Var{}
+	for i, name := range paramNames {
 		if i >= len(args) {
 			return bound.Top()
 		}
-		av, ok := size.Value(args[i])
-		if !ok {
-			// If the summary depends on this parameter's size, we cannot express
-			// it in caller terms.
-			if dependsOn(summary, p.Name()) {
+		av, class, ok := size.ValueClass(args[i])
+		switch {
+		case ok && class == size.Length:
+			rename[size.Len(name)] = av
+			if ap, isParam := args[i].(*ssa.Parameter); isParam && isSliceParam(ap) {
+				rename[size.Cap(name)] = size.Cap(ap.Name())
+			} else if dependsOnVar(summary, size.Cap(name)) {
 				return bound.Top()
 			}
-			continue
+		case ok: // Numeric
+			rename[size.Num(name)] = av
+		default:
+			if dependsOn(summary, name) {
+				return bound.Top()
+			}
 		}
-		// Map all of the parameter's possible size vars to the actual size.
-		rename[size.Len(p.Name())] = av
-		rename[size.Cap(p.Name())] = av
-		rename[size.Num(p.Name())] = av
 	}
 	return summary.Subst(rename)
+}
+
+func isSliceParam(p *ssa.Parameter) bool {
+	_, ok := p.Type().Underlying().(*types.Slice)
+	return ok
+}
+
+// dependsOnVar reports whether the bound references the variable v.
+func dependsOnVar(b bound.Bound, v bound.Var) bool {
+	for _, m := range b.Terms() {
+		for _, mv := range m.Vars() {
+			if mv == v {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // summary returns engine.Infer(fn, r), memoized, with recursion -> ⊤.
