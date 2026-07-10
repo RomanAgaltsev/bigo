@@ -49,6 +49,15 @@ func metrics(x int) int
 | `//bigo:ignore` | trust: treat as O(1) |
 | `//bigo:space O(...)` | reserved (Phase 2); parsed but inert |
 
+A declaration may carry more than one directive — `//bigo:cost` tells callers
+what this function costs while `//bigo:max` gates its own body:
+
+```go
+//bigo:cost O(1)
+//bigo:max O(n)
+func Lookup(keys []string, k string) int { ... }
+```
+
 Directives use the `//go:` shape — no space after `//`. A malformed directive
 is a diagnostic, never silently ignored.
 
