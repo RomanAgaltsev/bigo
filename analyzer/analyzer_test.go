@@ -1,6 +1,9 @@
 package analyzer
 
 import (
+	"io"
+	"os"
+	"strings"
 	"testing"
 
 	"golang.org/x/tools/go/analysis/analysistest"
@@ -41,4 +44,31 @@ func TestAnalyzerConcurrent(t *testing.T) {
 
 func TestAnalyzerCostIgnore(t *testing.T) {
 	analysistest.Run(t, analysistest.TestData(), Analyzer, "costignore")
+}
+
+func TestReportModeUsesStdoutNotDiagnostics(t *testing.T) {
+	if err := Analyzer.Flags.Set("report", "true"); err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = Analyzer.Flags.Set("report", "false") }()
+
+	old := os.Stdout
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	os.Stdout = w
+	// smoke has no budgets: report mode must print bounds to stdout and emit
+	// ZERO diagnostics (analysistest fails on any unexpected diagnostic —
+	// that is the exit-code guarantee).
+	analysistest.Run(t, analysistest.TestData(), Analyzer, "smoke")
+	w.Close()
+	os.Stdout = old
+	out, err := io.ReadAll(r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(out), "Noop: inferred complexity O(len(xs))") {
+		t.Errorf("report output missing, got: %q", out)
+	}
 }

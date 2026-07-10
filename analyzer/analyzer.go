@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"go/ast"
 	"go/types"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -155,7 +156,8 @@ func run(pass *analysis.Pass) (any, error) {
 	report := func(decl *ast.FuncDecl, fn *ssa.Function) (bound.Bound, []engine.Cause) {
 		inferred, causes := engine.InferDetailed(fn, resolver)
 		if reportMode && !inferred.IsTop() {
-			pass.Reportf(decl.Pos(), "inferred complexity %s", inferred.String())
+			p := pass.Fset.Position(decl.Pos())
+			_, _ = fmt.Fprintf(os.Stdout, "%s:%d: %s: inferred complexity %s\n", p.Filename, p.Line, decl.Name.Name, inferred.String())
 		}
 		return inferred, causes
 	}
