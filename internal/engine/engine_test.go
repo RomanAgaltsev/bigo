@@ -131,3 +131,47 @@ func f() int { return 0 }`
 		t.Errorf("Infer(nil) = %q, want Top", got.String())
 	}
 }
+
+func TestInferDetailedNamesTheBlocker(t *testing.T) {
+	const src = `package input
+func g(int) int
+func f(xs []int) int {
+	s := 0
+	for i := 0; i < len(xs); i++ {
+		s += g(xs[i])
+	}
+	return s
+}`
+	pkg, _, err := ssasupport.Build(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fn := ssasupport.Func(pkg, "f")
+	b, causes := InferDetailed(fn, builtinModel{})
+	if !b.IsTop() {
+		t.Fatalf("bound = %q, want Top", b.String())
+	}
+	if len(causes) == 0 {
+		t.Fatal("expected at least one cause for a Top bound")
+	}
+	if want := "unresolved cost at call to g"; causes[0].What != want {
+		t.Errorf("cause = %q, want %q", causes[0].What, want)
+	}
+	if !causes[0].Pos.IsValid() {
+		t.Error("cause position must be valid")
+	}
+}
+
+func TestInferDetailedNoCausesWhenBounded(t *testing.T) {
+	const src = `package input
+func f(xs []int) int { s := 0; for i := 0; i < len(xs); i++ { s += xs[i] }; return s }`
+	pkg, _, err := ssasupport.Build(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fn := ssasupport.Func(pkg, "f")
+	b, causes := InferDetailed(fn, builtinModel{})
+	if b.IsTop() || causes != nil {
+		t.Errorf("got (%q, %v), want bounded with nil causes", b.String(), causes)
+	}
+}
