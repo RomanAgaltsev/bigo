@@ -30,3 +30,11 @@ func TestAnalyzerInterproc(t *testing.T) {
 func TestAnalyzerMultivar(t *testing.T) {
 	analysistest.Run(t, analysistest.TestData(), Analyzer, "multivar")
 }
+
+func TestAnalyzerEdge(t *testing.T) {
+	analysistest.Run(t, analysistest.TestData(), Analyzer, "edge")
+}
+
+func TestAnalyzerConcurrent(t *testing.T) {
+	analysistest.Run(t, analysistest.TestData(), Analyzer, "concurrent")
+}

@@ -2,17 +2,25 @@
 package tripcount
 
 import (
+	"go/constant"
 	"go/token"
 	"go/types"
+
+	"golang.org/x/tools/go/ssa"
 
 	"github.com/RomanAgaltsev/bigo/internal/bound"
 	"github.com/RomanAgaltsev/bigo/internal/loopnest"
 	"github.com/RomanAgaltsev/bigo/internal/size"
-	"golang.org/x/tools/go/ssa"
 )
 
 // Of returns the loop's iteration-count bound in canonical size variables or
-// Top() when the loop shape is not recognized.
+// Top() when the loop shape is not recognized. Acceptance is deliberately
+// strict — every relaxation here must be argued for soundness:
+//   - the header's *ssa.If true-branch must stay inside the loop,
+//   - the comparison must test a strictly increasing induction variable
+//     against an upper bound (ind < b, ind <= b, b > ind, b >= ind),
+//   - the induction phi must start at a constant and advance by a positive
+//     constant step on every other edge.
 func Of(loop *loopnest.Loop) bound.Bound {
 	h := loop.Header
 	if len(h.Instrs) == 0 {
@@ -22,12 +30,17 @@ func Of(loop *loopnest.Loop) bound.Bound {
 	if !ok {
 		return bound.Top()
 	}
-	cmp, ok := ifi.Cond.(*ssa.BinOp)
-	if !ok || !isComparison(cmp.Op) {
+	// The true branch must be the edge that stays in the loop; otherwise the
+	// condition is an exit test and "bound" would be misread.
+	if len(ifi.Block().Succs) != 2 || !loop.Blocks[ifi.Block().Succs[0]] {
 		return bound.Top()
 	}
-	_, boundVal := classify(loop, cmp)
-	if boundVal == nil {
+	cmp, ok := ifi.Cond.(*ssa.BinOp)
+	if !ok {
+		return bound.Top()
+	}
+	boundVal, ok := classify(loop, cmp)
+	if !ok {
 		return bound.Top()
 	}
 	if v := sizeVar(boundVal); v != "" {
@@ -36,30 +49,28 @@ func Of(loop *loopnest.Loop) bound.Bound {
 	return bound.Top()
 }
 
-func isComparison(op token.Token) bool {
-	switch op {
-	case token.LSS, token.LEQ, token.GTR, token.GEQ:
-		return true
-	default:
-		return false
+// classify returns the bound operand of the loop condition when the condition
+// tests an increasing induction variable against an upper bound. Direction is
+// load-bearing: `i >= n; i++` never terminates for i0 >= n, so only
+// upper-bound comparisons are trip counts.
+func classify(loop *loopnest.Loop, cmp *ssa.BinOp) (ssa.Value, bool) {
+	switch cmp.Op {
+	case token.LSS, token.LEQ: // induction < bound
+		if isIncreasingInduction(loop, cmp.X) {
+			return cmp.Y, true
+		}
+	case token.GTR, token.GEQ: // bound > induction
+		if isIncreasingInduction(loop, cmp.Y) {
+			return cmp.X, true
+		}
 	}
+	return nil, false
 }
 
-// classify returns (induction, bound) operands of the loop condition or (nil,nil).
-func classify(loop *loopnest.Loop, cmp *ssa.BinOp) (ssa.Value, ssa.Value) {
-	if isInduction(loop, cmp.X) {
-		return cmp.X, cmp.Y
-	}
-	if isInduction(loop, cmp.Y) {
-		return cmp.Y, cmp.X
-	}
-	return nil, nil
-}
-
-// isInduction reports whether v adnvances once per iteration: either the header
-// phi itself (the `for i := 0; i < N; i++` shape) or that phi's in-header
-// increment (the `for range` shape, whose condition compares phi+1, not phi).
-func isInduction(loop *loopnest.Loop, v ssa.Value) bool {
+// isIncreasingInduction reports whether v advances by a positive constant once
+// per iteration: either the header phi itself (`for i := 0; i < N; i++`) or
+// that phi's in-header increment (the `for range` shape compares phi+1).
+func isIncreasingInduction(loop *loopnest.Loop, v ssa.Value) bool {
 	if isInductionPhi(loop, v) {
 		return true
 	}
@@ -70,31 +81,58 @@ func isInduction(loop *loopnest.Loop, v ssa.Value) bool {
 	return isInductionPhi(loop, bo.X) || isInductionPhi(loop, bo.Y)
 }
 
-// isInductionPhi reports whether v is a header phi advanced by a constant step
-// along one of its edges. The step must be an *ssa.Const: a runtime step k may
-// be <= 0, in which case the loop need not terminate and no trip count exists.
+// isInductionPhi reports whether v is a header phi that starts at a constant
+// and advances by a positive constant step. Every edge must be one or the
+// other; any third kind of edge (e.g. a reset to a parameter) disqualifies.
+// Both constraints are soundness, not style: a zero or negative step means
+// the loop need not terminate, and a non-constant start `i := m` makes the
+// trip count bound-start, which is not O(bound).
 func isInductionPhi(loop *loopnest.Loop, v ssa.Value) bool {
 	phi, ok := v.(*ssa.Phi)
 	if !ok || phi.Block() != loop.Header {
 		return false
 	}
+	hasStep, hasInit := false, false
 	for _, e := range phi.Edges {
-		bo, ok := e.(*ssa.BinOp)
-		if !ok || bo.Op != token.ADD {
-			continue
-		}
 		switch {
-		case bo.X == phi:
-			if _, ok := bo.Y.(*ssa.Const); ok {
-				return true
-			}
-		case bo.Y == phi:
-			if _, ok := bo.X.(*ssa.Const); ok {
-				return true
-			}
+		case isPositiveStep(phi, e):
+			hasStep = true
+		case isConstant(e):
+			hasInit = true
+		default:
+			return false
 		}
 	}
+	return hasStep && hasInit
+}
+
+// isPositiveStep reports whether e is phi + c for a constant c > 0.
+func isPositiveStep(phi *ssa.Phi, e ssa.Value) bool {
+	bo, ok := e.(*ssa.BinOp)
+	if !ok || bo.Op != token.ADD {
+		return false
+	}
+	switch {
+	case bo.X == phi:
+		return isPositiveConst(bo.Y)
+	case bo.Y == phi:
+		return isPositiveConst(bo.X)
+	}
 	return false
+}
+
+func isConstant(v ssa.Value) bool {
+	_, ok := v.(*ssa.Const)
+	return ok
+}
+
+func isPositiveConst(v ssa.Value) bool {
+	c, ok := v.(*ssa.Const)
+	if !ok || c.Value == nil {
+		return false
+	}
+	k, exact := constant.Int64Val(constant.ToInt(c.Value))
+	return exact && k > 0
 }
 
 // sizeVar maps a loop-bound value to a canonical size variable, or "".

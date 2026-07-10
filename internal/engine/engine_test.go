@@ -55,3 +55,79 @@ func f(xs []int) int { s := 0; for i := 0; i < len(xs); i++ { s += g(xs[i]) }; r
 		})
 	}
 }
+
+// userLinearModel: len/cap O(1); every other call costs O(k) — a stand-in for
+// a resolvable user callee, so defer multiplication is observable.
+type userLinearModel struct{}
+
+func (userLinearModel) CallCost(c *ssa.CallCommon) bound.Bound {
+	if b, ok := c.Value.(*ssa.Builtin); ok {
+		switch b.Name() {
+		case "len", "cap":
+			return bound.Constant()
+		}
+	}
+	return bound.Of(bound.Term("k"))
+}
+
+func inferWith(t *testing.T, model CostModel, src string) string {
+	t.Helper()
+	pkg, _, err := ssasupport.Build(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fn := ssasupport.Func(pkg, "f")
+	if fn == nil {
+		t.Fatal("f not found")
+	}
+	return Infer(fn, model).String()
+}
+
+func TestDeferInLoopIsMultiplied(t *testing.T) {
+	const src = `package input
+func g(int) int
+func f(xs []int) {
+	for i := 0; i < len(xs); i++ {
+		defer g(i)
+	}
+}`
+	// n deferred O(k) calls all run at return: the loop factor must apply.
+	if got, want := inferWith(t, userLinearModel{}, src), "O(k len(xs))"; got != want {
+		t.Errorf("Infer = %q, want %q", got, want)
+	}
+}
+
+func TestGoStatementIsUnverifiable(t *testing.T) {
+	const src = `package input
+func g(int) int
+func f(xs []int) {
+	for i := 0; i < len(xs); i++ {
+		go g(i)
+	}
+}`
+	// concurrency-dependent bounds are unverifiable in v1 — even if
+	// the spawned callee itself is resolvable.
+	if got := inferWith(t, userLinearModel{}, src); got != "unverifiable" {
+		t.Errorf("Infer = %q, want unverifiable", got)
+	}
+}
+
+func TestBodylessFunctionIsUnverifiable(t *testing.T) {
+	const src = `package input
+func g(n int) int
+func f() int { return 0 }`
+	pkg, _, err := ssasupport.Build(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	g := ssasupport.Func(pkg, "g")
+	if g == nil {
+		t.Fatal("g not found")
+	}
+	if got := Infer(g, builtinModel{}); !got.IsTop() {
+		t.Errorf("Infer(bodyless) = %q, want Top — no body means nothing is known", got.String())
+	}
+	if got := Infer(nil, builtinModel{}); !got.IsTop() {
+		t.Errorf("Infer(nil) = %q, want Top", got.String())
+	}
+}
