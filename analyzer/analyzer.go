@@ -58,7 +58,7 @@ func run(pass *analysis.Pass) (any, error) {
 			if reportMode && !inferred.IsTop() {
 				pass.Reportf(decl.Pos(), "inferred complexity %s", inferred.String())
 			}
-			dir, ok := directiveOf(decl)
+			dir, ok := directiveOf(pass, decl)
 			if !ok || dir.Verb != annotation.Max {
 				continue
 			}
@@ -79,7 +79,7 @@ func checkBudget(pass *analysis.Pass, decl *ast.FuncDecl, fn *ssa.Function, infe
 		pass.Reportf(decl.Pos(), "complexity %s exceeds budget %s", inferred.String(), budget.String())
 	case bound.Unknown:
 		if inferred.IsTop() {
-			pass.Reportf(decl.Pos(), "cannot verify budget %s: unresolved cost in %s (annotate the call with //bigo:cost or //bigo:ignore)", budget.String(), fn.Name())
+			pass.Reportf(decl.Pos(), "cannot verify budget %s: unresolved cost in %s", budget.String(), fn.Name())
 		} else {
 			pass.Reportf(decl.Pos(), "cannot verify budget %s: inferred %s is not comparable", budget.String(), inferred.String())
 		}
@@ -88,18 +88,24 @@ func checkBudget(pass *analysis.Pass, decl *ast.FuncDecl, fn *ssa.Function, infe
 	}
 }
 
-// directiveOf returns the first //bigo: directive in the function's doc comment.
-func directiveOf(decl *ast.FuncDecl) (annotation.Directive, bool) {
+// directiveOf returns the first //bigo: directive in the function's doc
+// comment. A comment that looks like a directive but fails to parse is
+// reported: a silently dropped budget is indistinguishable from a passing
+// one, which is the worst failure mode a CI gate can have.
+func directiveOf(pass *analysis.Pass, decl *ast.FuncDecl) (annotation.Directive, bool) {
 	if decl.Doc == nil {
 		return annotation.Directive{}, false
 	}
 	for _, c := range decl.Doc.List {
-		if !strings.Contains(c.Text, "bigo:") {
+		if !strings.HasPrefix(c.Text, "//bigo:") {
 			continue
 		}
-		if dir, err := annotation.Parse(c.Text); err == nil {
-			return dir, true
+		dir, err := annotation.Parse(c.Text)
+		if err != nil {
+			pass.Reportf(decl.Pos(), "invalid //bigo: directive: %v", err)
+			return annotation.Directive{}, false
 		}
+		return dir, true
 	}
 	return annotation.Directive{}, false
 }

@@ -31,3 +31,23 @@ func Unresolved(xs []int) int { // want `cannot verify budget O\(len\(xs\)\)`
 	}
 	return s
 }
+
+//bigo:mx O(n)
+func TypoVerb(xs []int) int { // want `invalid //bigo: directive`
+	s := 0
+	for i := 0; i < len(xs); i++ {
+		for j := 0; j < len(xs); j++ {
+			s += xs[i] * xs[j]
+		}
+	}
+	return s
+}
+
+//bigo:max O(n^)
+func BadExpr(xs []int) int { // want `invalid //bigo: directive`
+	s := 0
+	for i := 0; i < len(xs); i++ {
+		s += xs[i]
+	}
+	return s
+}

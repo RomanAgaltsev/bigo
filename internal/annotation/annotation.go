@@ -64,15 +64,14 @@ type Directive struct {
 	Raw      string
 }
 
-// Parse parses a single //bigo: comment line.
+// Parse parses a single //bigo: comment line. Like //go: directives, the
+// prefix must be exact — `// bigo:` with a space is prose, not a directive.
 func Parse(text string) (Directive, error) {
-	s := strings.TrimSpace(text)
-	s = strings.TrimPrefix(s, "//")
-	s = strings.TrimSpace(s)
-	if !strings.HasPrefix(s, "bigo:") {
+	const prefix = "//bigo:"
+	if !strings.HasPrefix(text, prefix) {
 		return Directive{}, fmt.Errorf("not a bigo directive: %q", text)
 	}
-	s = strings.TrimPrefix(s, "bigo:")
+	s := text[len(prefix):]
 
 	verbTok, rest, _ := strings.Cut(strings.TrimSpace(s), " ")
 	rest = strings.TrimSpace(rest)

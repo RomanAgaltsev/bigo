@@ -46,9 +46,12 @@ func TestParseDirectives(t *testing.T) {
 		}
 	})
 
-	t.Run("leading spaces tolerated", func(t *testing.T) {
-		if _, err := Parse("//  bigo:max O(n)"); err != nil {
-			t.Errorf("unexpected error: %v", err)
+	t.Run("leading space rejected (spec: //go: directive shape)", func(t *testing.T) {
+		if _, err := Parse("//  bigo:max O(n)"); err == nil {
+			t.Errorf("expected error for space before bigo:")
+		}
+		if _, err := Parse("// bigo:max O(n)"); err == nil {
+			t.Errorf("expected error for space before bigo:")
 		}
 	})
 
