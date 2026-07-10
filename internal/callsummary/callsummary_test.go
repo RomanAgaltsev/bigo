@@ -1,10 +1,13 @@
 package callsummary
 
 import (
+	"go/types"
 	"testing"
 
+	"github.com/RomanAgaltsev/bigo/internal/bound"
 	"github.com/RomanAgaltsev/bigo/internal/engine"
 	"github.com/RomanAgaltsev/bigo/internal/ssasupport"
+	"golang.org/x/tools/go/ssa"
 )
 
 func inferF(t *testing.T, src string) string {
@@ -17,7 +20,7 @@ func inferF(t *testing.T, src string) string {
 	if fn == nil {
 		t.Fatal("f not found")
 	}
-	return engine.Infer(fn, New()).String()
+	return engine.Infer(fn, New(nil)).String()
 }
 
 func TestInterprocedural(t *testing.T) {
@@ -93,5 +96,92 @@ func mk() []int
 func f() int { return fill(mk()) }`
 	if got := inferF(t, src); got != "unverifiable" {
 		t.Errorf("Infer = %q, want unverifiable", got)
+	}
+}
+
+func TestOverrideResolvesBodylessCallee(t *testing.T) {
+	const src = `package input
+func opaque(x int) int
+func f(xs []int) int {
+	s := 0
+	for i := 0; i < len(xs); i++ { s += opaque(xs[i]) }
+	return s
+}`
+	pkg, _, err := ssasupport.Build(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	opaque := ssasupport.Func(pkg, "opaque")
+	f := ssasupport.Func(pkg, "f")
+	// //bigo:cost O(1) on opaque, expressed as an override.
+	r := New(map[*ssa.Function]bound.Bound{opaque: bound.Constant()})
+	if got, want := engine.Infer(f, r).String(), "O(len(xs))"; got != want {
+		t.Errorf("Infer = %q, want %q", got, want)
+	}
+}
+
+func TestOverrideBeatsBodyAnalysis(t *testing.T) {
+	// A trusted (//bigo:ignore) quadratic helper must count as O(1).
+	const src = `package input
+func heavy(ys []int) int {
+	s := 0
+	for i := 0; i < len(ys); i++ {
+		for j := 0; j < len(ys); j++ { s++ }
+	}
+	return s
+}
+func f(xs []int) int { return heavy(xs) }`
+	pkg, _, err := ssasupport.Build(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	heavy := ssasupport.Func(pkg, "heavy")
+	f := ssasupport.Func(pkg, "f")
+	r := New(map[*ssa.Function]bound.Bound{heavy: bound.Constant()})
+	if got, want := engine.Infer(f, r).String(), "O(1)"; got != want {
+		t.Errorf("Infer = %q, want %q", got, want)
+	}
+}
+
+func TestOverrideSubstitutesParams(t *testing.T) {
+	// cost O(k) on opaque(k int): calling opaque(n) must yield O(n).
+	const src = `package input
+func opaque(k int) int
+func f(n int) int { return opaque(n) }`
+	pkg, _, err := ssasupport.Build(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	opaque := ssasupport.Func(pkg, "opaque")
+	f := ssasupport.Func(pkg, "f")
+	r := New(map[*ssa.Function]bound.Bound{opaque: bound.Of(bound.Term("k"))})
+	if got, want := engine.Infer(f, r).String(), "O(n)"; got != want {
+		t.Errorf("Infer = %q, want %q", got, want)
+	}
+}
+
+func TestInterfaceMethodCost(t *testing.T) {
+	const src = `package input
+type D interface{ Do(x int) int }
+func f(xs []int, d D) int {
+	s := 0
+	for i := 0; i < len(xs); i++ { s += d.Do(xs[i]) }
+	return s
+}`
+	pkg, _, err := ssasupport.Build(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	f := ssasupport.Func(pkg, "f")
+	// Find the *types.Func for D.Do.
+	dType := pkg.Pkg.Scope().Lookup("D").Type().Underlying().(*types.Interface)
+	do := dType.Method(0)
+	r := NewWithMethods(nil, map[*types.Func]bound.Bound{do: bound.Constant()})
+	if got, want := engine.Infer(f, r).String(), "O(len(xs))"; got != want {
+		t.Errorf("Infer = %q, want %q", got, want)
+	}
+	// Without the method cost the same call must stay unverifiable.
+	if got := engine.Infer(f, New(nil)).String(); got != "unverifiable" {
+		t.Errorf("Infer without method cost = %q, want unverifiable", got)
 	}
 }

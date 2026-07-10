@@ -2,7 +2,11 @@
 package analyzer
 
 import (
+	"fmt"
 	"go/ast"
+	"go/types"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"golang.org/x/tools/go/analysis"
@@ -34,7 +38,6 @@ func newAnalyzer() *analysis.Analyzer {
 
 func run(pass *analysis.Pass) (any, error) {
 	ssaInfo := pass.ResultOf[buildssa.Analyzer].(*buildssa.SSA)
-	resolver := callsummary.New()
 
 	byDecl := map[*ast.FuncDecl]*ssa.Function{}
 	for _, fn := range ssaInfo.SrcFuncs {
@@ -42,33 +45,140 @@ func run(pass *analysis.Pass) (any, error) {
 			byDecl[decl] = fn
 		}
 	}
+	// ssaFor also resolves bodyless declarations (assembly/external), which
+	// SrcFuncs omits — //bigo:cost on those is the headline use case.
+	ssaFor := func(decl *ast.FuncDecl) *ssa.Function {
+		if fn := byDecl[decl]; fn != nil {
+			return fn
+		}
+		if obj, ok := pass.TypesInfo.Defs[decl.Name].(*types.Func); ok {
+			return ssaInfo.Pkg.Prog.FuncValue(obj)
+		}
+		return nil
+	}
 
+	// Pass 1: collect every directive once (directiveOf reports parse errors,
+	// so it must not run twice per decl).
+	type funcDirective struct {
+		decl *ast.FuncDecl
+		fn   *ssa.Function
+		dir  annotation.Directive
+	}
+	var directives []funcDirective
+	var plain []*ast.FuncDecl // decls without directives, still shown by -report
 	for _, file := range pass.Files {
 		for _, d := range file.Decls {
 			decl, ok := d.(*ast.FuncDecl)
 			if !ok {
 				continue
 			}
-			fn := byDecl[decl]
-			if fn == nil {
-				continue
+			if dir, ok := directiveOf(pass, decl); ok {
+				directives = append(directives, funcDirective{decl, ssaFor(decl), dir})
+			} else {
+				plain = append(plain, decl)
 			}
-			inferred := engine.Infer(fn, resolver)
+		}
+	}
 
-			if reportMode && !inferred.IsTop() {
-				pass.Reportf(decl.Pos(), "inferred complexity %s", inferred.String())
-			}
-			dir, ok := directiveOf(pass, decl)
-			if !ok || dir.Verb != annotation.Max {
+	// Pass 2: cost/ignore assertions become resolver overrides.
+	overrides := map[*ssa.Function]bound.Bound{}
+	for _, fd := range directives {
+		if fd.fn == nil {
+			continue
+		}
+		switch fd.dir.Verb {
+		case annotation.Ignore:
+			overrides[fd.fn] = bound.Constant()
+		case annotation.Cost:
+			b, err := normalize.Budget(fd.dir, fd.fn)
+			if err != nil {
+				pass.Reportf(fd.decl.Pos(), "invalid //bigo:cost: %v", err)
 				continue
 			}
-			checkBudget(pass, decl, fn, inferred, dir)
+			overrides[fd.fn] = b
+		}
+	}
+	methodCosts := map[*types.Func]bound.Bound{}
+	for _, file := range pass.Files {
+		for _, d := range file.Decls {
+			gd, ok := d.(*ast.GenDecl)
+			if !ok {
+				continue
+			}
+			for _, spec := range gd.Specs {
+				ts, ok := spec.(*ast.TypeSpec)
+				if !ok {
+					continue
+				}
+				it, ok := ts.Type.(*ast.InterfaceType)
+				if !ok {
+					continue
+				}
+				for _, field := range it.Methods.List {
+					if field.Doc == nil || len(field.Names) == 0 {
+						continue
+					}
+					for _, cmt := range field.Doc.List {
+						if !strings.HasPrefix(cmt.Text, "//bigo:") {
+							continue
+						}
+						dir, err := annotation.Parse(cmt.Text)
+						if err != nil {
+							pass.Reportf(field.Pos(), "invalid //bigo: directive: %v", err)
+							continue
+						}
+						if dir.Verb != annotation.Cost && dir.Verb != annotation.Ignore {
+							pass.Reportf(field.Pos(), "only //bigo:cost and //bigo:ignore apply to interface methods")
+							continue
+						}
+						obj, ok := pass.TypesInfo.Defs[field.Names[0]].(*types.Func)
+						if !ok {
+							continue
+						}
+						if dir.Verb == annotation.Ignore {
+							methodCosts[obj] = bound.Constant()
+							continue
+						}
+						b, err := normalize.BudgetSig(dir, obj.Type().(*types.Signature))
+						if err != nil {
+							pass.Reportf(field.Pos(), "invalid //bigo:cost: %v", err)
+							continue
+						}
+						methodCosts[obj] = b
+					}
+				}
+			}
+		}
+	}
+	resolver := callsummary.NewWithMethods(overrides, methodCosts)
+
+	// Pass 3: infer and check.
+	report := func(decl *ast.FuncDecl, fn *ssa.Function) (bound.Bound, []engine.Cause) {
+		inferred, causes := engine.InferDetailed(fn, resolver)
+		if reportMode && !inferred.IsTop() {
+			p := pass.Fset.Position(decl.Pos())
+			_, _ = fmt.Fprintf(os.Stdout, "%s:%d: %s: inferred complexity %s\n", p.Filename, p.Line, decl.Name.Name, inferred.String())
+		}
+		return inferred, causes
+	}
+	for _, decl := range plain {
+		if fn := byDecl[decl]; fn != nil {
+			report(decl, fn)
+		}
+	}
+	for _, fd := range directives {
+		if fd.fn == nil || len(fd.fn.Blocks) == 0 {
+			continue // bodyless: nothing to check; its directive already feeds overrides
+		}
+		inferred, causes := report(fd.decl, fd.fn)
+		if fd.dir.Verb == annotation.Max {
+			checkBudget(pass, fd.decl, fd.fn, inferred, causes, fd.dir)
 		}
 	}
 	return nil, nil
 }
 
-func checkBudget(pass *analysis.Pass, decl *ast.FuncDecl, fn *ssa.Function, inferred bound.Bound, dir annotation.Directive) {
+func checkBudget(pass *analysis.Pass, decl *ast.FuncDecl, fn *ssa.Function, inferred bound.Bound, causes []engine.Cause, dir annotation.Directive) {
 	budget, err := normalize.Budget(dir, fn)
 	if err != nil {
 		pass.Reportf(decl.Pos(), "invalid //bigo:max: %v", err)
@@ -79,13 +189,27 @@ func checkBudget(pass *analysis.Pass, decl *ast.FuncDecl, fn *ssa.Function, infe
 		pass.Reportf(decl.Pos(), "complexity %s exceeds budget %s", inferred.String(), budget.String())
 	case bound.Unknown:
 		if inferred.IsTop() {
-			pass.Reportf(decl.Pos(), "cannot verify budget %s: unresolved cost in %s", budget.String(), fn.Name())
+			pass.Reportf(decl.Pos(), "cannot verify budget %s: %s (annotate the callee with //bigo:cost or //bigo:ignore)", budget.String(), causeText(pass, causes, fn))
 		} else {
 			pass.Reportf(decl.Pos(), "cannot verify budget %s: inferred %s is not comparable", budget.String(), inferred.String())
 		}
 	case bound.Within:
 		// ok
 	}
+}
+
+// causeText names the first blocker with its position — spec §5's "name the
+// exact unresolved node".
+func causeText(pass *analysis.Pass, causes []engine.Cause, fn *ssa.Function) string {
+	if len(causes) == 0 {
+		return "unresolved cost in " + fn.Name()
+	}
+	c := causes[0]
+	if !c.Pos.IsValid() {
+		return c.What
+	}
+	p := pass.Fset.Position(c.Pos)
+	return fmt.Sprintf("%s (%s:%d)", c.What, filepath.Base(p.Filename), p.Line)
 }
 
 // directiveOf returns the first //bigo: directive in the function's doc

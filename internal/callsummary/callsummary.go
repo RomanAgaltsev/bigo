@@ -15,16 +15,49 @@ import (
 
 // Resolver implements engine.CostModel.
 type Resolver struct {
-	memo    map[*ssa.Function]bound.Bound
-	onStack map[*ssa.Function]bool
+	memo        map[*ssa.Function]bound.Bound
+	onStack     map[*ssa.Function]bool
+	overrides   map[*ssa.Function]bound.Bound
+	methodCosts map[*types.Func]bound.Bound
 }
 
-// New returns an empty resolver.
-func New() *Resolver {
-	return &Resolver{
-		memo:    map[*ssa.Function]bound.Bound{},
-		onStack: map[*ssa.Function]bool{},
+// New returns a resolver. overrides maps functions to asserted summaries (from
+// //bigo:cost and //bigo:ignore), expressed in the callee's own canonical
+// param size vars; nil is allowed. Overrides win over body analysis.
+func New(overrides map[*ssa.Function]bound.Bound) *Resolver {
+	if overrides == nil {
+		overrides = map[*ssa.Function]bound.Bound{}
 	}
+	return &Resolver{
+		memo:      map[*ssa.Function]bound.Bound{},
+		onStack:   map[*ssa.Function]bool{},
+		overrides: overrides,
+	}
+}
+
+// NewWithMethods is New plus asserted costs for interface methods, keyed by
+// the interface method object (//bigo:cost on the method declaration).
+func NewWithMethods(overrides map[*ssa.Function]bound.Bound, methodCosts map[*types.Func]bound.Bound) *Resolver {
+	r := New(overrides)
+	if methodCosts == nil {
+		methodCosts = map[*types.Func]bound.Bound{}
+	}
+	r.methodCosts = methodCosts
+	return r
+}
+
+// override returns the asserted summary for fn, looking through generic
+// instantiations to their origin (annotations sit on the origin declaration).
+func (r *Resolver) override(fn *ssa.Function) (bound.Bound, bool) {
+	if b, ok := r.overrides[fn]; ok {
+		return b, true
+	}
+	if o := fn.Origin(); o != nil && o != fn {
+		if b, ok := r.overrides[o]; ok {
+			return b, true
+		}
+	}
+	return bound.Bound{}, false
 }
 
 // CallCost resolves a call's cost: cost table first, then user-function summary,
@@ -35,11 +68,24 @@ func (r *Resolver) CallCost(c *ssa.CallCommon) bound.Bound {
 	}
 	callee := c.StaticCallee()
 	if callee == nil {
-		return bound.Top() // interface / closure / dynamic dispatch
+		if c.Method != nil { // invoke mode: interface method call
+			if summary, ok := r.methodCosts[c.Method]; ok {
+				sig := c.Method.Type().(*types.Signature)
+				names := make([]string, sig.Params().Len())
+				for i := range names {
+					names[i] = sig.Params().At(i).Name()
+				}
+				return substArgs(summary, names, c.Args)
+			}
+		}
+		return bound.Top() // closure / func value / unannotated interface
+	}
+	if _, ok := r.override(callee); ok {
+		return r.callUser(callee, c.Args) // summary() will return the override
 	}
 	// No body to analyze: external (declared from export data) or an
-	// instantiation of one. Pkg is not a proxy for this: instances always have a
-	// nil Pkg, and imported functions have a non-nil Pkg with no blocks.
+	// instantiation of one. Pkg is not a proxy for this: instances always have
+	// a nil Pkg, and imported functions have a non-nil Pkg with no blocks.
 	if len(callee.Blocks) == 0 {
 		return bound.Top()
 	}
@@ -108,8 +154,13 @@ func dependsOnVar(b bound.Bound, v bound.Var) bool {
 	return false
 }
 
-// summary returns engine.Infer(fn, r), memoized, with recursion -> ⊤.
+// summary returns the function's asserted or inferred bound, memoized, with
+// recursion -> ⊤. An override (//bigo:cost, //bigo:ignore) short-circuits
+// body analysis entirely — that is the point of the annotation.
 func (r *Resolver) summary(fn *ssa.Function) bound.Bound {
+	if b, ok := r.override(fn); ok {
+		return b
+	}
 	if b, ok := r.memo[fn]; ok {
 		return b
 	}

@@ -67,3 +67,20 @@ func f(xs []int) int { return len(xs) }`)
 		t.Errorf("expected error for unbound var m")
 	}
 }
+
+func TestBudgetSigDefaultsPrimarySize(t *testing.T) {
+	d, err := annotation.Parse("//bigo:cost O(n)")
+	if err != nil {
+		t.Fatal(err)
+	}
+	f := fn(t, `package input
+func f(keys []string) int { return len(keys) }`)
+	sig := f.fn.Signature
+	b, err := BudgetSig(d, sig)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if b.String() != "O(len(keys))" {
+		t.Errorf("BudgetSig = %q, want O(len(keys))", b.String())
+	}
+}
