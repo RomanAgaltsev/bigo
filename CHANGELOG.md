@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/RomanAgaltsev/bigo/compare/v1.2.2...v1.3.0) (2026-07-10)
+
+
+### Features
+
+* honor //bigo:cost and //bigo:ignore, name unverifiable causes, scriptable -report ([#14](https://github.com/RomanAgaltsev/bigo/issues/14)) ([3b5fa61](https://github.com/RomanAgaltsev/bigo/commit/3b5fa618e11ca36e7069b953d59f0cd7c8e79950))
+
 ## [1.2.2](https://github.com/RomanAgaltsev/bigo/compare/v1.2.1...v1.2.2) (2026-07-10)
 
 
