@@ -57,14 +57,14 @@ func run(pass *analysis.Pass) (any, error) {
 		return nil
 	}
 
-	// Pass 1: collect every directive once (directiveOf reports parse errors,
-	// so it must not run twice per decl).
-	type funcDirective struct {
+	// Pass 1: collect every directive once (directivesOf reports parse errors,
+	// duplicates and conflicts, so it must not run twice per decl).
+	type funcDirectives struct {
 		decl *ast.FuncDecl
 		fn   *ssa.Function
-		dir  annotation.Directive
+		dirs []annotation.Directive
 	}
-	var directives []funcDirective
+	var directives []funcDirectives
 	var plain []*ast.FuncDecl // decls without directives, still shown by -report
 	for _, file := range pass.Files {
 		for _, d := range file.Decls {
@@ -72,8 +72,8 @@ func run(pass *analysis.Pass) (any, error) {
 			if !ok {
 				continue
 			}
-			if dir, ok := directiveOf(pass, decl); ok {
-				directives = append(directives, funcDirective{decl, ssaFor(decl), dir})
+			if dirs := directivesOf(pass, decl); len(dirs) > 0 {
+				directives = append(directives, funcDirectives{decl, ssaFor(decl), dirs})
 			} else {
 				plain = append(plain, decl)
 			}
@@ -86,16 +86,18 @@ func run(pass *analysis.Pass) (any, error) {
 		if fd.fn == nil {
 			continue
 		}
-		switch fd.dir.Verb {
-		case annotation.Ignore:
-			overrides[fd.fn] = bound.Constant()
-		case annotation.Cost:
-			b, err := normalize.Budget(fd.dir, fd.fn)
-			if err != nil {
-				pass.Reportf(fd.decl.Pos(), "invalid //bigo:cost: %v", err)
-				continue
+		for _, dir := range fd.dirs {
+			switch dir.Verb {
+			case annotation.Ignore:
+				overrides[fd.fn] = bound.Constant()
+			case annotation.Cost:
+				b, err := normalize.Budget(dir, fd.fn)
+				if err != nil {
+					pass.Reportf(fd.decl.Pos(), "invalid //bigo:cost: %v", err)
+					continue
+				}
+				overrides[fd.fn] = b
 			}
-			overrides[fd.fn] = b
 		}
 	}
 	methodCosts := map[*types.Func]bound.Bound{}
@@ -167,12 +169,13 @@ func run(pass *analysis.Pass) (any, error) {
 		}
 	}
 	for _, fd := range directives {
-		if fd.fn == nil || len(fd.fn.Blocks) == 0 {
-			continue // bodyless: nothing to check; its directive already feeds overrides
+		if fd.fn == nil {
+			continue
 		}
+		maxDir, hasMax := verb(fd.dirs, annotation.Max)
 		inferred, causes := report(fd.decl, fd.fn)
-		if fd.dir.Verb == annotation.Max {
-			checkBudget(pass, fd.decl, fd.fn, inferred, causes, fd.dir)
+		if hasMax {
+			checkBudget(pass, fd.decl, fd.fn, inferred, causes, maxDir)
 		}
 	}
 	return nil, nil
@@ -212,14 +215,18 @@ func causeText(pass *analysis.Pass, causes []engine.Cause, fn *ssa.Function) str
 	return fmt.Sprintf("%s (%s:%d)", c.What, filepath.Base(p.Filename), p.Line)
 }
 
-// directiveOf returns the first //bigo: directive in the function's doc
-// comment. A comment that looks like a directive but fails to parse is
-// reported: a silently dropped budget is indistinguishable from a passing
-// one, which is the worst failure mode a CI gate can have.
-func directiveOf(pass *analysis.Pass, decl *ast.FuncDecl) (annotation.Directive, bool) {
+// directivesOf returns every //bigo: directive on the function's doc comment,
+// in source order. A comment that looks like a directive but fails to parse is
+// reported and skipped: a silently dropped budget is indistinguishable from a
+// passing one, which is the worst failure mode a CI gate can have. Duplicate
+// and conflicting verbs are reported for the same reason — the loser would
+// otherwise vanish without a word.
+func directivesOf(pass *analysis.Pass, decl *ast.FuncDecl) []annotation.Directive {
 	if decl.Doc == nil {
-		return annotation.Directive{}, false
+		return nil
 	}
+	var dirs []annotation.Directive
+	seen := map[annotation.Verb]bool{}
 	for _, c := range decl.Doc.List {
 		if !strings.HasPrefix(c.Text, "//bigo:") {
 			continue
@@ -227,9 +234,29 @@ func directiveOf(pass *analysis.Pass, decl *ast.FuncDecl) (annotation.Directive,
 		dir, err := annotation.Parse(c.Text)
 		if err != nil {
 			pass.Reportf(decl.Pos(), "invalid //bigo: directive: %v", err)
-			return annotation.Directive{}, false
+			continue
 		}
-		return dir, true
+		if seen[dir.Verb] {
+			pass.Reportf(decl.Pos(), "duplicate //bigo:%s directive", dir.Verb)
+			continue
+		}
+		seen[dir.Verb] = true
+		dirs = append(dirs, dir)
+	}
+	if seen[annotation.Cost] && seen[annotation.Ignore] {
+		pass.Reportf(decl.Pos(), "//bigo:cost and //bigo:ignore are mutually exclusive")
+	}
+	return dirs
+}
+
+// verb returns the directive with verb v, if the declaration carries one.
+// annotation.Max is the zero value of annotation.Verb, so callers must consult
+// the boolean rather than comparing against a zero Directive.
+func verb(dirs []annotation.Directive, v annotation.Verb) (annotation.Directive, bool) {
+	for _, d := range dirs {
+		if d.Verb == v {
+			return d, true
+		}
 	}
 	return annotation.Directive{}, false
 }
