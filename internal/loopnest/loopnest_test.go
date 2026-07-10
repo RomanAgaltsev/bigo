@@ -67,3 +67,53 @@ func buildForest(t *testing.T, src, name string) *Forest {
 	}
 	return Build(fn)
 }
+
+func TestUncoveredCycleIrreducible(t *testing.T) {
+	// Two-entry cycle: neither a nor b dominates the other, so no natural
+	// loop exists — UncoveredCycle must catch it (review finding B4).
+	const src = `package input
+func f(n int, c bool) int {
+	i := 0
+	if c {
+		goto b
+	}
+a:
+	i++
+b:
+	i++
+	if i < n {
+		goto a
+	}
+	return i
+}`
+	pkg, _, err := ssasupport.Build(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fn := ssasupport.Func(pkg, "f")
+	forest := Build(fn)
+	if !forest.UncoveredCycle(fn) {
+		t.Error("UncoveredCycle = false, want true for irreducible two-entry cycle")
+	}
+}
+
+func TestUncoveredCycleFalseForNaturalLoops(t *testing.T) {
+	const src = `package input
+func f(xs []int) int {
+	s := 0
+	for i := 0; i < len(xs); i++ {
+		for j := 0; j < len(xs); j++ {
+			s += xs[i] * xs[j]
+		}
+	}
+	return s
+}`
+	pkg, _, err := ssasupport.Build(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fn := ssasupport.Func(pkg, "f")
+	if Build(fn).UncoveredCycle(fn) {
+		t.Error("UncoveredCycle = true, want false — every cycle here is a natural loop")
+	}
+}

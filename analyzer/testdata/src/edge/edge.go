@@ -104,3 +104,22 @@ func Triangular(xs []int) int { // want `cannot verify budget O\(len\(xs\)\^2\)`
 	}
 	return s
 }
+
+// Irreducible control flow (goto into a cycle from two entries) has no
+// natural loop; the function must be unverifiable, never O(1).
+
+//bigo:max O(1)
+func IrreducibleGoto(n int, c bool) int { // want `cannot verify budget O\(1\)`
+	i := 0
+	if c {
+		goto b
+	}
+a:
+	i++
+b:
+	i++
+	if i < n {
+		goto a
+	}
+	return i
+}

@@ -41,6 +41,78 @@ func dominates(a, b *ssa.BasicBlock) bool {
 	return false
 }
 
+// UncoveredCycle reports whether fn's CFG contains a cycle that natural-loop
+// detection did not cover — an irreducible (multi-entry) cycle. Such a cycle
+// has no header and no trip count, so callers must treat the function as
+// unverifiable rather than costing its blocks loop-free.
+func (f *Forest) UncoveredCycle(fn *ssa.Function) bool {
+	// Iterative Tarjan SCC over the block graph.
+	index := make(map[*ssa.BasicBlock]int, len(fn.Blocks))
+	low := make(map[*ssa.BasicBlock]int, len(fn.Blocks))
+	onStack := make(map[*ssa.BasicBlock]bool, len(fn.Blocks))
+	var stack []*ssa.BasicBlock
+	next := 0
+	bad := false
+
+	var connect func(v *ssa.BasicBlock)
+	connect = func(v *ssa.BasicBlock) {
+		index[v] = next
+		low[v] = next
+		next++
+		stack = append(stack, v)
+		onStack[v] = true
+		for _, w := range v.Succs {
+			if _, seen := index[w]; !seen {
+				connect(w)
+				low[v] = min(low[v], low[w])
+			} else if onStack[w] {
+				low[v] = min(low[v], index[w])
+			}
+		}
+		if low[v] != index[v] {
+			return
+		}
+		var scc []*ssa.BasicBlock
+		for {
+			w := stack[len(stack)-1]
+			stack = stack[:len(stack)-1]
+			onStack[w] = false
+			scc = append(scc, w)
+			if w == v {
+				break
+			}
+		}
+		if !isCycle(scc) {
+			return
+		}
+		for _, b := range scc {
+			if len(f.byBlock[b]) == 0 {
+				bad = true
+			}
+		}
+	}
+	for _, b := range fn.Blocks {
+		if _, seen := index[b]; !seen {
+			connect(b)
+		}
+	}
+	return bad
+}
+
+// isCycle reports whether an SCC actually contains a cycle: more than one
+// block, or a single block with an edge to itself.
+func isCycle(scc []*ssa.BasicBlock) bool {
+	if len(scc) > 1 {
+		return true
+	}
+	for _, s := range scc[0].Succs {
+		if s == scc[0] {
+			return true
+		}
+	}
+	return false
+}
+
 // Build constructs the loop-nesting forest of fn.
 func Build(fn *ssa.Function) *Forest {
 	headers := map[*ssa.BasicBlock]*Loop{}

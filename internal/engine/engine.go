@@ -23,6 +23,10 @@ func Infer(fn *ssa.Function, model CostModel) bound.Bound {
 	}
 	forest := loopnest.Build(fn)
 
+	if forest.UncoveredCycle(fn) {
+		return bound.Top() // irreducible control flow: no trip count exists
+	}
+
 	total := bound.Constant()
 	started := false
 	for _, b := range fn.Blocks {
