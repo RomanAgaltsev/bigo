@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/RomanAgaltsev/bigo/compare/v1.2.0...v1.2.1) (2026-07-10)
+
+
+### Bug Fixes
+
+* loop soundness, defer/go costs, directive error reporting ([#10](https://github.com/RomanAgaltsev/bigo/issues/10)) ([82859f5](https://github.com/RomanAgaltsev/bigo/commit/82859f58a576fb9743d8028e8c88e4456271c296))
+
 ## [1.2.0](https://github.com/RomanAgaltsev/bigo/compare/v1.1.0...v1.2.0) (2026-07-10)
 
 
