@@ -123,3 +123,16 @@ b:
 	}
 	return i
 }
+
+// A variable offset in the loop condition shifts the trip count to (n-j).
+// With j = -1000000 and n = 1 this runs a million times, so O(n) would be a
+// wrong bound — the loop must be unverifiable.
+
+//bigo:max O(n)
+func OffsetCondition(n, j int) int { // want `cannot verify budget O\(n\)`
+	s := 0
+	for i := 0; i+j < n; i++ {
+		s++
+	}
+	return s
+}
