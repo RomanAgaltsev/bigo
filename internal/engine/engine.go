@@ -41,12 +41,21 @@ func Infer(fn *ssa.Function, model CostModel) bound.Bound {
 	return total
 }
 
-// blockCost is O(1) plus the model's cost for each call in the block.
+// blockCost is O(1) plus the model's cost for each call-shaped instruction.
+// Deferred calls are joined like plain calls: they all run at function exit,
+// and the enclosing-loop factor applied by Infer upper-bounds "one deferred
+// call per iteration". A go statement makes the block unverifiable — v1 does
+// not model concurrent work, even when the callee is resolvable.
 func blockCost(b *ssa.BasicBlock, model CostModel) bound.Bound {
 	cost := bound.Constant()
 	for _, instr := range b.Instrs {
-		if call, ok := instr.(*ssa.Call); ok {
-			cost = cost.Join(model.CallCost(&call.Call))
+		switch v := instr.(type) {
+		case *ssa.Call:
+			cost = cost.Join(model.CallCost(&v.Call))
+		case *ssa.Defer:
+			cost = cost.Join(model.CallCost(&v.Call))
+		case *ssa.Go:
+			return bound.Top()
 		}
 	}
 	return cost
