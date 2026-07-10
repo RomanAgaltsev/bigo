@@ -28,6 +28,8 @@ jobs:
         run: |
           go mod tidy
           git diff --exit-code -- go.mod go.sum
+      - name: bigo on bigo
+        run: ./bin/custom-gcl run -c .golangci.custom.yml
 
   lint-success:
     if: always()
