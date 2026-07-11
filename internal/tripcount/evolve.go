@@ -478,3 +478,136 @@ func mapRangeDirty(loop *loopnest.Loop) bool {
 	}
 	return false
 }
+
+// ruleBisection — R6, the two-phi shrinking interval (binary search).
+//
+// Shape: guard `lo < hi` (strict; or `hi > lo`), both header phis; every
+// in-loop edge pair updates EXACTLY one of them — lo' = mid + c (c >= 1) or
+// hi' = mid - c (c >= 0, including hi' = mid) — where mid is (lo+hi)/2 or
+// lo + (hi-lo)/2 computed in this loop; lowerBoundConst(lo0) >= 0;
+// upperExtent(hi0) resolves.
+//
+// Claim: logarithmic, O(log(upper(hi0))). Argument: with lo >= 0 throughout
+// (lo0 >= 0, lo only moves up to mid+c) and floor division, lo <= mid < hi
+// whenever lo < hi — for (lo+hi)/2 under the documented no-overflow
+// assumption (a length above 2^62), for lo+(hi-lo)/2 unconditionally. Both
+// updates shrink hi-lo to <= ceil((hi-lo)/2), strictly, so the guard fails
+// within log2(upper(hi0)) + 2 iterations. `lo' = mid` is rejected: when
+// hi == lo+1, mid == lo and the loop need not terminate.
+func ruleBisection(sh *shape) (bound.Bound, bool) {
+	if sh.cmp == nil || (sh.cmp.Op != token.LSS && sh.cmp.Op != token.GTR) {
+		return bound.Bound{}, false
+	}
+	loV, hiV := sh.cmp.X, sh.cmp.Y
+	if sh.cmp.Op == token.GTR {
+		loV, hiV = hiV, loV
+	}
+	lo, ok := loV.(*ssa.Phi)
+	if !ok || lo.Block() != sh.loop.Header {
+		return bound.Bound{}, false
+	}
+	hi, ok := hiV.(*ssa.Phi)
+	if !ok || hi.Block() != sh.loop.Header {
+		return bound.Bound{}, false
+	}
+	var extent bound.Var
+	hasExtent, hasBack := false, false
+	for i, pred := range lo.Block().Preds {
+		le, he := lo.Edges[i], hi.Edges[i]
+		if !sh.loop.Blocks[pred] { // init edge pair
+			c, ok := sh.f.lowerBoundConst(le, 0)
+			if !ok || c < 0 {
+				return bound.Bound{}, false
+			}
+			v, ok := sh.f.upperExtent(he, 0)
+			if !ok {
+				return bound.Bound{}, false
+			}
+			if hasExtent && v != extent {
+				return bound.Bound{}, false
+			}
+			extent, hasExtent = v, true
+			continue
+		}
+		hasBack = true
+		switch { // exactly one end moves
+		case he == hi && isLoUpdate(sh, le, lo, hi):
+		case le == lo && isHiUpdate(sh, he, lo, hi):
+		default:
+			return bound.Bound{}, false
+		}
+	}
+	if !hasExtent || !hasBack {
+		return bound.Bound{}, false
+	}
+	return bound.Of(bound.Mono(extent, 0, 1)), true
+}
+
+// isLoUpdate matches lo' = mid + c for const c >= 1.
+func isLoUpdate(sh *shape, v ssa.Value, lo, hi *ssa.Phi) bool {
+	bo, ok := v.(*ssa.BinOp)
+	if !ok || bo.Op != token.ADD {
+		return false
+	}
+	if c, okC := constIntV(bo.Y); okC && c >= 1 {
+		return isMid(sh, bo.X, lo, hi)
+	}
+	if c, okC := constIntV(bo.X); okC && c >= 1 {
+		return isMid(sh, bo.Y, lo, hi)
+	}
+	return false
+}
+
+// isHiUpdate matches hi' = mid or hi' = mid - c for const c >= 0.
+func isHiUpdate(sh *shape, v ssa.Value, lo, hi *ssa.Phi) bool {
+	if isMid(sh, v, lo, hi) {
+		return true
+	}
+	bo, ok := v.(*ssa.BinOp)
+	if !ok || bo.Op != token.SUB {
+		return false
+	}
+	c, okC := constIntV(bo.Y)
+	return okC && c >= 0 && isMid(sh, bo.X, lo, hi)
+}
+
+// isMid matches (lo+hi)/2 and lo + (hi-lo)/2, computed inside this loop.
+func isMid(sh *shape, v ssa.Value, lo, hi *ssa.Phi) bool {
+	in, ok := v.(ssa.Instruction)
+	if !ok || !sh.loop.Blocks[in.Block()] {
+		return false
+	}
+	bo, ok := v.(*ssa.BinOp)
+	if !ok {
+		return false
+	}
+	// (lo+hi)/2
+	if bo.Op == token.QUO {
+		if c, okC := constIntV(bo.Y); okC && c == 2 {
+			if add, okA := bo.X.(*ssa.BinOp); okA && add.Op == token.ADD {
+				return (add.X == lo && add.Y == hi) || (add.X == hi && add.Y == lo)
+			}
+		}
+		return false
+	}
+	// lo + (hi-lo)/2
+	if bo.Op == token.ADD {
+		half, x := bo.Y, bo.X
+		if x != lo {
+			half, x = bo.X, bo.Y
+		}
+		if x != lo {
+			return false
+		}
+		q, ok := half.(*ssa.BinOp)
+		if !ok || q.Op != token.QUO {
+			return false
+		}
+		if c, okC := constIntV(q.Y); !okC || c != 2 {
+			return false
+		}
+		sub, ok := q.X.(*ssa.BinOp)
+		return ok && sub.Op == token.SUB && sub.X == hi && sub.Y == lo
+	}
+	return false
+}

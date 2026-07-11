@@ -1,12 +1,12 @@
 {
   "total": 89,
-  "bounded": 57,
-  "coverage_pct": "64.0",
+  "bounded": 58,
+  "coverage_pct": "65.2",
   "by_cause": {
     "call": 8,
     "go": 2,
     "irreducible": 1,
-    "loop": 14,
+    "loop": 13,
     "nobody": 7
   },
   "per_package": {
@@ -52,7 +52,7 @@
     },
     "structures/array": {
       "total": 7,
-      "bounded": 6
+      "bounded": 7
     },
     "structures/graph": {
       "total": 3,
@@ -467,8 +467,8 @@
     {
       "pkg": "structures/array",
       "func": "BinarySearch",
-      "verdict": "unverifiable",
-      "cause": "loop"
+      "verdict": "bounded",
+      "bound": "O(log(len(xs)))"
     },
     {
       "pkg": "structures/array",

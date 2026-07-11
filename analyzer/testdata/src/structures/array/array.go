@@ -54,12 +54,11 @@ func Reverse(xs []int) {
 	}
 }
 
-// BinarySearch is O(log n). Unverifiable today: halving loops are not a
-// recognized induction. Graduates with: geometric/halving-loop recognition
-// (Phase 2 tripcount).
+// BinarySearch is O(log n). Bounded since the loop-algebra slice: a
+// monotone-shrinking bisection interval.
 //
 //bigo:max O(log n)
-func BinarySearch(xs []int, target int) int { // want `cannot verify budget O\(log\(len\(xs\)\)\)`
+func BinarySearch(xs []int, target int) int {
 	lo, hi := 0, len(xs)
 	for lo < hi {
 		mid := (lo + hi) / 2

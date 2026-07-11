@@ -123,6 +123,14 @@ Each can only *miss* a violation, never invent one:
   memory model makes racy reads undefined anyway). Channel-typed fields are
   never used as sizes: channel synchronization makes concurrent mutation
   legal, so `len(ch)` has no stable entry value.
+- Trip counts cover counted loops (increasing/decreasing with constant
+  steps), geometric growth/decay, `range` over slices/maps/strings, and
+  two-variable bisection. Worklist loops (`for len(queue) > 0`), pointer
+  chasing, and recursion remain unverifiable.
+- Loop-bound arithmetic assumes values bounded by real memory; the
+  `(lo+hi)/2` bisection form additionally assumes `lo+hi` does not overflow
+  (requires a length above 2^62). The `lo + (hi-lo)/2` form needs no
+  assumption.
 
 ## Status & versioning
 
