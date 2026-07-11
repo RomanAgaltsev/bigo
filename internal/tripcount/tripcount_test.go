@@ -441,3 +441,64 @@ func f(h []int, i int) int {
 		})
 	}
 }
+
+func TestRuleRangeNext(t *testing.T) {
+	tests := []struct{ name, src, want string }{
+		{
+			"range over a map parameter, clean body",
+			`package input
+func f(m map[string]int) int { s := 0; for _, v := range m { s += v }; return s }`,
+			"O(len(m))",
+		},
+		{
+			"range over a string parameter",
+			`package input
+func f(str string) int { s := 0; for _, r := range str { s += int(r) }; return s }`,
+			"O(len(str))",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := Of(innerLoop(t, tt.src)).String(); got != tt.want {
+				t.Errorf("Of(inner) = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestRuleRangeNextDirtyMapStaysTop(t *testing.T) {
+	tests := []struct{ name, src string }{
+		{
+			"body inserts into a map (unspecified visitation of new keys)",
+			`package input
+func f(m map[string]int) int {
+	s := 0
+	for k, v := range m {
+		m[k+"x"] = v
+		s++
+	}
+	return s
+}`,
+		},
+		{
+			"body calls a function that could mutate the map",
+			`package input
+func g(m map[string]int)
+func f(m map[string]int) int {
+	s := 0
+	for range m {
+		g(m)
+		s++
+	}
+	return s
+}`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := Of(innerLoop(t, tt.src)); !got.IsTop() {
+				t.Errorf("Of = %q, want Top — mutation during map range is unbounded", got.String())
+			}
+		})
+	}
+}

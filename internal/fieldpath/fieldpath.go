@@ -377,3 +377,13 @@ func isInteger(t types.Type) bool {
 	b, ok := t.Underlying().(*types.Basic)
 	return ok && b.Info()&types.IsInteger != 0
 }
+
+// PathFor exposes the dotted path of a stable field read (see fieldPath) for
+// callers that need to name the operand itself — e.g. a ranged map field.
+// Nil-safe.
+func (s *Stability) PathFor(v ssa.Value) (string, bool) {
+	if s == nil {
+		return "", false
+	}
+	return s.fieldPath(v)
+}

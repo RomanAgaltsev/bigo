@@ -6,6 +6,8 @@ import (
 	"golang.org/x/tools/go/ssa"
 
 	"github.com/RomanAgaltsev/bigo/internal/bound"
+	"github.com/RomanAgaltsev/bigo/internal/loopnest"
+	"github.com/RomanAgaltsev/bigo/internal/size"
 )
 
 // ruleIncreasing — R1, the generalized counted loop.
@@ -412,4 +414,67 @@ func divStep(phi *ssa.Phi, e ssa.Value) bool {
 	}
 	d, ok := constIntV(sub.Y)
 	return ok && d >= 0
+}
+
+// ruleRangeNext — R5, `range` over a map or string.
+//
+// Shape: the loop's exit If tests the ok-Extract of a Next in this header,
+// whose Iter is Range(x), where x names a size (parameter or stable field
+// path). Next yields each element at most once, so trips <= the element
+// count. Strings are immutable — no further check. Maps may be mutated
+// during range with unspecified visitation of new keys (Go spec), so the
+// loop's blocks must contain no MapUpdate and no call-shaped or
+// channel-synchronizing instruction; plain stores are fine (they cannot
+// change a map's length — the reason this check is local, not fieldpath's).
+func ruleRangeNext(sh *shape) (bound.Bound, bool) {
+	ext, ok := sh.ifi.Cond.(*ssa.Extract)
+	if !ok {
+		return bound.Bound{}, false
+	}
+	next, ok := ext.Tuple.(*ssa.Next)
+	if !ok || next.Block() != sh.loop.Header {
+		return bound.Bound{}, false
+	}
+	rng, ok := next.Iter.(*ssa.Range)
+	if !ok {
+		return bound.Bound{}, false
+	}
+	if !next.IsString && mapRangeDirty(sh.loop) {
+		return bound.Bound{}, false
+	}
+	x := rng.X
+	if p, ok := x.(*ssa.Parameter); ok {
+		return bound.Of(bound.Term(size.Len(p.Name()))), true
+	}
+	if path, ok := sh.f.stab.PathFor(x); ok {
+		return bound.Of(bound.Term(size.Len(path))), true
+	}
+	return bound.Bound{}, false
+}
+
+// mapRangeDirty reports whether the loop body could change the ranged map's
+// size: any map write, or any instruction that hands control to code that
+// could (calls, defers, goroutines, channel synchronization).
+func mapRangeDirty(loop *loopnest.Loop) bool {
+	for b := range loop.Blocks {
+		for _, instr := range b.Instrs {
+			switch v := instr.(type) {
+			case *ssa.MapUpdate, *ssa.Defer, *ssa.Go, *ssa.Select, *ssa.Send:
+				return true
+			case *ssa.UnOp:
+				if v.Op == token.ARROW {
+					return true
+				}
+			case *ssa.Call:
+				if bi, ok := v.Call.Value.(*ssa.Builtin); ok {
+					switch bi.Name() {
+					case "len", "cap":
+						continue
+					}
+				}
+				return true
+			}
+		}
+	}
+	return false
 }
