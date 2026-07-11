@@ -46,6 +46,10 @@ func TestAnalyzerCostIgnore(t *testing.T) {
 	analysistest.Run(t, analysistest.TestData(), Analyzer, "costignore")
 }
 
+func TestStructuresArray(t *testing.T) {
+	analysistest.Run(t, analysistest.TestData(), Analyzer, "structures/array")
+}
+
 func TestReportModeUsesStdoutNotDiagnostics(t *testing.T) {
 	if err := Analyzer.Flags.Set("report", "true"); err != nil {
 		t.Fatal(err)
