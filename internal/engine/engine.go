@@ -22,12 +22,18 @@ type CostModel interface {
 type CauseKind int
 
 const (
-	CauseCall        CauseKind = iota // unresolved cost at a call
-	CauseDefer                        // unresolved cost at a deferred call
-	CauseGo                           // goroutine launch (spec §9)
-	CauseLoop                         // loop with unrecognized trip count
-	CauseIrreducible                  // irreducible control flow
-	CauseNoBody                       // function has no analyzable body
+	// CauseCall - unresolved cost at a call
+	CauseCall CauseKind = iota
+	// CauseDefer - unresolved cost at a deferred call
+	CauseDefer
+	// CauseGo - goroutine launch
+	CauseGo
+	// CauseLoop - loop with unrecognized trip count
+	CauseLoop
+	// CauseIrreducible - irreducible control flow
+	CauseIrreducible
+	// CauseNoBody - function has no analyzable body
+	CauseNoBody
 )
 
 func (k CauseKind) String() string {

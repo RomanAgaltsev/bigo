@@ -50,7 +50,7 @@ func loadDirs(t *testing.T) ([]*ast.File, *types.Info, func(*ast.FuncDecl) *ssa.
 func TestScan(t *testing.T) {
 	files, info, ssaFor := loadDirs(t)
 	var reports []string
-	rec := func(pos token.Pos, format string, args ...any) {
+	rec := func(_ token.Pos, format string, args ...any) {
 		reports = append(reports, fmt.Sprintf(format, args...))
 	}
 	fns := Scan(files, info, ssaFor, rec)
