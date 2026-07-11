@@ -386,3 +386,58 @@ func f(n int) int { s := 0; for j := n; j >= 5; j -= 2 { s++ }; return s }`,
 		})
 	}
 }
+
+func TestRuleGeometric(t *testing.T) {
+	tests := []struct{ name, src, want string }{
+		{
+			"doubling up from 1",
+			`package input
+func f(n int) int { s := 0; for i := 1; i < n; i *= 2 { s++ }; return s }`,
+			"O(log(n))",
+		},
+		{
+			"sift-down from the root: comparand 2i+1, steps 2i+1 / 2i+2",
+			`package input
+func f(h []int) int {
+	s := 0
+	i := 0
+	for 2*i+1 < len(h) {
+		c := 2*i + 1
+		if c+1 < len(h) && h[c+1] < h[c] {
+			c++
+		}
+		s++
+		i = c
+	}
+	return s
+}`,
+			"O(log(len(h)))",
+		},
+		{
+			"halving down to zero",
+			`package input
+func f(n int) int { s := 0; for i := n; i > 0; i /= 2 { s++ }; return s }`,
+			"O(log(n))",
+		},
+		{
+			"sift-up: (i-1)/2 from a parameter start",
+			`package input
+func f(h []int, i int) int {
+	s := 0
+	for i > 0 {
+		s++
+		i = (i - 1) / 2
+	}
+	return s
+}`,
+			"O(log(i))",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := Of(innerLoop(t, tt.src)).String(); got != tt.want {
+				t.Errorf("Of(inner) = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
