@@ -34,18 +34,18 @@ func parseSizeRef(s string) (SizeRef, error) {
 	switch {
 	case strings.HasPrefix(s, "len(") && strings.HasSuffix(s, ")"):
 		p := s[len("len(") : len(s)-1]
-		if !isIdentifier(p) {
+		if !isFieldPathIdent(p) {
 			return SizeRef{}, fmt.Errorf("bad len() argument %q", s)
 		}
 		return SizeRef{Kind: Len, Param: p}, nil
 	case strings.HasPrefix(s, "cap(") && strings.HasSuffix(s, ")"):
 		p := s[len("cap(") : len(s)-1]
-		if !isIdentifier(p) {
+		if !isFieldPathIdent(p) {
 			return SizeRef{}, fmt.Errorf("bad cap() argument %q", s)
 		}
 		return SizeRef{Kind: Cap, Param: p}, nil
 	default:
-		if !isIdentifier(s) {
+		if !isFieldPathIdent(s) {
 			return SizeRef{}, fmt.Errorf("bad size reference %q", s)
 		}
 		return SizeRef{Kind: Num, Param: s}, nil
@@ -59,6 +59,22 @@ func isIdentifier(s string) bool {
 	}
 	for i := 1; i < len(s); i++ {
 		if !isIdentPart(s[i]) {
+			return false
+		}
+	}
+	return true
+}
+
+// isFieldPathIdent reports whether s is an identifier or a dotted field path
+// of at most two selections (root, root.f, or root.f.g) — the same depth
+// limit fieldpath enforces on the inference side.
+func isFieldPathIdent(s string) bool {
+	parts := strings.Split(s, ".")
+	if len(parts) == 0 || len(parts) > 3 {
+		return false
+	}
+	for _, p := range parts {
+		if !isIdentifier(p) {
 			return false
 		}
 	}
