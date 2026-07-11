@@ -27,6 +27,16 @@ type Doer interface {
 
 func plain() {}
 
+// bigo:max O(n)
+func spaced(xs []int) int { // near-miss: space after // — must be reported, not dropped
+	return len(xs)
+}
+
+type Beeper interface {
+	// bigo:cost O(1)
+	Beep(x int) int // near-miss on an interface method — must be reported
+}
+
 type FS struct{ items []int }
 
 //bigo:cost O(k) where k=len(s.items)

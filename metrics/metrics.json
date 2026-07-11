@@ -1,9 +1,9 @@
 {
-  "total": 89,
+  "total": 90,
   "bounded": 58,
-  "coverage_pct": "65.2",
+  "coverage_pct": "64.4",
   "by_cause": {
-    "call": 8,
+    "call": 9,
     "go": 2,
     "irreducible": 1,
     "loop": 13,
@@ -47,7 +47,7 @@
       "bounded": 4
     },
     "smoke": {
-      "total": 1,
+      "total": 2,
       "bounded": 1
     },
     "structures/array": {
@@ -457,6 +457,12 @@
       "func": "LinearScan",
       "verdict": "bounded",
       "bound": "O(len(xs))"
+    },
+    {
+      "pkg": "smoke",
+      "func": "Closure",
+      "verdict": "unverifiable",
+      "cause": "call"
     },
     {
       "pkg": "smoke",

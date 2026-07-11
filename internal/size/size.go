@@ -13,6 +13,8 @@ import (
 )
 
 // Len is the size variable for len(param).
+//
+//bigo:max O(1)
 func Len(param string) bound.Var {
 	return bound.Var("len(" + param + ")")
 }

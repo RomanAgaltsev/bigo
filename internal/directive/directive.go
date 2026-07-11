@@ -85,6 +85,8 @@ func Scan(files []*ast.File, info *types.Info, ssaFor func(*ast.FuncDecl) *ssa.F
 
 // Verb returns the directive with verb v, if present. annotation.Max is the
 // zero Verb, so callers must consult the boolean, never a zero Directive.
+//
+//bigo:max O(n) where n=len(dirs)
 func Verb(dirs []annotation.Directive, v annotation.Verb) (annotation.Directive, bool) {
 	for _, d := range dirs {
 		if d.Verb == v {
@@ -108,6 +110,9 @@ func directivesOf(decl *ast.FuncDecl, report Reporter) []annotation.Directive {
 	seen := map[annotation.Verb]bool{}
 	for _, c := range decl.Doc.List {
 		if !strings.HasPrefix(c.Text, "//bigo:") {
+			if isNearMiss(c.Text) {
+				report(decl.Pos(), nearMissMsg)
+			}
 			continue
 		}
 		dir, err := annotation.Parse(c.Text)
@@ -148,6 +153,9 @@ func scanInterfaces(gd *ast.GenDecl, info *types.Info, out map[*types.Func]bound
 			}
 			for _, cmt := range field.Doc.List {
 				if !strings.HasPrefix(cmt.Text, "//bigo:") {
+					if isNearMiss(cmt.Text) {
+						report(field.Pos(), nearMissMsg)
+					}
 					continue
 				}
 				dir, err := annotation.Parse(cmt.Text)
@@ -179,6 +187,24 @@ func scanInterfaces(gd *ast.GenDecl, info *types.Info, out map[*types.Func]bound
 			}
 		}
 	}
+}
+
+// nearMissMsg is reported for a comment that looks like a //bigo: directive but
+// has whitespace after the slashes. A silently dropped budget is
+// indistinguishable from a passing one — the worst failure mode for a CI gate —
+// so a suspected directive is named rather than ignored.
+const nearMissMsg = "//bigo: directive must not have a space after '//'; this looks like a misplaced directive and is being ignored"
+
+// isNearMiss reports whether text is a comment whose body, after the slashes and
+// any spaces, begins with "bigo:" — i.e. the //go:-shape prefix with an errant
+// space (`// bigo:max`). The exact `//bigo:` prefix is handled by the caller
+// before this is consulted, so an exact directive never reaches here.
+func isNearMiss(text string) bool {
+	body := strings.TrimLeft(text, "/")
+	if body == text { // not a // line comment (e.g. a /* block */)
+		return false
+	}
+	return strings.HasPrefix(strings.TrimLeft(body, " \t"), "bigo:")
 }
 
 // hasFieldPathVar reports whether the bound references a frame-local
