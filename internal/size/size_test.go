@@ -81,3 +81,19 @@ func f(xs []int, n int, s string) {}`
 		t.Errorf("string: got (%q,%v,%v), want (len(s), Length, true)", v, c, ok)
 	}
 }
+
+func TestIsFieldPath(t *testing.T) {
+	for v, want := range map[bound.Var]bool{
+		"len(s.items)":     true,
+		"cap(s.buf)":       true,
+		"s.limit":          true,
+		"len(s.cfg.items)": true,
+		"len(xs)":          false,
+		"cap(xs)":          false,
+		"n":                false,
+	} {
+		if got := IsFieldPath(v); got != want {
+			t.Errorf("IsFieldPath(%q) = %v, want %v", v, got, want)
+		}
+	}
+}
