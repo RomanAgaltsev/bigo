@@ -103,4 +103,9 @@ func TestReportModeUsesStdoutNotDiagnostics(t *testing.T) {
 	if !strings.Contains(string(out), "Noop: inferred complexity O(len(xs))") {
 		t.Errorf("report output missing, got: %q", out)
 	}
+	// Report mode must name unverifiable functions too — they are exactly the
+	// ones a user would annotate — and say why.
+	if !strings.Contains(string(out), "Closure: unverifiable") {
+		t.Errorf("report output should name unverifiable functions, got: %q", out)
+	}
 }

@@ -64,8 +64,8 @@ func TestScan(t *testing.T) {
 	if len(fns.MethodCosts) != 2 {
 		t.Errorf("MethodCosts = %d, want 2 (Doer.Do, Scanner.Scan)", len(fns.MethodCosts))
 	}
-	if len(fns.Plain) != 2 { // typo (malformed sole directive -> no valid dirs) + plain
-		t.Errorf("Plain = %d, want 2 (typo, plain)", len(fns.Plain))
+	if len(fns.Plain) != 3 { // typo + plain + spaced (near-miss -> no valid dirs)
+		t.Errorf("Plain = %d, want 3 (typo, plain, spaced)", len(fns.Plain))
 	}
 	joined := strings.Join(reports, "\n")
 	for _, want := range []string{
@@ -73,6 +73,7 @@ func TestScan(t *testing.T) {
 		"duplicate //bigo:max directive",                       // duplicate
 		"//bigo:cost and //bigo:ignore are mutually exclusive", // conflict
 		"//bigo:cost with field-path sizes does not propagate through calls yet",
+		"must not have a space", // near-miss func `spaced` and interface method `Beep`
 	} {
 		if !strings.Contains(joined, want) {
 			t.Errorf("reports missing %q; got:\n%s", want, joined)
@@ -86,6 +87,15 @@ func TestScan(t *testing.T) {
 	}
 	if gap != 2 {
 		t.Errorf("propagation-gap diagnostic reported %d times, want 2 (func + interface method)", gap)
+	}
+	nearMiss := 0
+	for _, r := range reports {
+		if strings.Contains(r, "must not have a space") {
+			nearMiss++
+		}
+	}
+	if nearMiss != 2 {
+		t.Errorf("near-miss diagnostic reported %d times, want 2 (func spaced + method Beep)", nearMiss)
 	}
 	// Verb helper: duplicate kept its FIRST max (O(n)).
 	for _, fd := range fns.Directives {

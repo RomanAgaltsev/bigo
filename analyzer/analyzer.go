@@ -63,9 +63,15 @@ func run(pass *analysis.Pass) (any, error) {
 	// Pass 3: infer and check.
 	report := func(decl *ast.FuncDecl, fn *ssa.Function) (bound.Bound, []engine.Cause) {
 		inferred, causes := engine.InferDetailed(fn, resolver)
-		if reportMode && !inferred.IsTop() {
+		if reportMode {
 			p := pass.Fset.Position(decl.Pos())
-			_, _ = fmt.Fprintf(os.Stdout, "%s:%d: %s: inferred complexity %s\n", p.Filename, p.Line, decl.Name.Name, inferred.String())
+			if inferred.IsTop() {
+				// Name the unverifiable functions too, with their blocker: they
+				// are exactly the ones a user explores -report to find and annotate.
+				_, _ = fmt.Fprintf(os.Stdout, "%s:%d: %s: unverifiable — %s\n", p.Filename, p.Line, decl.Name.Name, causeText(pass, causes, fn))
+			} else {
+				_, _ = fmt.Fprintf(os.Stdout, "%s:%d: %s: inferred complexity %s\n", p.Filename, p.Line, decl.Name.Name, inferred.String())
+			}
 		}
 		return inferred, causes
 	}

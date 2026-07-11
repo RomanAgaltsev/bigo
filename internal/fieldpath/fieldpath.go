@@ -349,6 +349,7 @@ func (s *Stability) cleanAt(instr ssa.Instruction) bool {
 	return false
 }
 
+//bigo:max O(n) where n=len(fields)
 func joinPath(root string, fields []string) string {
 	// fields were collected leaf-first; render root.outer.inner.
 	out := root

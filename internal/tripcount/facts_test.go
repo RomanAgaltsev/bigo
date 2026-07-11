@@ -122,3 +122,55 @@ func f(xs []int, m int) int {
 		})
 	}
 }
+
+// headerPhi returns the first *ssa.Phi in the outermost loop's header.
+func headerPhi(t *testing.T, src string) *ssa.Phi {
+	t.Helper()
+	pkg, _, err := ssasupport.Build(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fn := ssasupport.Func(pkg, "f")
+	forest := loopnest.Build(fn)
+	if len(forest.Roots) == 0 {
+		t.Fatal("no loop")
+	}
+	for _, in := range forest.Roots[0].Header.Instrs {
+		if phi, ok := in.(*ssa.Phi); ok {
+			return phi
+		}
+	}
+	t.Fatal("no header phi")
+	return nil
+}
+
+func TestGuardBoundRejectsInvertedExit(t *testing.T) {
+	// The header test is `t = i < n; if t goto EXIT else goto BODY` — phi on the
+	// low side of `<`, but the TRUE branch leaves the loop, so the loop CONTINUES
+	// while i >= n (infinite for n <= 0) and i is NOT bounded above by n.
+	// go/ssa emits exactly this for the negated-guard goto form below.
+	phi := headerPhi(t, `package input
+func f(n int) {
+	i := 0
+loop:
+	if i < n {
+		goto done
+	}
+	_ = i
+	i++
+	goto loop
+done:
+}`)
+	if _, ok := guardBound(phi); ok {
+		t.Errorf("guardBound accepted an inverted-exit loop: unsound upper bound on an unbounded induction")
+	}
+}
+
+func TestGuardBoundAcceptsStandardLoop(t *testing.T) {
+	// for i := 0; i < n; i++ : true branch stays in the loop; i <= n holds.
+	phi := headerPhi(t, `package input
+func f(n int) { for i := 0; i < n; i++ { _ = i } }`)
+	if _, ok := guardBound(phi); !ok {
+		t.Errorf("guardBound rejected a standard counted loop (precision regression)")
+	}
+}

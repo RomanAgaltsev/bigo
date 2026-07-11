@@ -137,8 +137,8 @@ Each can only *miss* a violation, never invent one:
 Complete: intraprocedural engine, cost tables, acyclic interprocedural
 summaries, generics at instantiation, golangci-lint plugin.
 The **analysis surface is pre-stable**: verdicts may
-change between minor versions as inference improves. Design-complete, not built recursion,
-interface resolution, space complexity.
+change between minor versions as inference improves. Design-complete but not yet
+built: recursion, interface resolution, space complexity.
 
 ## License
 

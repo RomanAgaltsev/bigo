@@ -210,6 +210,14 @@ func guardBound(phi *ssa.Phi) (ssa.Value, bool) {
 	if !ok {
 		return nil, false
 	}
+	// The true branch must stay in the loop (be able to return to the header);
+	// otherwise `phi < e` is an EXIT test and e bounds phi from BELOW, not above
+	// — the loop continues while phi >= e and the induction is unbounded. This
+	// mirrors the check tripcount.Of makes for the loop it analyzes; here it is
+	// self-contained because guardBound is reached without a *loopnest.Loop.
+	if len(h.Succs) != 2 || !reachesBlock(h.Succs[0], h) {
+		return nil, false
+	}
 	switch cmp.Op {
 	case token.LSS, token.LEQ:
 		if cmp.X == phi {
@@ -221,4 +229,24 @@ func guardBound(phi *ssa.Phi) (ssa.Value, bool) {
 		}
 	}
 	return nil, false
+}
+
+// reachesBlock reports whether target is reachable from start by following
+// successor edges (start counts as reaching itself: a single-block loop).
+func reachesBlock(start, target *ssa.BasicBlock) bool {
+	seen := map[*ssa.BasicBlock]bool{}
+	stack := []*ssa.BasicBlock{start}
+	for len(stack) > 0 {
+		b := stack[len(stack)-1]
+		stack = stack[:len(stack)-1]
+		if b == target {
+			return true
+		}
+		if seen[b] {
+			continue
+		}
+		seen[b] = true
+		stack = append(stack, b.Succs...)
+	}
+	return false
 }
