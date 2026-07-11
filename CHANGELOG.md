@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.0](https://github.com/RomanAgaltsev/bigo/compare/v1.5.0...v1.6.0) (2026-07-11)
+
+
+### Features
+
+* shared trip-count facts and generalized increasing rule ([#27](https://github.com/RomanAgaltsev/bigo/issues/27)) ([bb9fbb9](https://github.com/RomanAgaltsev/bigo/commit/bb9fbb9397c05188889ff8c1b2fc7fd34fb1ee27))
+
 ## [1.5.0](https://github.com/RomanAgaltsev/bigo/compare/v1.4.0...v1.5.0) (2026-07-11)
 
 
