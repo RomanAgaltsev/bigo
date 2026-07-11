@@ -2,7 +2,7 @@
 
 GENERATED — do not edit; regenerate with `task metrics`.
 
-**Coverage: 61.4%** — 54 of 88 corpus functions bounded.
+**Coverage: 62.9%** — 56 of 89 corpus functions bounded.
 
 ## Per package
 
@@ -21,7 +21,7 @@ GENERATED — do not edit; regenerate with `task metrics`.
 | structures/array | 7 | 6 | 1 |
 | structures/graph | 3 | 1 | 2 |
 | structures/hashmap | 3 | 2 | 1 |
-| structures/heap | 3 | 1 | 2 |
+| structures/heap | 4 | 3 | 1 |
 | structures/list | 3 | 1 | 2 |
 | structures/stringops | 2 | 2 | 0 |
 | structures/tree | 3 | 0 | 3 |
@@ -33,7 +33,7 @@ GENERATED — do not edit; regenerate with `task metrics`.
 | call | 8 |
 | go | 2 |
 | irreducible | 1 |
-| loop | 16 |
+| loop | 15 |
 | nobody | 7 |
 
 The cause histogram is the Phase-2 prioritization signal: the biggest
