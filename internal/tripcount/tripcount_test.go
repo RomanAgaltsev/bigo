@@ -215,3 +215,100 @@ func f(s *S, v int) int {
 		t.Errorf("Of = %q, want Top — the function grew the field before the loop", got.String())
 	}
 }
+
+func TestRuleIncreasingGraduations(t *testing.T) {
+	tests := []struct{ name, src, want string }{
+		{
+			"selection-sort inner: start i+1 has constant lower bound 1",
+			`package input
+func f(xs []int) int {
+	s := 0
+	for i := 0; i < len(xs); i++ {
+		for j := i + 1; j < len(xs); j++ { s++ }
+	}
+	return s
+}`,
+			"O(len(xs))", // the INNER loop — see innerLoop helper below
+		},
+		{
+			"triangular inner: bound i is guard-bounded by len(xs)",
+			`package input
+func f(xs []int) int {
+	s := 0
+	for i := 0; i < len(xs); i++ {
+		for j := 0; j < i; j++ { s++ }
+	}
+	return s
+}`,
+			"O(len(xs))",
+		},
+		{
+			"bubble inner: bound len(xs)-1-i",
+			`package input
+func f(xs []int) int {
+	s := 0
+	for i := 0; i < len(xs); i++ {
+		for j := 0; j < len(xs)-1-i; j++ { s++ }
+	}
+	return s
+}`,
+			"O(len(xs))",
+		},
+		{
+			"half-length reverse index form",
+			`package input
+func f(xs []int) int {
+	s := 0
+	for i := 0; i < len(xs)/2; i++ { s++ }
+	return s
+}`,
+			"O(len(xs))",
+		},
+		{
+			"two-pointer reverse: extent is the decreasing phi's init",
+			`package input
+func f(xs []int) int {
+	s := 0
+	for i, j := 0, len(xs)-1; i < j; i, j = i+1, j-1 { s++ }
+	return s
+}`,
+			"O(len(xs))",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := Of(innerLoop(t, tt.src)).String(); got != tt.want {
+				t.Errorf("Of(inner) = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+// innerLoop returns the deepest loop plus stability — the loop the new rules
+// must bound. For single-loop functions it is the only loop.
+func innerLoop(t *testing.T, src string) (*loopnest.Loop, *fieldpath.Stability) {
+	t.Helper()
+	pkg, _, err := ssasupport.Build(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fn := ssasupport.Func(pkg, "f")
+	forest := loopnest.Build(fn)
+	var deepest *loopnest.Loop
+	var walk func(l *loopnest.Loop)
+	walk = func(l *loopnest.Loop) {
+		if deepest == nil || l.Depth > deepest.Depth {
+			deepest = l
+		}
+		for _, c := range l.Children {
+			walk(c)
+		}
+	}
+	for _, r := range forest.Roots {
+		walk(r)
+	}
+	if deepest == nil {
+		t.Fatal("no loops found")
+	}
+	return deepest, fieldpath.Analyze(fn)
+}
