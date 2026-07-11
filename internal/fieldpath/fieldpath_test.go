@@ -108,7 +108,7 @@ type S struct{ items []int }
 func f(s *S, v int) int { s.items = append(s.items, v); t := 0; for i := 0; i < len(s.items); i++ { t++ }; return t }`,
 		},
 		{
-			"escaped &s.items forces a spill; alloc-rooted loads are rejected",
+			"escaped &s.items makes the spill alloc escape (Heap); rejected",
 			`package input
 type S struct{ items []int }
 func mutate(p *[]int)

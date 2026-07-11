@@ -202,3 +202,22 @@ func f(xs []int) int {
 		t.Errorf("CauseCall.String() = %q, want call", got)
 	}
 }
+
+func TestInferFieldBoundedFunction(t *testing.T) {
+	const src = `package input
+type S struct{ items []int }
+func f(s *S) int {
+	t := 0
+	for i := 0; i < len(s.items); i++ {
+		t += s.items[i]
+	}
+	return t
+}`
+	pkg, _, err := ssasupport.Build(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := Infer(ssasupport.Func(pkg, "f"), builtinModel{}).String(), "O(len(s.items))"; got != want {
+		t.Errorf("Infer = %q, want %q", got, want)
+	}
+}

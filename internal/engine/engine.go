@@ -7,6 +7,7 @@ import (
 	"golang.org/x/tools/go/ssa"
 
 	"github.com/RomanAgaltsev/bigo/internal/bound"
+	"github.com/RomanAgaltsev/bigo/internal/fieldpath"
 	"github.com/RomanAgaltsev/bigo/internal/loopnest"
 	"github.com/RomanAgaltsev/bigo/internal/tripcount"
 )
@@ -81,6 +82,7 @@ func InferDetailed(fn *ssa.Function, model CostModel) (bound.Bound, []Cause) {
 	if forest.UncoveredCycle(fn) {
 		return bound.Top(), []Cause{{Pos: fn.Pos(), Kind: CauseIrreducible, What: "irreducible control flow (goto into a cycle)"}}
 	}
+	stab := fieldpath.Analyze(fn)
 
 	var causes []Cause
 	total := bound.Constant()
@@ -88,7 +90,7 @@ func InferDetailed(fn *ssa.Function, model CostModel) (bound.Bound, []Cause) {
 	for _, b := range fn.Blocks {
 		factor := bound.Constant()
 		for _, lp := range forest.EnclosingLoops(b) {
-			tc := tripcount.Of(lp, nil)
+			tc := tripcount.Of(lp, stab)
 			if tc.IsTop() {
 				causes = append(causes, Cause{
 					Pos:  lp.Header.Instrs[len(lp.Header.Instrs)-1].Pos(),
