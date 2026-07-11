@@ -350,3 +350,39 @@ func f(h []int, i int) int {
 		})
 	}
 }
+
+func TestRuleDecreasing(t *testing.T) {
+	tests := []struct{ name, src, want string }{
+		{
+			"countdown from a parameter",
+			`package input
+func f(n int) int { s := 0; for j := n; j > 0; j-- { s++ }; return s }`,
+			"O(n)",
+		},
+		{
+			"insertion-sort inner: init i is guard-bounded, && conjunct is body",
+			`package input
+func f(xs []int) int {
+	s := 0
+	for i := 1; i < len(xs); i++ {
+		for j := i; j > 0 && xs[j-1] > xs[j]; j-- { s++ }
+	}
+	return s
+}`,
+			"O(len(xs))",
+		},
+		{
+			"countdown to a small positive constant",
+			`package input
+func f(n int) int { s := 0; for j := n; j >= 5; j -= 2 { s++ }; return s }`,
+			"O(n)",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := Of(innerLoop(t, tt.src)).String(); got != tt.want {
+				t.Errorf("Of(inner) = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
