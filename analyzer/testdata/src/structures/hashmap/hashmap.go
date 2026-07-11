@@ -23,12 +23,11 @@ func LookupAll(m map[string]int, keys []string) int {
 	return s
 }
 
-// SumValues is O(len(m)). Unverifiable today: range over a map lowers to
-// Range/Next, which the trip-count matcher does not recognize. Graduates
-// with: range-over-map trip counts (a contained tripcount extension).
+// SumValues is O(len(m)). Bounded since the loop-algebra slice: range-Next
+// over a map parameter with a clean body.
 //
 //bigo:max O(n)
-func SumValues(m map[string]int) int { // want `cannot verify budget O\(len\(m\)\)`
+func SumValues(m map[string]int) int {
 	s := 0
 	for _, v := range m {
 		s += v
