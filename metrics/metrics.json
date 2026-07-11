@@ -1,0 +1,530 @@
+{
+  "total": 75,
+  "bounded": 42,
+  "coverage_pct": "56.0",
+  "by_cause": {
+    "call": 7,
+    "go": 2,
+    "irreducible": 1,
+    "loop": 17,
+    "nobody": 6
+  },
+  "per_package": {
+    "budget": {
+      "total": 9,
+      "bounded": 7
+    },
+    "concurrent": {
+      "total": 5,
+      "bounded": 4
+    },
+    "costignore": {
+      "total": 10,
+      "bounded": 4
+    },
+    "edge": {
+      "total": 11,
+      "bounded": 4
+    },
+    "interproc": {
+      "total": 5,
+      "bounded": 5
+    },
+    "multivar": {
+      "total": 3,
+      "bounded": 3
+    },
+    "negative": {
+      "total": 3,
+      "bounded": 0
+    },
+    "positive": {
+      "total": 4,
+      "bounded": 4
+    },
+    "smoke": {
+      "total": 1,
+      "bounded": 1
+    },
+    "structures/array": {
+      "total": 7,
+      "bounded": 3
+    },
+    "structures/graph": {
+      "total": 3,
+      "bounded": 1
+    },
+    "structures/hashmap": {
+      "total": 3,
+      "bounded": 2
+    },
+    "structures/heap": {
+      "total": 3,
+      "bounded": 1
+    },
+    "structures/list": {
+      "total": 3,
+      "bounded": 1
+    },
+    "structures/stringops": {
+      "total": 2,
+      "bounded": 2
+    },
+    "structures/tree": {
+      "total": 3,
+      "bounded": 0
+    }
+  },
+  "functions": [
+    {
+      "pkg": "budget",
+      "func": "BadExpr",
+      "verdict": "bounded",
+      "bound": "O(len(xs))"
+    },
+    {
+      "pkg": "budget",
+      "func": "CostAndIgnore",
+      "verdict": "bounded",
+      "bound": "O(1)"
+    },
+    {
+      "pkg": "budget",
+      "func": "CostAndMax",
+      "verdict": "bounded",
+      "bound": "O(len(xs)^2)"
+    },
+    {
+      "pkg": "budget",
+      "func": "DuplicateMax",
+      "verdict": "bounded",
+      "bound": "O(len(xs))"
+    },
+    {
+      "pkg": "budget",
+      "func": "LinearOK",
+      "verdict": "bounded",
+      "bound": "O(len(xs))"
+    },
+    {
+      "pkg": "budget",
+      "func": "QuadraticBad",
+      "verdict": "bounded",
+      "bound": "O(len(xs)^2)"
+    },
+    {
+      "pkg": "budget",
+      "func": "TypoVerb",
+      "verdict": "bounded",
+      "bound": "O(len(xs)^2)"
+    },
+    {
+      "pkg": "budget",
+      "func": "Unresolved",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "budget",
+      "func": "other",
+      "verdict": "unverifiable",
+      "cause": "nobody"
+    },
+    {
+      "pkg": "concurrent",
+      "func": "ChannelFill",
+      "verdict": "bounded",
+      "bound": "O(len(xs))"
+    },
+    {
+      "pkg": "concurrent",
+      "func": "DeferInLoop",
+      "verdict": "bounded",
+      "bound": "O(len(xs)^2)"
+    },
+    {
+      "pkg": "concurrent",
+      "func": "SingleDefer",
+      "verdict": "bounded",
+      "bound": "O(len(xs))"
+    },
+    {
+      "pkg": "concurrent",
+      "func": "SpawnsWork",
+      "verdict": "unverifiable",
+      "cause": "go"
+    },
+    {
+      "pkg": "concurrent",
+      "func": "scan",
+      "verdict": "bounded",
+      "bound": "O(len(ys))"
+    },
+    {
+      "pkg": "costignore",
+      "func": "BodylessBudget",
+      "verdict": "unverifiable",
+      "cause": "nobody"
+    },
+    {
+      "pkg": "costignore",
+      "func": "CostWithSize",
+      "verdict": "bounded",
+      "bound": "O(len(xs) m)"
+    },
+    {
+      "pkg": "costignore",
+      "func": "StillBlocked",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "costignore",
+      "func": "UsesCost",
+      "verdict": "bounded",
+      "bound": "O(len(xs))"
+    },
+    {
+      "pkg": "costignore",
+      "func": "UsesIgnore",
+      "verdict": "bounded",
+      "bound": "O(len(xs))"
+    },
+    {
+      "pkg": "costignore",
+      "func": "UsesInterfaceCost",
+      "verdict": "bounded",
+      "bound": "O(len(xs))"
+    },
+    {
+      "pkg": "costignore",
+      "func": "opaque",
+      "verdict": "unverifiable",
+      "cause": "nobody"
+    },
+    {
+      "pkg": "costignore",
+      "func": "opaqueLinear",
+      "verdict": "unverifiable",
+      "cause": "nobody"
+    },
+    {
+      "pkg": "costignore",
+      "func": "trusted",
+      "verdict": "unverifiable",
+      "cause": "nobody"
+    },
+    {
+      "pkg": "costignore",
+      "func": "unannotated",
+      "verdict": "unverifiable",
+      "cause": "nobody"
+    },
+    {
+      "pkg": "edge",
+      "func": "BreakOut",
+      "verdict": "bounded",
+      "bound": "O(len(xs))"
+    },
+    {
+      "pkg": "edge",
+      "func": "EarlyReturn",
+      "verdict": "bounded",
+      "bound": "O(len(xs))"
+    },
+    {
+      "pkg": "edge",
+      "func": "InfiniteGEQ",
+      "verdict": "unverifiable",
+      "cause": "loop"
+    },
+    {
+      "pkg": "edge",
+      "func": "IrreducibleGoto",
+      "verdict": "unverifiable",
+      "cause": "irreducible"
+    },
+    {
+      "pkg": "edge",
+      "func": "LabeledBreak",
+      "verdict": "bounded",
+      "bound": "O(len(xs)^2)"
+    },
+    {
+      "pkg": "edge",
+      "func": "NegativeStep",
+      "verdict": "unverifiable",
+      "cause": "loop"
+    },
+    {
+      "pkg": "edge",
+      "func": "OffsetCondition",
+      "verdict": "unverifiable",
+      "cause": "loop"
+    },
+    {
+      "pkg": "edge",
+      "func": "ParamStart",
+      "verdict": "unverifiable",
+      "cause": "loop"
+    },
+    {
+      "pkg": "edge",
+      "func": "SwitchInLoop",
+      "verdict": "bounded",
+      "bound": "O(len(xs))"
+    },
+    {
+      "pkg": "edge",
+      "func": "Triangular",
+      "verdict": "unverifiable",
+      "cause": "loop"
+    },
+    {
+      "pkg": "edge",
+      "func": "ZeroStep",
+      "verdict": "unverifiable",
+      "cause": "loop"
+    },
+    {
+      "pkg": "interproc",
+      "func": "CallsLinearOK",
+      "verdict": "bounded",
+      "bound": "O(len(xs))"
+    },
+    {
+      "pkg": "interproc",
+      "func": "LinearOverLinearBad",
+      "verdict": "bounded",
+      "bound": "O(len(xs)^2)"
+    },
+    {
+      "pkg": "interproc",
+      "func": "SortOK",
+      "verdict": "bounded",
+      "bound": "O(len(xs) log(len(xs)))"
+    },
+    {
+      "pkg": "interproc",
+      "func": "SortTooSlow",
+      "verdict": "bounded",
+      "bound": "O(len(xs) log(len(xs)))"
+    },
+    {
+      "pkg": "interproc",
+      "func": "scan",
+      "verdict": "bounded",
+      "bound": "O(len(ys))"
+    },
+    {
+      "pkg": "multivar",
+      "func": "Pairs",
+      "verdict": "bounded",
+      "bound": "O(len(a) len(b))"
+    },
+    {
+      "pkg": "multivar",
+      "func": "PairsIncomparable",
+      "verdict": "bounded",
+      "bound": "O(len(a) len(b))"
+    },
+    {
+      "pkg": "multivar",
+      "func": "PairsOverBudget",
+      "verdict": "bounded",
+      "bound": "O(len(a) len(b))"
+    },
+    {
+      "pkg": "negative",
+      "func": "ClosureCall",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "negative",
+      "func": "Concurrent",
+      "verdict": "unverifiable",
+      "cause": "go"
+    },
+    {
+      "pkg": "negative",
+      "func": "InterfaceCall",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "positive",
+      "func": "BubbleSort",
+      "verdict": "bounded",
+      "bound": "O(len(xs)^2)"
+    },
+    {
+      "pkg": "positive",
+      "func": "Constant",
+      "verdict": "bounded",
+      "bound": "O(1)"
+    },
+    {
+      "pkg": "positive",
+      "func": "CountUp",
+      "verdict": "bounded",
+      "bound": "O(k)"
+    },
+    {
+      "pkg": "positive",
+      "func": "LinearScan",
+      "verdict": "bounded",
+      "bound": "O(len(xs))"
+    },
+    {
+      "pkg": "smoke",
+      "func": "Noop",
+      "verdict": "bounded",
+      "bound": "O(len(xs))"
+    },
+    {
+      "pkg": "structures/array",
+      "func": "BinarySearch",
+      "verdict": "unverifiable",
+      "cause": "loop"
+    },
+    {
+      "pkg": "structures/array",
+      "func": "InsertionSort",
+      "verdict": "unverifiable",
+      "cause": "loop"
+    },
+    {
+      "pkg": "structures/array",
+      "func": "LinearScan",
+      "verdict": "bounded",
+      "bound": "O(len(xs))"
+    },
+    {
+      "pkg": "structures/array",
+      "func": "MinMax",
+      "verdict": "bounded",
+      "bound": "O(len(xs))"
+    },
+    {
+      "pkg": "structures/array",
+      "func": "PairSums",
+      "verdict": "bounded",
+      "bound": "O(len(xs)^2)"
+    },
+    {
+      "pkg": "structures/array",
+      "func": "Reverse",
+      "verdict": "unverifiable",
+      "cause": "loop"
+    },
+    {
+      "pkg": "structures/array",
+      "func": "SelectionSort",
+      "verdict": "unverifiable",
+      "cause": "loop"
+    },
+    {
+      "pkg": "structures/graph",
+      "func": "BFS",
+      "verdict": "unverifiable",
+      "cause": "loop"
+    },
+    {
+      "pkg": "structures/graph",
+      "func": "DFS",
+      "verdict": "unverifiable",
+      "cause": "loop"
+    },
+    {
+      "pkg": "structures/graph",
+      "func": "Degrees",
+      "verdict": "bounded",
+      "bound": "O(len(adj))"
+    },
+    {
+      "pkg": "structures/hashmap",
+      "func": "Has",
+      "verdict": "bounded",
+      "bound": "O(1)"
+    },
+    {
+      "pkg": "structures/hashmap",
+      "func": "LookupAll",
+      "verdict": "bounded",
+      "bound": "O(len(keys))"
+    },
+    {
+      "pkg": "structures/hashmap",
+      "func": "SumValues",
+      "verdict": "unverifiable",
+      "cause": "loop"
+    },
+    {
+      "pkg": "structures/heap",
+      "func": "PeekMin",
+      "verdict": "bounded",
+      "bound": "O(1)"
+    },
+    {
+      "pkg": "structures/heap",
+      "func": "SiftDown",
+      "verdict": "unverifiable",
+      "cause": "loop"
+    },
+    {
+      "pkg": "structures/heap",
+      "func": "SiftUp",
+      "verdict": "unverifiable",
+      "cause": "loop"
+    },
+    {
+      "pkg": "structures/list",
+      "func": "Contains",
+      "verdict": "unverifiable",
+      "cause": "loop"
+    },
+    {
+      "pkg": "structures/list",
+      "func": "Len",
+      "verdict": "unverifiable",
+      "cause": "loop"
+    },
+    {
+      "pkg": "structures/list",
+      "func": "PushFront",
+      "verdict": "bounded",
+      "bound": "O(1)"
+    },
+    {
+      "pkg": "structures/stringops",
+      "func": "ConcatAll",
+      "verdict": "bounded",
+      "bound": "O(len(parts))"
+    },
+    {
+      "pkg": "structures/stringops",
+      "func": "CountByte",
+      "verdict": "bounded",
+      "bound": "O(len(s))"
+    },
+    {
+      "pkg": "structures/tree",
+      "func": "Height",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "structures/tree",
+      "func": "Insert",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "structures/tree",
+      "func": "InsertAll",
+      "verdict": "unverifiable",
+      "cause": "call"
+    }
+  ]
+}

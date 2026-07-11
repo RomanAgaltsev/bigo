@@ -16,10 +16,50 @@ type CostModel interface {
 	CallCost(c *ssa.CallCommon) bound.Bound
 }
 
-// Cause records why a bound became unverifiable: the source position and a
-// human-readable description of the unresolved construct.
+// CauseKind is the machine-readable category of an unverifiable cause. The
+// metrics harness buckets on Kind; diagnostics render What. Never bucket on
+// What — it is presentation text.
+type CauseKind int
+
+const (
+	// CauseCall - unresolved cost at a call
+	CauseCall CauseKind = iota
+	// CauseDefer - unresolved cost at a deferred call
+	CauseDefer
+	// CauseGo - goroutine launch
+	CauseGo
+	// CauseLoop - loop with unrecognized trip count
+	CauseLoop
+	// CauseIrreducible - irreducible control flow
+	CauseIrreducible
+	// CauseNoBody - function has no analyzable body
+	CauseNoBody
+)
+
+func (k CauseKind) String() string {
+	switch k {
+	case CauseCall:
+		return "call"
+	case CauseDefer:
+		return "defer"
+	case CauseGo:
+		return "go"
+	case CauseLoop:
+		return "loop"
+	case CauseIrreducible:
+		return "irreducible"
+	case CauseNoBody:
+		return "nobody"
+	default:
+		return "unknown"
+	}
+}
+
+// Cause records why a bound became unverifiable: the source position, the
+// machine-readable kind, and a human-readable description.
 type Cause struct {
 	Pos  token.Pos
+	Kind CauseKind
 	What string
 }
 
@@ -35,11 +75,11 @@ func Infer(fn *ssa.Function, model CostModel) bound.Bound {
 // Causes are nil when the bound is not ⊤.
 func InferDetailed(fn *ssa.Function, model CostModel) (bound.Bound, []Cause) {
 	if fn == nil || len(fn.Blocks) == 0 {
-		return bound.Top(), []Cause{{What: "function has no analyzable body"}}
+		return bound.Top(), []Cause{{Kind: CauseNoBody, What: "function has no analyzable body"}}
 	}
 	forest := loopnest.Build(fn)
 	if forest.UncoveredCycle(fn) {
-		return bound.Top(), []Cause{{Pos: fn.Pos(), What: "irreducible control flow (goto into a cycle)"}}
+		return bound.Top(), []Cause{{Pos: fn.Pos(), Kind: CauseIrreducible, What: "irreducible control flow (goto into a cycle)"}}
 	}
 
 	var causes []Cause
@@ -52,6 +92,7 @@ func InferDetailed(fn *ssa.Function, model CostModel) (bound.Bound, []Cause) {
 			if tc.IsTop() {
 				causes = append(causes, Cause{
 					Pos:  lp.Header.Instrs[len(lp.Header.Instrs)-1].Pos(),
+					Kind: CauseLoop,
 					What: "loop with unrecognized trip count",
 				})
 			}
@@ -86,17 +127,17 @@ func blockCost(b *ssa.BasicBlock, model CostModel) (bound.Bound, []Cause) {
 		case *ssa.Call:
 			c := model.CallCost(&v.Call)
 			if c.IsTop() {
-				causes = append(causes, Cause{Pos: v.Pos(), What: "unresolved cost at call to " + calleeName(&v.Call)})
+				causes = append(causes, Cause{Pos: v.Pos(), Kind: CauseCall, What: "unresolved cost at call to " + calleeName(&v.Call)})
 			}
 			cost = cost.Join(c)
 		case *ssa.Defer:
 			c := model.CallCost(&v.Call)
 			if c.IsTop() {
-				causes = append(causes, Cause{Pos: v.Pos(), What: "unresolved cost at deferred call to " + calleeName(&v.Call)})
+				causes = append(causes, Cause{Pos: v.Pos(), Kind: CauseDefer, What: "unresolved cost at deferred call to " + calleeName(&v.Call)})
 			}
 			cost = cost.Join(c)
 		case *ssa.Go:
-			causes = append(causes, Cause{Pos: v.Pos(), What: "goroutine launch (concurrency is unverifiable in v1)"})
+			causes = append(causes, Cause{Pos: v.Pos(), Kind: CauseGo, What: "goroutine launch (concurrency is unverifiable in v1)"})
 			return bound.Top(), causes
 		}
 	}

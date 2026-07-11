@@ -1,6 +1,11 @@
 version: "3"
 
 tasks:
+  metrics:
+    desc: Regenerate the coverage golden (metrics/metrics.json + metrics/METRICS.md)
+    cmds:
+      - go test ./internal/metrics/ -run TestGolden -update
+
   test:
     desc: Run all tests with the race detector
     cmds:
