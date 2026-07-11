@@ -215,3 +215,138 @@ func f(s *S, v int) int {
 		t.Errorf("Of = %q, want Top — the function grew the field before the loop", got.String())
 	}
 }
+
+func TestRuleIncreasingGraduations(t *testing.T) {
+	tests := []struct{ name, src, want string }{
+		{
+			"selection-sort inner: start i+1 has constant lower bound 1",
+			`package input
+func f(xs []int) int {
+	s := 0
+	for i := 0; i < len(xs); i++ {
+		for j := i + 1; j < len(xs); j++ { s++ }
+	}
+	return s
+}`,
+			"O(len(xs))", // the INNER loop — see innerLoop helper below
+		},
+		{
+			"triangular inner: bound i is guard-bounded by len(xs)",
+			`package input
+func f(xs []int) int {
+	s := 0
+	for i := 0; i < len(xs); i++ {
+		for j := 0; j < i; j++ { s++ }
+	}
+	return s
+}`,
+			"O(len(xs))",
+		},
+		{
+			"bubble inner: bound len(xs)-1-i",
+			`package input
+func f(xs []int) int {
+	s := 0
+	for i := 0; i < len(xs); i++ {
+		for j := 0; j < len(xs)-1-i; j++ { s++ }
+	}
+	return s
+}`,
+			"O(len(xs))",
+		},
+		{
+			"half-length reverse index form",
+			`package input
+func f(xs []int) int {
+	s := 0
+	for i := 0; i < len(xs)/2; i++ { s++ }
+	return s
+}`,
+			"O(len(xs))",
+		},
+		{
+			"two-pointer reverse: extent is the decreasing phi's init",
+			`package input
+func f(xs []int) int {
+	s := 0
+	for i, j := 0, len(xs)-1; i < j; i, j = i+1, j-1 { s++ }
+	return s
+}`,
+			"O(len(xs))",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := Of(innerLoop(t, tt.src)).String(); got != tt.want {
+				t.Errorf("Of(inner) = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+// innerLoop returns the deepest loop plus stability — the loop the new rules
+// must bound. For single-loop functions it is the only loop.
+func innerLoop(t *testing.T, src string) (*loopnest.Loop, *fieldpath.Stability) {
+	t.Helper()
+	pkg, _, err := ssasupport.Build(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fn := ssasupport.Func(pkg, "f")
+	forest := loopnest.Build(fn)
+	var deepest *loopnest.Loop
+	var walk func(l *loopnest.Loop)
+	walk = func(l *loopnest.Loop) {
+		if deepest == nil || l.Depth > deepest.Depth {
+			deepest = l
+		}
+		for _, c := range l.Children {
+			walk(c)
+		}
+	}
+	for _, r := range forest.Roots {
+		walk(r)
+	}
+	if deepest == nil {
+		t.Fatal("no loops found")
+	}
+	return deepest, fieldpath.Analyze(fn)
+}
+
+// TestLoopAlgebraStaysTop pins the shapes the generalizations must NOT
+// accept. Every PR of the loop-algebra plan re-runs this; a flip here is a
+// wrong-bound bug by construction.
+func TestLoopAlgebraStaysTop(t *testing.T) {
+	tests := []struct{ name, src string }{
+		{"B1 wrong guard direction", `package input
+func f(n int) int { s := 0; for i := 0; i >= n; i++ { s++ }; return s }`},
+		{"B1 negative step under upper guard", `package input
+func f(n int) int { s := 0; for i := 0; i < n; i += -1 { s++ }; return s }`},
+		{"B1 zero step", `package input
+func f(n int) int { s := 0; for i := 0; i < n; i += 0 { s++ }; return s }`},
+		{"B1 parameter start", `package input
+func f(m, n int) int { s := 0; for i := m; i < n; i++ { s++ }; return s }`},
+		{"S1 variable offset in comparand", `package input
+func f(n, j int) int { s := 0; for i := 0; i+j < n; i++ { s++ }; return s }`},
+		{"decreasing toward a parameter bound", `package input
+func f(n, m int) int { s := 0; for j := n; j > m; j-- { s++ }; return s }`},
+		{"geometric from zero never grows", `package input
+func f(n int) int { s := 0; for i := 0; i < n; i *= 2 { s++ }; return s }`},
+		{"param-start geometric (infinite for negative starts)", `package input
+func f(h []int, i int) int {
+	s := 0
+	for 2*i+1 < len(h) {
+		s++
+		i = 2*i + 1
+	}
+	return s
+}`},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := Of(innerLoop(t, tt.src)); !got.IsTop() {
+				t.Errorf("Of = %q, want Top", got.String())
+			}
+		})
+	}
+}

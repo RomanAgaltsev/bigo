@@ -91,11 +91,11 @@ func ParamStart(a, b int) int { // want `cannot verify budget O\(b\)`
 	return s
 }
 
-// Triangular nests are a documented v1 precision gap (inner bound is a phi,
-// not a size) — pinned here so a Phase-2 graduation moves this entry.
+// Triangular nests bound since the loop-algebra slice: the inner bound i is
+// dominated by its own loop's guard (i < len(xs)).
 
 //bigo:max O(n^2)
-func Triangular(xs []int) int { // want `cannot verify budget O\(len\(xs\)\^2\)`
+func Triangular(xs []int) int {
 	s := 0
 	for i := 0; i < len(xs); i++ {
 		for j := 0; j < i; j++ {

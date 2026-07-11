@@ -44,12 +44,11 @@ func PairSums(xs []int) int {
 	return s
 }
 
-// Reverse is O(n). Unverifiable today: the two-pointer condition i < j tests
-// two moving inductions, and the index form needs len(xs)/2 arithmetic.
-// Graduates with: affine size-expression bounds (Phase 2 tripcount).
+// Reverse is O(n). Bounded since the loop-algebra slice: the two-pointer gap
+// shrinks every iteration and j never exceeds its initial extent.
 //
 //bigo:max O(n)
-func Reverse(xs []int) { // want `cannot verify budget O\(len\(xs\)\)`
+func Reverse(xs []int) {
 	for i, j := 0, len(xs)-1; i < j; i, j = i+1, j-1 {
 		xs[i], xs[j] = xs[j], xs[i]
 	}
@@ -88,12 +87,11 @@ func InsertionSort(xs []int) { // want `cannot verify budget O\(len\(xs\)\^2\)`
 	}
 }
 
-// SelectionSort is O(n^2). Unverifiable today: the inner loop starts at i+1,
-// a non-constant initial value. Graduates with: affine induction starts
-// (Phase 2) — the same capability family as triangular nests (see edge/).
+// SelectionSort is O(n^2). Bounded since the loop-algebra slice: the inner
+// start i+1 has a provable constant lower bound.
 //
 //bigo:max O(n^2)
-func SelectionSort(xs []int) { // want `cannot verify budget O\(len\(xs\)\^2\)`
+func SelectionSort(xs []int) {
 	for i := 0; i < len(xs); i++ {
 		m := i
 		for j := i + 1; j < len(xs); j++ {
