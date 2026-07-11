@@ -58,6 +58,14 @@ func TestStructuresTree(t *testing.T) {
 	analysistest.Run(t, analysistest.TestData(), Analyzer, "structures/tree")
 }
 
+func TestStructuresGraph(t *testing.T) {
+	analysistest.Run(t, analysistest.TestData(), Analyzer, "structures/graph")
+}
+
+func TestStructuresHeap(t *testing.T) {
+	analysistest.Run(t, analysistest.TestData(), Analyzer, "structures/heap")
+}
+
 func TestReportModeUsesStdoutNotDiagnostics(t *testing.T) {
 	if err := Analyzer.Flags.Set("report", "true"); err != nil {
 		t.Fatal(err)
