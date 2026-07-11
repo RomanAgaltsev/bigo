@@ -1,13 +1,13 @@
 {
-  "total": 75,
-  "bounded": 42,
-  "coverage_pct": "56.0",
+  "total": 88,
+  "bounded": 50,
+  "coverage_pct": "56.8",
   "by_cause": {
-    "call": 7,
+    "call": 8,
     "go": 2,
     "irreducible": 1,
-    "loop": 17,
-    "nobody": 6
+    "loop": 20,
+    "nobody": 7
   },
   "per_package": {
     "budget": {
@@ -25,6 +25,10 @@
     "edge": {
       "total": 11,
       "bounded": 4
+    },
+    "fieldsize": {
+      "total": 13,
+      "bounded": 8
     },
     "interproc": {
       "total": 5,
@@ -285,6 +289,84 @@
       "func": "ZeroStep",
       "verdict": "unverifiable",
       "cause": "loop"
+    },
+    {
+      "pkg": "fieldsize",
+      "func": "CallsFieldBounded",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "fieldsize",
+      "func": "CountToLimit",
+      "verdict": "bounded",
+      "bound": "O(s.limit)"
+    },
+    {
+      "pkg": "fieldsize",
+      "func": "EscapedField",
+      "verdict": "unverifiable",
+      "cause": "loop"
+    },
+    {
+      "pkg": "fieldsize",
+      "func": "GrowThenScan",
+      "verdict": "unverifiable",
+      "cause": "loop"
+    },
+    {
+      "pkg": "fieldsize",
+      "func": "SumCalls",
+      "verdict": "unverifiable",
+      "cause": "loop"
+    },
+    {
+      "pkg": "fieldsize",
+      "func": "SumHoisted",
+      "verdict": "bounded",
+      "bound": "O(len(s.items))"
+    },
+    {
+      "pkg": "fieldsize",
+      "func": "SumInline",
+      "verdict": "bounded",
+      "bound": "O(len(s.items))"
+    },
+    {
+      "pkg": "fieldsize",
+      "func": "SumNested",
+      "verdict": "bounded",
+      "bound": "O(len(s.cfg.items))"
+    },
+    {
+      "pkg": "fieldsize",
+      "func": "SumValue",
+      "verdict": "bounded",
+      "bound": "O(len(s.items))"
+    },
+    {
+      "pkg": "fieldsize",
+      "func": "mutate",
+      "verdict": "bounded",
+      "bound": "O(1)"
+    },
+    {
+      "pkg": "fieldsize",
+      "func": "opaqueFieldCost",
+      "verdict": "unverifiable",
+      "cause": "nobody"
+    },
+    {
+      "pkg": "fieldsize",
+      "func": "sumItems",
+      "verdict": "bounded",
+      "bound": "O(len(s.items))"
+    },
+    {
+      "pkg": "fieldsize",
+      "func": "work",
+      "verdict": "bounded",
+      "bound": "O(1)"
     },
     {
       "pkg": "interproc",

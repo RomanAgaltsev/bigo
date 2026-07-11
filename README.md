@@ -61,6 +61,14 @@ func Lookup(keys []string, k string) int { ... }
 Directives use the `//go:` shape — no space after `//`. A malformed directive
 is a diagnostic, never silently ignored.
 
+Size variables can name receiver/parameter fields when bigo can prove the
+field is not mutated between function entry and the loop:
+
+```go
+//bigo:max O(n) where n=len(s.items)
+func (s *S) Sum() int { ... }
+```
+
 ## Install & run
 
 ```sh
@@ -111,6 +119,10 @@ Each can only *miss* a violation, never invent one:
   `range`-over-func iterators are **unverifiable** (in progress).
 - Cross-package calls resolve only through the curated stdlib cost table or
   your `//bigo:cost` annotations.
+- Field-size stability assumes no data race on the analyzed object (the Go
+  memory model makes racy reads undefined anyway). Channel-typed fields are
+  never used as sizes: channel synchronization makes concurrent mutation
+  legal, so `len(ch)` has no stable entry value.
 
 ## Status & versioning
 
