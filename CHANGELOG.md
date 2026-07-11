@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/RomanAgaltsev/bigo/compare/v1.4.0...v1.5.0) (2026-07-11)
+
+
+### Features
+
+* struct-field and receiver size variables (entry-stable paths) ([#25](https://github.com/RomanAgaltsev/bigo/issues/25)) ([b264413](https://github.com/RomanAgaltsev/bigo/commit/b264413c817110510f027547a8fff94c7038cb7e))
+
 ## [1.4.0](https://github.com/RomanAgaltsev/bigo/compare/v1.3.2...v1.4.0) (2026-07-11)
 
 
