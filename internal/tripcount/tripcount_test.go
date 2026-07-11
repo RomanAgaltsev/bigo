@@ -3,11 +3,12 @@ package tripcount
 import (
 	"testing"
 
+	"github.com/RomanAgaltsev/bigo/internal/fieldpath"
 	"github.com/RomanAgaltsev/bigo/internal/loopnest"
 	"github.com/RomanAgaltsev/bigo/internal/ssasupport"
 )
 
-func firstLoop(t *testing.T, src string) *loopnest.Loop {
+func firstLoop(t *testing.T, src string) (*loopnest.Loop, *fieldpath.Stability) {
 	t.Helper()
 	pkg, _, err := ssasupport.Build(src)
 	if err != nil {
@@ -18,7 +19,7 @@ func firstLoop(t *testing.T, src string) *loopnest.Loop {
 	if len(forest.Roots) == 0 {
 		t.Fatal("no loops found")
 	}
-	return forest.Roots[0]
+	return forest.Roots[0], fieldpath.Analyze(fn)
 }
 
 func TestOf(t *testing.T) {
@@ -165,5 +166,52 @@ func TestOfAcceptsConstantOffsetInComparison(t *testing.T) {
 func f(n int) int { s := 0; for i := 0; i+1 < n; i++ { s++ }; return s }`
 	if got, want := Of(firstLoop(t, src)).String(), "O(n)"; got != want {
 		t.Errorf("Of = %q, want %q", got, want)
+	}
+}
+
+func TestOfFieldBounds(t *testing.T) {
+	tests := []struct{ name, src, want string }{
+		{
+			"value-receiver style field length",
+			`package input
+type S struct{ items []int }
+func f(s S) int { t := 0; for i := 0; i < len(s.items); i++ { t++ }; return t }`,
+			"O(len(s.items))",
+		},
+		{
+			"pointer param hoisted length",
+			`package input
+type S struct{ items []int }
+func f(s *S) int { n := len(s.items); t := 0; for i := 0; i < n; i++ { t++ }; return t }`,
+			"O(len(s.items))",
+		},
+		{
+			"pointer param numeric field",
+			`package input
+type S struct{ limit int }
+func f(s *S) int { t := 0; for i := 0; i < s.limit; i++ { t++ }; return t }`,
+			"O(s.limit)",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := Of(firstLoop(t, tt.src)).String(); got != tt.want {
+				t.Errorf("Of = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestOfFieldBoundMutatedIsTop(t *testing.T) {
+	const src = `package input
+type S struct{ items []int }
+func f(s *S, v int) int {
+	s.items = append(s.items, v)
+	t := 0
+	for i := 0; i < len(s.items); i++ { t++ }
+	return t
+}`
+	if got := Of(firstLoop(t, src)); !got.IsTop() {
+		t.Errorf("Of = %q, want Top — the function grew the field before the loop", got.String())
 	}
 }
