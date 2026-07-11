@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.0](https://github.com/RomanAgaltsev/bigo/compare/v1.6.0...v1.7.0) (2026-07-11)
+
+
+### Features
+
+* **tripcount:** decreasing counted loops (R2); graduate insertion sort ([#29](https://github.com/RomanAgaltsev/bigo/issues/29)) ([b7119c7](https://github.com/RomanAgaltsev/bigo/commit/b7119c7eb0420f2b6b2c3bb9213f2e0cf659cb1e))
+
 ## [1.6.0](https://github.com/RomanAgaltsev/bigo/compare/v1.5.0...v1.6.0) (2026-07-11)
 
 
