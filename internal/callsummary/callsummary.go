@@ -112,6 +112,17 @@ func (r *Resolver) callUser(callee *ssa.Function, args []ssa.Value) bound.Bound 
 // the argument's numeric var. Any parameter the summary depends on that the
 // caller cannot express makes the whole call unverifiable.
 func substArgs(summary bound.Bound, paramNames []string, args []ssa.Value) bound.Bound {
+	// Field-path sizes are frame-local: re-rooting a callee's len(s.items)
+	// into caller vocabulary needs caller-side stability from entry to the
+	// call site, which does not exist yet (design spec §2 non-goal). Refuse
+	// rather than leak a var the caller cannot interpret.
+	for _, m := range summary.Terms() {
+		for _, mv := range m.Vars() {
+			if size.IsFieldPath(mv) {
+				return bound.Top()
+			}
+		}
+	}
 	rename := map[bound.Var]bound.Var{}
 	for i, name := range paramNames {
 		if i >= len(args) {
