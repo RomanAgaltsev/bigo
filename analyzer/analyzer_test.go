@@ -66,6 +66,14 @@ func TestStructuresHeap(t *testing.T) {
 	analysistest.Run(t, analysistest.TestData(), Analyzer, "structures/heap")
 }
 
+func TestStructuresHashmap(t *testing.T) {
+	analysistest.Run(t, analysistest.TestData(), Analyzer, "structures/hashmap")
+}
+
+func TestStructuresStringops(t *testing.T) {
+	analysistest.Run(t, analysistest.TestData(), Analyzer, "structures/stringops")
+}
+
 func TestReportModeUsesStdoutNotDiagnostics(t *testing.T) {
 	if err := Analyzer.Flags.Set("report", "true"); err != nil {
 		t.Fatal(err)
