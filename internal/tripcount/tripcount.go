@@ -55,6 +55,7 @@ func Of(loop *loopnest.Loop, stab *fieldpath.Stability) bound.Bound {
 // rules in most-specific-first order.
 var rules = []func(*shape) (bound.Bound, bool){
 	ruleRangeNext,
+	ruleBisection,
 	ruleGeometricUp,
 	ruleGeometricDown,
 	ruleDecreasing,

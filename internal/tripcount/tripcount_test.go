@@ -502,3 +502,105 @@ func f(m map[string]int) int {
 		})
 	}
 }
+
+func TestRuleBisection(t *testing.T) {
+	tests := []struct{ name, src, want string }{
+		{
+			"classic binary search, (lo+hi)/2",
+			`package input
+func f(xs []int, target int) int {
+	lo, hi := 0, len(xs)
+	for lo < hi {
+		mid := (lo + hi) / 2
+		if xs[mid] < target {
+			lo = mid + 1
+		} else {
+			hi = mid
+		}
+	}
+	return lo
+}`,
+			"O(log(len(xs)))",
+		},
+		{
+			"overflow-safe mid form lo + (hi-lo)/2",
+			`package input
+func f(xs []int, target int) int {
+	lo, hi := 0, len(xs)
+	for lo < hi {
+		mid := lo + (hi-lo)/2
+		if xs[mid] < target {
+			lo = mid + 1
+		} else {
+			hi = mid
+		}
+	}
+	return lo
+}`,
+			"O(log(len(xs)))",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := Of(innerLoop(t, tt.src)).String(); got != tt.want {
+				t.Errorf("Of(inner) = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestRuleBisectionRejects(t *testing.T) {
+	tests := []struct{ name, src string }{
+		{
+			"lo can start below zero (mid may fall outside [lo,hi))",
+			`package input
+func f(xs []int, lo int) int {
+	hi := len(xs)
+	for lo < hi {
+		mid := (lo + hi) / 2
+		if xs[mid] < 0 {
+			lo = mid + 1
+		} else {
+			hi = mid
+		}
+	}
+	return lo
+}`,
+		},
+		{
+			"lo moves to mid, not mid+1 (may not terminate: lo==mid when hi==lo+1)",
+			`package input
+func f(xs []int) int {
+	lo, hi := 0, len(xs)
+	for lo < hi {
+		mid := (lo + hi) / 2
+		if xs[mid] < 0 {
+			lo = mid
+		} else {
+			hi = mid
+		}
+	}
+	return lo
+}`,
+		},
+		{
+			"a back edge moves BOTH ends",
+			`package input
+func f(xs []int) int {
+	lo, hi := 0, len(xs)
+	for lo < hi {
+		mid := (lo + hi) / 2
+		lo, hi = mid+1, mid
+	}
+	return lo
+}`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := Of(innerLoop(t, tt.src)); !got.IsTop() {
+				t.Errorf("Of = %q, want Top — unproven bisection invariant", got.String())
+			}
+		})
+	}
+}
