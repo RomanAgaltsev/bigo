@@ -26,3 +26,13 @@ type Doer interface {
 }
 
 func plain() {}
+
+type FS struct{ items []int }
+
+//bigo:cost O(k) where k=len(s.items)
+func fieldCost(s *FS) int
+
+type Scanner interface {
+	//bigo:cost O(k) where k=len(s.items)
+	Scan(s *FS) int
+}
