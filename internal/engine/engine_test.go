@@ -175,3 +175,30 @@ func f(xs []int) int { s := 0; for i := 0; i < len(xs); i++ { s += xs[i] }; retu
 		t.Errorf("got (%q, %v), want bounded with nil causes", b.String(), causes)
 	}
 }
+
+func TestCauseKinds(t *testing.T) {
+	const src = `package input
+func g(int) int
+func f(xs []int) int {
+	s := 0
+	for i := 0; i < len(xs); i++ {
+		s += g(xs[i])
+	}
+	return s
+}`
+	pkg, _, err := ssasupport.Build(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, causes := InferDetailed(ssasupport.Func(pkg, "f"), builtinModel{})
+	if len(causes) == 0 || causes[0].Kind != CauseCall {
+		t.Errorf("causes[0].Kind = %v, want CauseCall", causes)
+	}
+	_, causes = InferDetailed(ssasupport.Func(pkg, "g"), builtinModel{})
+	if len(causes) == 0 || causes[0].Kind != CauseNoBody {
+		t.Errorf("bodyless causes[0].Kind = %v, want CauseNoBody", causes)
+	}
+	if got := CauseCall.String(); got != "call" {
+		t.Errorf("CauseCall.String() = %q, want call", got)
+	}
+}
