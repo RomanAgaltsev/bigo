@@ -50,6 +50,14 @@ func TestStructuresArray(t *testing.T) {
 	analysistest.Run(t, analysistest.TestData(), Analyzer, "structures/array")
 }
 
+func TestStructuresList(t *testing.T) {
+	analysistest.Run(t, analysistest.TestData(), Analyzer, "structures/list")
+}
+
+func TestStructuresTree(t *testing.T) {
+	analysistest.Run(t, analysistest.TestData(), Analyzer, "structures/tree")
+}
+
 func TestReportModeUsesStdoutNotDiagnostics(t *testing.T) {
 	if err := Analyzer.Flags.Set("report", "true"); err != nil {
 		t.Fatal(err)
