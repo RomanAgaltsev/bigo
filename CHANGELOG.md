@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/RomanAgaltsev/bigo/compare/v1.3.2...v1.4.0) (2026-07-11)
+
+
+### Features
+
+* metrics harness with committed coverage golden ([#23](https://github.com/RomanAgaltsev/bigo/issues/23)) ([edc4126](https://github.com/RomanAgaltsev/bigo/commit/edc4126b538239a690fe0b2df48496f519ce848a))
+
 ## [1.3.2](https://github.com/RomanAgaltsev/bigo/compare/v1.3.1...v1.3.2) (2026-07-10)
 
 
