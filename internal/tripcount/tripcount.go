@@ -139,12 +139,18 @@ func isConstant(v ssa.Value) bool {
 }
 
 func isPositiveConst(v ssa.Value) bool {
+	k, exact := constIntV(v)
+	return exact && k > 0
+}
+
+// constIntV returns the exact int64 value of a constant.
+func constIntV(v ssa.Value) (int64, bool) {
 	c, ok := v.(*ssa.Const)
 	if !ok || c.Value == nil {
-		return false
+		return 0, false
 	}
 	k, exact := constant.Int64Val(constant.ToInt(c.Value))
-	return exact && k > 0
+	return k, exact
 }
 
 // sizeVar maps a loop-bound value to a canonical size variable, or "".
