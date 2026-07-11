@@ -106,3 +106,79 @@ func isIncreasingInductionPhi(sh *shape, phi *ssa.Phi) bool {
 	}
 	return hasStep && hasInit
 }
+
+// ruleDecreasing — R2, the decreasing counted loop.
+//
+// Shape: `phi ⋗ c` (GTR/GEQ, or LSS/LEQ with sides swapped) for a CONSTANT c;
+// every non-init edge subtracts a positive constant (phi-c or phi+negc);
+// every init edge resolves to a dominating extent. A non-constant lower
+// bound stays ⊤ — the mirror image of B1's parameter start.
+//
+// Claim: linear, O(upper(init)). Argument: the value starts <= upper(init),
+// drops by >= 1 per iteration, and the guard fails at the constant.
+func ruleDecreasing(sh *shape) (bound.Bound, bool) {
+	if sh.cmp == nil {
+		return bound.Bound{}, false
+	}
+	var indV, lowV ssa.Value
+	switch sh.cmp.Op {
+	case token.GTR, token.GEQ:
+		indV, lowV = sh.cmp.X, sh.cmp.Y
+	case token.LSS, token.LEQ:
+		indV, lowV = sh.cmp.Y, sh.cmp.X
+	default:
+		return bound.Bound{}, false
+	}
+	if _, ok := constIntV(lowV); !ok {
+		return bound.Bound{}, false
+	}
+	phi, ok := indV.(*ssa.Phi)
+	if !ok || phi.Block() != sh.loop.Header {
+		return bound.Bound{}, false
+	}
+	var extent bound.Var
+	hasStep, hasInit := false, false
+	for _, e := range phi.Edges {
+		if isNegStep(phi, e) {
+			hasStep = true
+			continue
+		}
+		v, ok := sh.f.upperExtent(e, 0)
+		if !ok {
+			return bound.Bound{}, false
+		}
+		if hasInit && v != extent {
+			return bound.Bound{}, false
+		}
+		extent, hasInit = v, true
+	}
+	if !hasStep || !hasInit {
+		return bound.Bound{}, false
+	}
+	return bound.Of(bound.Term(extent)), true
+}
+
+// isNegStep reports whether e is phi - c (c > 0) or phi + c (c < 0).
+func isNegStep(phi *ssa.Phi, e ssa.Value) bool {
+	bo, ok := e.(*ssa.BinOp)
+	if !ok {
+		return false
+	}
+	switch bo.Op {
+	case token.SUB:
+		if bo.X == phi {
+			c, ok := constIntV(bo.Y)
+			return ok && c > 0
+		}
+	case token.ADD:
+		switch {
+		case bo.X == phi:
+			c, ok := constIntV(bo.Y)
+			return ok && c < 0
+		case bo.Y == phi:
+			c, ok := constIntV(bo.X)
+			return ok && c < 0
+		}
+	}
+	return false
+}

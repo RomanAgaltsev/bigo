@@ -75,11 +75,11 @@ func BinarySearch(xs []int, target int) int { // want `cannot verify budget O\(l
 	return -1
 }
 
-// InsertionSort is O(n^2). Unverifiable today: the inner induction decreases
-// (j > 0; j--). Graduates with: decreasing-induction recognition (Phase 2).
+// InsertionSort is O(n^2). Bounded since the loop-algebra slice: the inner
+// countdown j > 0 starts at the guard-bounded i.
 //
 //bigo:max O(n^2)
-func InsertionSort(xs []int) { // want `cannot verify budget O\(len\(xs\)\^2\)`
+func InsertionSort(xs []int) {
 	for i := 1; i < len(xs); i++ {
 		for j := i; j > 0 && xs[j-1] > xs[j]; j-- {
 			xs[j-1], xs[j] = xs[j], xs[j-1]

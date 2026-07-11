@@ -52,9 +52,9 @@ func Of(loop *loopnest.Loop, stab *fieldpath.Stability) bound.Bound {
 	return bound.Top()
 }
 
-// rules in most-specific-first order. Later PRs prepend the more specific
-// rules (range-Next, bisection, geometric) above the counted ones.
+// rules in most-specific-first order.
 var rules = []func(*shape) (bound.Bound, bool){
+	ruleDecreasing,
 	ruleIncreasing,
 }
 
