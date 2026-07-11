@@ -46,6 +46,34 @@ func TestAnalyzerCostIgnore(t *testing.T) {
 	analysistest.Run(t, analysistest.TestData(), Analyzer, "costignore")
 }
 
+func TestStructuresArray(t *testing.T) {
+	analysistest.Run(t, analysistest.TestData(), Analyzer, "structures/array")
+}
+
+func TestStructuresList(t *testing.T) {
+	analysistest.Run(t, analysistest.TestData(), Analyzer, "structures/list")
+}
+
+func TestStructuresTree(t *testing.T) {
+	analysistest.Run(t, analysistest.TestData(), Analyzer, "structures/tree")
+}
+
+func TestStructuresGraph(t *testing.T) {
+	analysistest.Run(t, analysistest.TestData(), Analyzer, "structures/graph")
+}
+
+func TestStructuresHeap(t *testing.T) {
+	analysistest.Run(t, analysistest.TestData(), Analyzer, "structures/heap")
+}
+
+func TestStructuresHashmap(t *testing.T) {
+	analysistest.Run(t, analysistest.TestData(), Analyzer, "structures/hashmap")
+}
+
+func TestStructuresStringops(t *testing.T) {
+	analysistest.Run(t, analysistest.TestData(), Analyzer, "structures/stringops")
+}
+
 func TestReportModeUsesStdoutNotDiagnostics(t *testing.T) {
 	if err := Analyzer.Flags.Set("report", "true"); err != nil {
 		t.Fatal(err)
