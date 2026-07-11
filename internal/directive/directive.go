@@ -15,6 +15,7 @@ import (
 	"github.com/RomanAgaltsev/bigo/internal/annotation"
 	"github.com/RomanAgaltsev/bigo/internal/bound"
 	"github.com/RomanAgaltsev/bigo/internal/normalize"
+	"github.com/RomanAgaltsev/bigo/internal/size"
 )
 
 // Reporter receives directive-level problems. The analyzer passes
@@ -71,6 +72,9 @@ func Scan(files []*ast.File, info *types.Info, ssaFor func(*ast.FuncDecl) *ssa.F
 				if err != nil {
 					report(fd.Decl.Pos(), "invalid //bigo:cost: %v", err)
 					continue
+				}
+				if hasFieldPathVar(b) {
+					report(fd.Decl.Pos(), "//bigo:cost with field-path sizes does not propagate through calls yet; callers remain unverifiable")
 				}
 				fns.Overrides[fd.Fn] = b
 			}
@@ -168,8 +172,24 @@ func scanInterfaces(gd *ast.GenDecl, info *types.Info, out map[*types.Func]bound
 					report(field.Pos(), "invalid //bigo:cost: %v", err)
 					continue
 				}
+				if hasFieldPathVar(b) {
+					report(field.Pos(), "//bigo:cost with field-path sizes does not propagate through calls yet; callers remain unverifiable")
+				}
 				out[obj] = b
 			}
 		}
 	}
+}
+
+// hasFieldPathVar reports whether the bound references a frame-local
+// field-path size (len(s.items) etc.), which cannot propagate to callers yet.
+func hasFieldPathVar(b bound.Bound) bool {
+	for _, m := range b.Terms() {
+		for _, v := range m.Vars() {
+			if size.IsFieldPath(v) {
+				return true
+			}
+		}
+	}
+	return false
 }

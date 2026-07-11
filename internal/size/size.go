@@ -4,6 +4,7 @@ package size
 
 import (
 	"go/types"
+	"strings"
 
 	"golang.org/x/tools/go/ssa"
 
@@ -76,4 +77,12 @@ func ValueClass(v ssa.Value) (bound.Var, Class, bool) {
 func Value(v ssa.Value) (bound.Var, bool) {
 	av, _, ok := ValueClass(v)
 	return av, ok
+}
+
+// IsFieldPath reports whether the variable names a field-path size — one
+// whose subject contains a field selection, e.g. len(s.items) or s.limit.
+// Field-path sizes are frame-local: they must never leak through a call into
+// a caller's bound (the caller cannot interpret the callee's receiver name).
+func IsFieldPath(v bound.Var) bool {
+	return strings.Contains(string(v), ".")
 }

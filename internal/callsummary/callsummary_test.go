@@ -185,3 +185,20 @@ func f(xs []int, d D) int {
 		t.Errorf("Infer without method cost = %q, want unverifiable", got)
 	}
 }
+
+func TestFieldPathSummaryDoesNotLeak(t *testing.T) {
+	// sum's own bound is O(len(s.items)) — in ITS frame. That var is
+	// meaningless (and potentially wrong) in the caller's vocabulary, so the
+	// call must be ⊤ until re-rooting exists (spec non-goal).
+	const src = `package input
+type S struct{ items []int }
+func sum(s *S) int {
+	t := 0
+	for i := 0; i < len(s.items); i++ { t += s.items[i] }
+	return t
+}
+func f(s *S) int { return sum(s) }`
+	if got := inferF(t, src); got != "unverifiable" {
+		t.Errorf("Infer = %q, want unverifiable — a callee field var leaked into the caller", got)
+	}
+}

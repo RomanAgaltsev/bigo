@@ -53,3 +53,29 @@ func TestParseWhereErrors(t *testing.T) {
 		}
 	}
 }
+
+func TestParseWhereFieldPaths(t *testing.T) {
+	d, err := Parse("//bigo:max O(n*k) where n=len(s.items), k=s.limit")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r := d.Bindings["n"]; r.Kind != Len || r.Param != "s.items" {
+		t.Errorf("n binding = %+v, want {Len s.items}", r)
+	}
+	if r := d.Bindings["k"]; r.Kind != Num || r.Param != "s.limit" {
+		t.Errorf("k binding = %+v, want {Num s.limit}", r)
+	}
+	if _, err := Parse("//bigo:max O(n) where n=len(s.cfg.items)"); err != nil {
+		t.Errorf("depth-2 path rejected: %v", err)
+	}
+	for _, bad := range []string{
+		"//bigo:max O(n) where n=len(s.)",
+		"//bigo:max O(n) where n=len(.items)",
+		"//bigo:max O(n) where n=len(s.b.a.items)", // depth 3
+		"//bigo:max O(n) where n=s..limit",
+	} {
+		if _, err := Parse(bad); err == nil {
+			t.Errorf("Parse(%q) expected error", bad)
+		}
+	}
+}

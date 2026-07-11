@@ -84,3 +84,20 @@ func f(keys []string) int { return len(keys) }`)
 		t.Errorf("BudgetSig = %q, want O(len(keys))", b.String())
 	}
 }
+
+func TestBudgetFieldPathBinding(t *testing.T) {
+	d, err := annotation.Parse("//bigo:max O(n) where n=len(s.items)")
+	if err != nil {
+		t.Fatal(err)
+	}
+	f := fn(t, `package input
+type S struct{ items []int }
+func f(s *S) int { return 0 }`)
+	b, err := Budget(d, f.fn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if b.String() != "O(len(s.items))" {
+		t.Errorf("Budget = %q, want O(len(s.items))", b.String())
+	}
+}

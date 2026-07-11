@@ -9,6 +9,7 @@ import (
 	"golang.org/x/tools/go/ssa"
 
 	"github.com/RomanAgaltsev/bigo/internal/bound"
+	"github.com/RomanAgaltsev/bigo/internal/fieldpath"
 	"github.com/RomanAgaltsev/bigo/internal/loopnest"
 	"github.com/RomanAgaltsev/bigo/internal/size"
 )
@@ -21,7 +22,7 @@ import (
 //     against an upper bound (ind < b, ind <= b, b > ind, b >= ind),
 //   - the induction phi must start at a constant and advance by a positive
 //     constant step on every other edge.
-func Of(loop *loopnest.Loop) bound.Bound {
+func Of(loop *loopnest.Loop, stab *fieldpath.Stability) bound.Bound {
 	h := loop.Header
 	if len(h.Instrs) == 0 {
 		return bound.Top()
@@ -44,6 +45,10 @@ func Of(loop *loopnest.Loop) bound.Bound {
 		return bound.Top()
 	}
 	if v := sizeVar(boundVal); v != "" {
+		return bound.Of(bound.Term(v))
+	}
+	// Parameter-rooted field paths, when provably entry-stable (Rule V/P).
+	if v, ok := stab.VarFor(boundVal); ok {
 		return bound.Of(bound.Term(v))
 	}
 	return bound.Top()

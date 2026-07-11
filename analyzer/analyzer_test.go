@@ -74,6 +74,10 @@ func TestStructuresStringops(t *testing.T) {
 	analysistest.Run(t, analysistest.TestData(), Analyzer, "structures/stringops")
 }
 
+func TestAnalyzerFieldsize(t *testing.T) {
+	analysistest.Run(t, analysistest.TestData(), Analyzer, "fieldsize")
+}
+
 func TestReportModeUsesStdoutNotDiagnostics(t *testing.T) {
 	if err := Analyzer.Flags.Set("report", "true"); err != nil {
 		t.Fatal(err)

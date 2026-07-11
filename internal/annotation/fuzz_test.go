@@ -11,6 +11,9 @@ func FuzzParse(f *testing.F) {
 		"//bigo:space O(n)",
 		"// not a directive",
 		"//bigo:max O(",
+		"//bigo:max O(n) where n=len(s.items)",
+		"//bigo:cost O(k) where k=s.limit",
+		"//bigo:max O(n) where n=len(s.cfg.items)",
 	}
 	for _, s := range seeds {
 		f.Add(s)
