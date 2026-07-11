@@ -312,3 +312,41 @@ func innerLoop(t *testing.T, src string) (*loopnest.Loop, *fieldpath.Stability) 
 	}
 	return deepest, fieldpath.Analyze(fn)
 }
+
+// TestLoopAlgebraStaysTop pins the shapes the generalizations must NOT
+// accept. Every PR of the loop-algebra plan re-runs this; a flip here is a
+// wrong-bound bug by construction.
+func TestLoopAlgebraStaysTop(t *testing.T) {
+	tests := []struct{ name, src string }{
+		{"B1 wrong guard direction", `package input
+func f(n int) int { s := 0; for i := 0; i >= n; i++ { s++ }; return s }`},
+		{"B1 negative step under upper guard", `package input
+func f(n int) int { s := 0; for i := 0; i < n; i += -1 { s++ }; return s }`},
+		{"B1 zero step", `package input
+func f(n int) int { s := 0; for i := 0; i < n; i += 0 { s++ }; return s }`},
+		{"B1 parameter start", `package input
+func f(m, n int) int { s := 0; for i := m; i < n; i++ { s++ }; return s }`},
+		{"S1 variable offset in comparand", `package input
+func f(n, j int) int { s := 0; for i := 0; i+j < n; i++ { s++ }; return s }`},
+		{"decreasing toward a parameter bound", `package input
+func f(n, m int) int { s := 0; for j := n; j > m; j-- { s++ }; return s }`},
+		{"geometric from zero never grows", `package input
+func f(n int) int { s := 0; for i := 0; i < n; i *= 2 { s++ }; return s }`},
+		{"param-start geometric (infinite for negative starts)", `package input
+func f(h []int, i int) int {
+	s := 0
+	for 2*i+1 < len(h) {
+		s++
+		i = 2*i + 1
+	}
+	return s
+}`},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := Of(innerLoop(t, tt.src)); !got.IsTop() {
+				t.Errorf("Of = %q, want Top", got.String())
+			}
+		})
+	}
+}
