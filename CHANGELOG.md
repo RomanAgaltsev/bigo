@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.0](https://github.com/RomanAgaltsev/bigo/compare/v1.8.0...v1.9.0) (2026-07-11)
+
+
+### Features
+
+* **tripcount:** range-over-map and range-over-string trip counts (R5) ([#33](https://github.com/RomanAgaltsev/bigo/issues/33)) ([36a58f8](https://github.com/RomanAgaltsev/bigo/commit/36a58f83e535078c9015c4cef5d5d34078e9a6d4))
+
 ## [1.8.0](https://github.com/RomanAgaltsev/bigo/compare/v1.7.0...v1.8.0) (2026-07-11)
 
 
