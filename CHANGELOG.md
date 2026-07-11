@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.0](https://github.com/RomanAgaltsev/bigo/compare/v1.7.0...v1.8.0) (2026-07-11)
+
+
+### Features
+
+* **tripcount:** geometric loop bounds (R3/R4); heap corpus rework; ([#31](https://github.com/RomanAgaltsev/bigo/issues/31)) ([b19368a](https://github.com/RomanAgaltsev/bigo/commit/b19368a8118641143a5d5eadb4537ecaf0559947))
+
 ## [1.7.0](https://github.com/RomanAgaltsev/bigo/compare/v1.6.0...v1.7.0) (2026-07-11)
 
 
