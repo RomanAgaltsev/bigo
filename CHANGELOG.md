@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.0](https://github.com/RomanAgaltsev/bigo/compare/v1.9.0...v1.10.0) (2026-07-11)
+
+
+### Features
+
+* **tripcount:** bisection loop bounds (R6); graduate binary search ([#35](https://github.com/RomanAgaltsev/bigo/issues/35)) ([18d872e](https://github.com/RomanAgaltsev/bigo/commit/18d872e5e6664701e0a557edb2d667e0a7bee065))
+
 ## [1.9.0](https://github.com/RomanAgaltsev/bigo/compare/v1.8.0...v1.9.0) (2026-07-11)
 
 
