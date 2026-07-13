@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.12.0](https://github.com/RomanAgaltsev/bigo/compare/v1.11.0...v1.12.0) (2026-07-13)
+
+
+### Features
+
+* **recurrence:** subtractive, Master, and Akra–Bazzi recurrence solving ([#40](https://github.com/RomanAgaltsev/bigo/issues/40)) ([6c3b4ef](https://github.com/RomanAgaltsev/bigo/commit/6c3b4ef0c9ae8f1b4c75f4491fb90847265f2c90))
+
 ## [1.11.0](https://github.com/RomanAgaltsev/bigo/compare/v1.10.0...v1.11.0) (2026-07-13)
 
 
