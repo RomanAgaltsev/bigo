@@ -9,6 +9,10 @@ import (
 	"golang.org/x/tools/go/analysis/analysistest"
 )
 
+func TestAnalyzerSpace(t *testing.T) {
+	analysistest.Run(t, analysistest.TestData(), Analyzer, "space")
+}
+
 func TestAnalyzerSmoke(t *testing.T) {
 	// No //bigo annotations -> no diagnostics.
 	analysistest.Run(t, analysistest.TestData(), Analyzer, "smoke")
