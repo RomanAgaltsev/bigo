@@ -1,7 +1,7 @@
 {
-  "total": 106,
-  "bounded": 69,
-  "coverage_pct": "65.1",
+  "total": 107,
+  "bounded": 70,
+  "coverage_pct": "65.4",
   "by_cause": {
     "call": 14,
     "go": 2,
@@ -55,8 +55,8 @@
       "bounded": 1
     },
     "space": {
-      "total": 5,
-      "bounded": 4
+      "total": 6,
+      "bounded": 5
     },
     "structures/array": {
       "total": 7,
@@ -567,6 +567,12 @@
       "func": "MakeFill",
       "verdict": "bounded",
       "bound": "O(n)"
+    },
+    {
+      "pkg": "space",
+      "func": "RecSum",
+      "verdict": "bounded",
+      "bound": "O(len(xs))"
     },
     {
       "pkg": "space",

@@ -40,3 +40,15 @@ func LoopAllocGCdStrict(n int) { // want `cannot verify space budget O\(1\)`
 func UnknownMake(g func() int) []int { // want `cannot verify space budget O\(1\)`
 	return make([]int, g())
 }
+
+// RecSum is all-stack: it allocates nothing, but recurses len(xs) deep, so its
+// true peak space is the O(len(xs)) recursion stack (heap O(1) ∨ stack O(n)).
+// Stack is a real peak, so O(n) verifies as `within` here.
+
+//bigo:space O(n)
+func RecSum(xs []int) int {
+	if len(xs) == 0 {
+		return 0
+	}
+	return xs[0] + RecSum(xs[1:])
+}

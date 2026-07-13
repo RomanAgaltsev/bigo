@@ -91,7 +91,7 @@ func run(pass *analysis.Pass) (any, error) {
 			checkBudget(pass, fd.Decl, fd.Fn, inferred, causes, maxDir)
 		}
 		if spaceDir, hasSpace := directive.Verb(fd.Dirs, annotation.Space); hasSpace {
-			checkSpace(pass, fd.Decl, fd.Fn, spaceResolver, spaceDir)
+			checkSpace(pass, fd.Decl, fd.Fn, spaceResolver, resolver, spaceDir)
 		}
 	}
 	return nil, nil
@@ -101,8 +101,8 @@ func run(pass *analysis.Pass) (any, error) {
 // (total allocated) so it proves Within only; stack (recursion depth) is a true
 // peak and proves both verdicts. spaceVerdict enforces that asymmetry, so a
 // space budget can never produce a false Exceeds.
-func checkSpace(pass *analysis.Pass, decl *ast.FuncDecl, fn *ssa.Function, spaceResolver *callsummary.SpaceResolver, dir annotation.Directive) {
-	sp, causes := engine.InferSpace(fn, spaceResolver)
+func checkSpace(pass *analysis.Pass, decl *ast.FuncDecl, fn *ssa.Function, spaceResolver *callsummary.SpaceResolver, timeModel engine.CostModel, dir annotation.Directive) {
+	sp, causes := spaceResolver.SpaceOf(fn, timeModel)
 	budget, err := normalize.Budget(dir, fn)
 	if err != nil {
 		pass.Reportf(decl.Pos(), "invalid //bigo:space: %v", err)
