@@ -40,14 +40,15 @@ func SizeVar(v ssa.Value) bound.Var {
 			}
 		}
 	case *ssa.Parameter:
-		if isInteger(t.Type()) {
+		if IsInteger(t.Type()) {
 			return size.Num(t.Name())
 		}
 	}
 	return ""
 }
 
-func isInteger(t types.Type) bool {
+// IsInteger reports whether t's underlying type is an integer basic type.
+func IsInteger(t types.Type) bool {
 	b, ok := t.Underlying().(*types.Basic)
 	return ok && b.Info()&types.IsInteger != 0
 }

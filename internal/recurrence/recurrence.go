@@ -46,7 +46,8 @@ func callCommon(instr ssa.Instruction) *ssa.CallCommon {
 
 // Solve returns the solved asymptotic time bound of a self-recursive function
 // in its own canonical size variables, or ok=false when no recurrence family
-// applies (the caller falls back to ⊤). PR1: always (Top, false).
-func Solve(fn *ssa.Function, model engine.CostModel) (bound.Bound, bool) {
+// applies (the caller falls back to ⊤). PR1: always (Top, false); Task 4 routes
+// it through extract and the family solvers.
+func Solve(_ *ssa.Function, _ engine.CostModel) (bound.Bound, bool) {
 	return bound.Top(), false
 }
