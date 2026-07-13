@@ -1,9 +1,9 @@
 {
-  "total": 90,
+  "total": 94,
   "bounded": 58,
-  "coverage_pct": "64.4",
+  "coverage_pct": "61.7",
   "by_cause": {
-    "call": 9,
+    "call": 13,
     "go": 2,
     "irreducible": 1,
     "loop": 13,
@@ -45,6 +45,10 @@
     "positive": {
       "total": 4,
       "bounded": 4
+    },
+    "recursion": {
+      "total": 4,
+      "bounded": 0
     },
     "smoke": {
       "total": 2,
@@ -457,6 +461,30 @@
       "func": "LinearScan",
       "verdict": "bounded",
       "bound": "O(len(xs))"
+    },
+    {
+      "pkg": "recursion",
+      "func": "Fib",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "recursion",
+      "func": "Growing",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "recursion",
+      "func": "SelfInLoop",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "recursion",
+      "func": "Unguarded",
+      "verdict": "unverifiable",
+      "cause": "call"
     },
     {
       "pkg": "smoke",
