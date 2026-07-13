@@ -1,7 +1,7 @@
 {
-  "total": 100,
-  "bounded": 64,
-  "coverage_pct": "64.0",
+  "total": 101,
+  "bounded": 65,
+  "coverage_pct": "64.4",
   "by_cause": {
     "call": 13,
     "go": 2,
@@ -47,8 +47,8 @@
       "bounded": 4
     },
     "recursion": {
-      "total": 10,
-      "bounded": 6
+      "total": 11,
+      "bounded": 7
     },
     "smoke": {
       "total": 2,
@@ -515,6 +515,12 @@
       "func": "TreeSum",
       "verdict": "bounded",
       "bound": "O(len(xs))"
+    },
+    {
+      "pkg": "recursion",
+      "func": "Unbalanced",
+      "verdict": "bounded",
+      "bound": "O(len(xs) log(len(xs)))"
     },
     {
       "pkg": "recursion",

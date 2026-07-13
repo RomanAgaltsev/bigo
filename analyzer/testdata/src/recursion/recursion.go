@@ -109,3 +109,17 @@ func ScanHalve(xs []int) int { // Master case 2: 2T(n/2)+O(n) -> O(len(xs) log(l
 // The solver itself handles 2T(n/2)+O(n) — see TestSolveMaster — so ScanHalve,
 // whose per-level work scans the parameter directly, graduates to the same
 // O(n log n) bound.
+
+//bigo:max O(n log n)
+func Unbalanced(xs []int) int { // Akra–Bazzi: T(n/2)+2T(n/4)+O(n), p=1 -> O(len(xs) log(len(xs)))
+	s := 0
+	for _, v := range xs { // O(len(xs)) per-level scan of the parameter
+		s += v
+	}
+	if len(xs) < 4 {
+		return s
+	}
+	half := len(xs) / 2
+	q := len(xs) / 4
+	return s + Unbalanced(xs[:half]) + Unbalanced(xs[:q]) + Unbalanced(xs[:q])
+}

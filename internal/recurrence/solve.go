@@ -1,6 +1,10 @@
 package recurrence
 
-import "github.com/RomanAgaltsev/bigo/internal/bound"
+import (
+	"math"
+
+	"github.com/RomanAgaltsev/bigo/internal/bound"
+)
 
 // termsKind classifies the step shape of a recurrence's self-calls, selecting
 // the solver family in Solve.
@@ -124,4 +128,70 @@ func solveMaster(a, b int, work bound.Bound, n bound.Var) (bound.Bound, bool) {
 	default:
 		return work, true
 	}
+}
+
+// ratio is one branch of an unbalanced split: a calls onto subproblems of size
+// n/b. b is a float to admit non-integer ratios in principle, though detection
+// currently only produces integer divisors.
+type ratio struct {
+	a int
+	b float64 // > 1
+}
+
+// ratiosOf groups a divisive recurrence's terms by divisor, yielding one ratio
+// per distinct divisor with its multiplicity (the count of self-calls at that
+// divisor). Over-counting from mutually exclusive branches only inflates p, a
+// conservative (sound) over-estimate.
+func ratiosOf(terms []sizeStep) []ratio {
+	counts := map[int64]int{}
+	var order []int64
+	for _, t := range terms {
+		if counts[t.div] == 0 {
+			order = append(order, t.div)
+		}
+		counts[t.div]++
+	}
+	out := make([]ratio, 0, len(order))
+	for _, d := range order {
+		out = append(out, ratio{a: counts[d], b: float64(d)})
+	}
+	return out
+}
+
+// solveAkraBazzi solves T(n) = Σ aᵢ·T(n/bᵢ) + f(n) for unbalanced (mixed-ratio)
+// splits by finding an integer p with Σ aᵢ·bᵢ^(-p) == 1, then applying the
+// Akra–Bazzi result for polynomial f exactly as the Master cases. Emits only for
+// integer p (poly-log representability).
+func solveAkraBazzi(ratios []ratio, work bound.Bound, n bound.Var) (bound.Bound, bool) {
+	p, ok := akraBazziP(ratios)
+	if !ok {
+		return bound.Top(), false
+	}
+	d, l, ok := degree(work, n)
+	if !ok {
+		return bound.Top(), false
+	}
+	switch {
+	case d < p:
+		return bound.Of(bound.Mono(n, p, 0)), true
+	case d == p:
+		return bound.Of(bound.Mono(n, p, l+1)), true
+	default:
+		return work, true
+	}
+}
+
+// akraBazziP returns the integer p in [0,8] with Σ aᵢ·bᵢ^(-p) == 1 (within a
+// small epsilon), else ok=false — no representable critical exponent.
+func akraBazziP(ratios []ratio) (int, bool) {
+	for p := 0; p <= 8; p++ {
+		sum := 0.0
+		for _, r := range ratios {
+			sum += float64(r.a) * math.Pow(r.b, -float64(p))
+		}
+		if math.Abs(sum-1) < 1e-9 {
+			return p, true
+		}
+	}
+	return 0, false
 }

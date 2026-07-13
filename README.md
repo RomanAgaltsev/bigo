@@ -108,6 +108,34 @@ linters:
 golangci-lint custom && ./bin/custom-gcl run
 ```
 
+## Recursion
+
+bigo solves self-recursive functions whose argument provably shrinks toward a
+base case, in three recurrence families:
+
+- **Subtractive** — `T(n) = T(n−c) + f(n)` → `O(n·f(n))`. Recursive scans and
+  guarded countdowns (`sum(xs[1:])`, `f(n-1)`).
+- **Master** — `T(n) = a·T(n/b) + f(n)` for a uniform divisor `b`. Binary
+  search (`O(log n)`), balanced divide-and-conquer (`O(n)`, `O(n log n)`).
+- **Akra–Bazzi** — `T(n) = Σ aᵢ·T(n/bᵢ) + f(n)` for unbalanced integer-ratio
+  splits, when the critical exponent `p` (solving `Σ aᵢ·bᵢ^−p = 1`) is an
+  integer.
+
+A bound is emitted only when the measure — a slice length or an integer
+magnitude — **provably strictly decreases** toward a base; a wrong answer here
+would be a wrong bound on possibly non-terminating code. These stay
+unverifiable (⊤):
+
+- **Pointer-structure recursion** (walking a `*Node` tree or list): no
+  slice/integer measure to decrease.
+- **Non-terminating or growing recursion**: `f(n-1)` with no base guard, `f(n+1)`.
+- **Exponential recurrences**: naive Fibonacci (`T(n-1)+T(n-2)`).
+- **Non-integer critical exponents**: `2·T(n/4)` (exponent ½).
+- **Non-constant multiplicity** (self-calls under a size loop), mutual and
+  multi-function recursion, and per-level work whose cost depends on the
+  recursion's *results* (merge sort's `merge(l, r)`, which would need relational
+  length tracking).
+
 ## What bigo does not count (yet)
 
 Each can only *miss* a violation, never invent one:
@@ -115,8 +143,9 @@ Each can only *miss* a violation, never invent one:
 - `append` is amortized O(1) (including `append(a, b...)`), `make` is O(1).
 - String concatenation and comparison are O(1) per operation.
 - Map index/assign/delete are O(1).
-- Recursion, interface calls without `//bigo:cost`, closures, and
-  `range`-over-func iterators are **unverifiable** (in progress).
+- Self-recursion over a size measure is solved (see [Recursion](#recursion));
+  interface calls without `//bigo:cost`, closures, and `range`-over-func
+  iterators remain **unverifiable** (in progress).
 - Cross-package calls resolve only through the curated stdlib cost table or
   your `//bigo:cost` annotations.
 - Field-size stability assumes no data race on the analyzed object (the Go
@@ -125,8 +154,8 @@ Each can only *miss* a violation, never invent one:
   legal, so `len(ch)` has no stable entry value.
 - Trip counts cover counted loops (increasing/decreasing with constant
   steps), geometric growth/decay, `range` over slices/maps/strings, and
-  two-variable bisection. Worklist loops (`for len(queue) > 0`), pointer
-  chasing, and recursion remain unverifiable.
+  two-variable bisection. Worklist loops (`for len(queue) > 0`) and pointer
+  chasing remain unverifiable; size-measure self-recursion is solved.
 - Loop-bound arithmetic assumes values bounded by real memory; the
   `(lo+hi)/2` bisection form additionally assumes `lo+hi` does not overflow
   (requires a length above 2^62). The `lo + (hi-lo)/2` form needs no
@@ -135,10 +164,11 @@ Each can only *miss* a violation, never invent one:
 ## Status & versioning
 
 Complete: intraprocedural engine, cost tables, acyclic interprocedural
-summaries, generics at instantiation, golangci-lint plugin.
+summaries, generics at instantiation, golangci-lint plugin, size-measure
+recurrence solving (subtractive / Master / Akra–Bazzi).
 The **analysis surface is pre-stable**: verdicts may
 change between minor versions as inference improves. Design-complete but not yet
-built: recursion, interface resolution, space complexity.
+built: interface resolution, space complexity.
 
 ## License
 
