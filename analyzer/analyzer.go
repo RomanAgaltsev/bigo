@@ -103,12 +103,16 @@ func run(pass *analysis.Pass) (any, error) {
 // space budget can never produce a false Exceeds.
 func checkSpace(pass *analysis.Pass, decl *ast.FuncDecl, fn *ssa.Function, spaceResolver *callsummary.SpaceResolver, timeModel engine.CostModel, dir annotation.Directive) {
 	sp, causes := spaceResolver.SpaceOf(fn, timeModel)
+	inferred := sp.Heap.Join(sp.Stack)
+	if reportMode {
+		p := pass.Fset.Position(decl.Pos())
+		_, _ = fmt.Fprintf(os.Stdout, "%s:%d: %s: space %s\n", p.Filename, p.Line, decl.Name.Name, inferred.String())
+	}
 	budget, err := normalize.Budget(dir, fn)
 	if err != nil {
 		pass.Reportf(decl.Pos(), "invalid //bigo:space: %v", err)
 		return
 	}
-	inferred := sp.Heap.Join(sp.Stack)
 	switch spaceVerdict(sp, budget) {
 	case bound.Exceeds:
 		pass.Reportf(decl.Pos(), "space %s exceeds budget %s", inferred.String(), budget.String())
