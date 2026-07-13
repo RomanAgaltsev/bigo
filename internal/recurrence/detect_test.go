@@ -3,7 +3,6 @@ package recurrence
 import (
 	"testing"
 
-	"github.com/RomanAgaltsev/bigo/internal/callsummary"
 	"github.com/RomanAgaltsev/bigo/internal/ssasupport"
 )
 
@@ -13,7 +12,7 @@ func extractOf(t *testing.T, src string) (rec, bool) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return extract(ssasupport.Func(pkg, "f"), callsummary.New(nil))
+	return extract(ssasupport.Func(pkg, "f"), stubModel{})
 }
 
 func TestExtractSliceSubtractive(t *testing.T) {

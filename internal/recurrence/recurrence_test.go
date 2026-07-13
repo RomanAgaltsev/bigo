@@ -3,7 +3,6 @@ package recurrence
 import (
 	"testing"
 
-	"github.com/RomanAgaltsev/bigo/internal/callsummary"
 	"github.com/RomanAgaltsev/bigo/internal/ssasupport"
 )
 
@@ -44,7 +43,7 @@ func f(xs []int) int {
 		t.Fatal(err)
 	}
 	fn := ssasupport.Func(pkg, "f")
-	w, ok := localWork(fn, callsummary.New(nil))
+	w, ok := localWork(fn, stubModel{})
 	if !ok || w.String() != "O(len(xs))" {
 		t.Errorf("localWork = (%q, %v), want (O(len(xs)), true)", w.String(), ok)
 	}
