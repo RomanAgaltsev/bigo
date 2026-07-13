@@ -1,9 +1,9 @@
 {
-  "total": 101,
-  "bounded": 65,
-  "coverage_pct": "64.4",
+  "total": 107,
+  "bounded": 70,
+  "coverage_pct": "65.4",
   "by_cause": {
-    "call": 13,
+    "call": 14,
     "go": 2,
     "irreducible": 1,
     "loop": 13,
@@ -53,6 +53,10 @@
     "smoke": {
       "total": 2,
       "bounded": 1
+    },
+    "space": {
+      "total": 6,
+      "bounded": 5
     },
     "structures/array": {
       "total": 7,
@@ -539,6 +543,42 @@
       "func": "Noop",
       "verdict": "bounded",
       "bound": "O(len(xs))"
+    },
+    {
+      "pkg": "space",
+      "func": "Constant",
+      "verdict": "bounded",
+      "bound": "O(1)"
+    },
+    {
+      "pkg": "space",
+      "func": "LoopAllocGCdOK",
+      "verdict": "bounded",
+      "bound": "O(n)"
+    },
+    {
+      "pkg": "space",
+      "func": "LoopAllocGCdStrict",
+      "verdict": "bounded",
+      "bound": "O(n)"
+    },
+    {
+      "pkg": "space",
+      "func": "MakeFill",
+      "verdict": "bounded",
+      "bound": "O(n)"
+    },
+    {
+      "pkg": "space",
+      "func": "RecSum",
+      "verdict": "bounded",
+      "bound": "O(len(xs))"
+    },
+    {
+      "pkg": "space",
+      "func": "UnknownMake",
+      "verdict": "unverifiable",
+      "cause": "call"
     },
     {
       "pkg": "structures/array",

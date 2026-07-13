@@ -59,6 +59,7 @@ func run(pass *analysis.Pass) (any, error) {
 
 	fns := directive.Scan(pass.Files, pass.TypesInfo, ssaFor, pass.Reportf)
 	resolver := callsummary.NewWithMethods(fns.Overrides, fns.MethodCosts)
+	spaceResolver := callsummary.NewSpace(nil)
 
 	// Pass 3: infer and check.
 	report := func(decl *ast.FuncDecl, fn *ssa.Function) (bound.Bound, []engine.Cause) {
@@ -89,8 +90,50 @@ func run(pass *analysis.Pass) (any, error) {
 		if hasMax {
 			checkBudget(pass, fd.Decl, fd.Fn, inferred, causes, maxDir)
 		}
+		if spaceDir, hasSpace := directive.Verb(fd.Dirs, annotation.Space); hasSpace {
+			checkSpace(pass, fd.Decl, fd.Fn, spaceResolver, resolver, spaceDir)
+		}
 	}
 	return nil, nil
+}
+
+// checkSpace verifies a //bigo:space budget. Heap is an upper bound on peak
+// (total allocated) so it proves Within only; stack (recursion depth) is a true
+// peak and proves both verdicts. spaceVerdict enforces that asymmetry, so a
+// space budget can never produce a false Exceeds.
+func checkSpace(pass *analysis.Pass, decl *ast.FuncDecl, fn *ssa.Function, spaceResolver *callsummary.SpaceResolver, timeModel engine.CostModel, dir annotation.Directive) {
+	sp, causes := spaceResolver.SpaceOf(fn, timeModel)
+	inferred := sp.Heap.Join(sp.Stack)
+	if reportMode {
+		p := pass.Fset.Position(decl.Pos())
+		_, _ = fmt.Fprintf(os.Stdout, "%s:%d: %s: space %s\n", p.Filename, p.Line, decl.Name.Name, inferred.String())
+	}
+	budget, err := normalize.Budget(dir, fn)
+	if err != nil {
+		pass.Reportf(decl.Pos(), "invalid //bigo:space: %v", err)
+		return
+	}
+	switch spaceVerdict(sp, budget) {
+	case bound.Exceeds:
+		pass.Reportf(decl.Pos(), "space %s exceeds budget %s", inferred.String(), budget.String())
+	case bound.Unknown:
+		pass.Reportf(decl.Pos(), "cannot verify space budget %s: %s", budget.String(), causeText(pass, causes, fn))
+	case bound.Within:
+		// ok
+	}
+}
+
+// spaceVerdict applies the heap/stack asymmetry: stack (a real peak) can prove
+// Within and Exceeds; heap (an upper bound on peak) proves Within only. So a
+// budget can only be Exceeded on the stack term, never on heap over-approximation.
+func spaceVerdict(sp engine.Space, budget bound.Bound) bound.Verdict {
+	if bound.Check(sp.Stack, budget) == bound.Exceeds {
+		return bound.Exceeds
+	}
+	if bound.Check(sp.Heap.Join(sp.Stack), budget) == bound.Within {
+		return bound.Within
+	}
+	return bound.Unknown
 }
 
 func checkBudget(pass *analysis.Pass, decl *ast.FuncDecl, fn *ssa.Function, inferred bound.Bound, causes []engine.Cause, dir annotation.Directive) {

@@ -47,7 +47,7 @@ func metrics(x int) int
 | `//bigo:max O(n*m) where n=len(a), m=len(b)` | multi-size budget with bindings |
 | `//bigo:cost O(...)` | assert the cost of a function or interface method |
 | `//bigo:ignore` | trust: treat as O(1) |
-| `//bigo:space O(...)` | reserved (Phase 2); parsed but inert |
+| `//bigo:space O(...)` | space budget: heap (total allocated) + recursion stack |
 
 A declaration may carry more than one directive — `//bigo:cost` tells callers
 what this function costs while `//bigo:max` gates its own body:
@@ -135,6 +135,39 @@ unverifiable (⊤):
   multi-function recursion, and per-level work whose cost depends on the
   recursion's *results* (merge sort's `merge(l, r)`, which would need relational
   length tracking).
+
+## Space budgets
+
+`//bigo:space O(...)` gates a function's asymptotic **space**, split into two
+soundness classes that bigo treats asymmetrically:
+
+- **Stack** — the peak recursion depth, from the same recurrence solver used for
+  time (`O(n)` subtractive, `O(log n)` divisive). This is a *true* peak, so it
+  proves both `within` and `exceeds`.
+- **Heap** — an **upper bound on peak** live memory, modeled as *total
+  allocated* (`make([]T, n)` → `O(n)`, `append(a, b...)` → `O(len(b))`, one
+  allocation × its enclosing-loop trips). Because total allocated over-counts a
+  peak that the garbage collector shrinks, heap proves `within` **only** — never
+  `exceeds`.
+
+The consequence is deliberate: **a space budget never reports a false
+`exceeds`.** A function that allocates `O(1)` inside an `n`-loop has peak heap
+`O(1)` but total-allocated `O(n)`; against an `O(1)` budget bigo reports
+`cannot verify` (annotate to resolve), not `exceeds`, because bigo bounds total
+allocation as a safe over-approximation of peak:
+
+```go
+//bigo:space O(n)
+func RecSum(xs []int) int { // stack O(len(xs)); within
+	if len(xs) == 0 {
+		return 0
+	}
+	return xs[0] + RecSum(xs[1:])
+}
+```
+
+Concurrent allocation (`go`) and calls whose space is unknown are `⊤`
+(unverifiable), exactly as on the time axis.
 
 ## What bigo does not count (yet)
 
