@@ -19,7 +19,6 @@ import (
 
 	"github.com/RomanAgaltsev/bigo/internal/callsummary"
 	"github.com/RomanAgaltsev/bigo/internal/directive"
-	"github.com/RomanAgaltsev/bigo/internal/engine"
 )
 
 // FuncMetric is one function's verdict.
@@ -90,7 +89,7 @@ func Collect(srcRoot string) (Report, error) {
 				return
 			}
 			m := FuncMetric{Pkg: p.PkgPath, Func: decl.Name.Name}
-			b, causes := engine.InferDetailed(fn, resolver)
+			b, causes := resolver.InferTop(fn)
 			if b.IsTop() {
 				m.Verdict = "unverifiable"
 				if len(causes) > 0 {

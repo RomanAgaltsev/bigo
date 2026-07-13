@@ -62,7 +62,7 @@ func run(pass *analysis.Pass) (any, error) {
 
 	// Pass 3: infer and check.
 	report := func(decl *ast.FuncDecl, fn *ssa.Function) (bound.Bound, []engine.Cause) {
-		inferred, causes := engine.InferDetailed(fn, resolver)
+		inferred, causes := resolver.InferTop(fn)
 		if reportMode {
 			p := pass.Fset.Position(decl.Pos())
 			if inferred.IsTop() {

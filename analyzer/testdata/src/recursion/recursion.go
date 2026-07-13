@@ -1,5 +1,7 @@
-// Package recursion is the corpus for recurrence solving. This PR pins the
-// full soundness regression set at ⊤; later PRs graduate the solvable ones.
+// Package recursion is the corpus for recurrence solving. The soundness
+// regression set (unguarded, growing, exponential, self-in-loop) stays pinned
+// at ⊤; this PR graduates the subtractive linear recurrences. Later PRs
+// graduate the divide-and-conquer families.
 package recursion
 
 //bigo:max O(n)
@@ -30,4 +32,31 @@ func SelfInLoop(xs []int) int { // want `cannot verify budget O\(len\(xs\)\)`
 		s += SelfInLoop(xs[1:]) // self-call under a size loop -> ⊤
 	}
 	return s
+}
+
+//bigo:max O(n)
+func SumSlice(xs []int) int { // graduates: T(n)=T(n-1)+O(1) -> O(len(xs))
+	if len(xs) == 0 {
+		return 0
+	}
+	return xs[0] + SumSlice(xs[1:])
+}
+
+//bigo:max O(n)
+func LinearSearchRec(xs []int, t int) int { // O(len(xs))
+	if len(xs) == 0 {
+		return -1
+	}
+	if xs[0] == t {
+		return 0
+	}
+	return LinearSearchRec(xs[1:], t)
+}
+
+//bigo:max O(n)
+func CountdownWork(n int) int { // guarded integer, T(n)=T(n-1)+O(1) -> O(n)
+	if n <= 0 {
+		return 0
+	}
+	return 1 + CountdownWork(n-1)
 }

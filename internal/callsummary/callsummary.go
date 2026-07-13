@@ -93,6 +93,22 @@ func (r *Resolver) CallCost(c *ssa.CallCommon) bound.Bound {
 	return r.callUser(callee, c.Args)
 }
 
+// InferTop returns fn's own asymptotic bound with diagnostic causes, for the
+// top-level check of a function (as opposed to resolving a call to it). A
+// self-recursive function's body walk mis-costs its self-call — that is the
+// recursion, not a single call — so its true bound is the solved recurrence,
+// the same value summary hands a caller. When the solver declines, the ⊤ and
+// causes from the body walk drive the diagnostic. Non-recursive functions defer
+// straight to engine.InferDetailed.
+func (r *Resolver) InferTop(fn *ssa.Function) (bound.Bound, []engine.Cause) {
+	if recurrence.IsSelfRecursive(fn) {
+		if solved, ok := recurrence.Solve(fn, r); ok {
+			return solved, nil
+		}
+	}
+	return engine.InferDetailed(fn, r)
+}
+
 func (r *Resolver) callUser(callee *ssa.Function, args []ssa.Value) bound.Bound {
 	summary := r.summary(callee)
 	if summary.IsTop() {

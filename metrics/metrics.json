@@ -1,7 +1,7 @@
 {
-  "total": 94,
-  "bounded": 58,
-  "coverage_pct": "61.7",
+  "total": 97,
+  "bounded": 61,
+  "coverage_pct": "62.9",
   "by_cause": {
     "call": 13,
     "go": 2,
@@ -47,8 +47,8 @@
       "bounded": 4
     },
     "recursion": {
-      "total": 4,
-      "bounded": 0
+      "total": 7,
+      "bounded": 3
     },
     "smoke": {
       "total": 2,
@@ -464,6 +464,12 @@
     },
     {
       "pkg": "recursion",
+      "func": "CountdownWork",
+      "verdict": "bounded",
+      "bound": "O(n)"
+    },
+    {
+      "pkg": "recursion",
       "func": "Fib",
       "verdict": "unverifiable",
       "cause": "call"
@@ -476,9 +482,21 @@
     },
     {
       "pkg": "recursion",
+      "func": "LinearSearchRec",
+      "verdict": "bounded",
+      "bound": "O(len(xs))"
+    },
+    {
+      "pkg": "recursion",
       "func": "SelfInLoop",
       "verdict": "unverifiable",
       "cause": "call"
+    },
+    {
+      "pkg": "recursion",
+      "func": "SumSlice",
+      "verdict": "bounded",
+      "bound": "O(len(xs))"
     },
     {
       "pkg": "recursion",
