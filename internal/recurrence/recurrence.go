@@ -48,6 +48,20 @@ func callCommon(instr ssa.Instruction) *ssa.CallCommon {
 // in its own canonical size variables, or ok=false when no recurrence family
 // applies (the caller falls back to ⊤). PR1: always (Top, false); Task 4 routes
 // it through extract and the family solvers.
-func Solve(_ *ssa.Function, _ engine.CostModel) (bound.Bound, bool) {
-	return bound.Top(), false
+func Solve(fn *ssa.Function, model engine.CostModel) (bound.Bound, bool) {
+	r, ok := extract(fn, model)
+	if !ok {
+		return bound.Top(), false
+	}
+	switch kindOf(r.terms) {
+	case allSub:
+		return solveSubtractive(r)
+	case allDiv:
+		if b, uniform := uniformDiv(r.terms); uniform {
+			return solveMaster(r.mult, b, r.work, r.measure)
+		}
+		return solveAkraBazzi(ratiosOf(r.terms), r.work, r.measure) // unbalanced splits
+	default:
+		return bound.Top(), false // mixed subtractive/divisive: out of scope
+	}
 }

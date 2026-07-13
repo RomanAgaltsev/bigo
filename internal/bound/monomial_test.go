@@ -37,3 +37,16 @@ func TestMonomialEqualIgnoresZeroFactors(t *testing.T) {
 		t.Errorf("expected %v == n", a)
 	}
 }
+
+func TestMonomialFactorOf(t *testing.T) {
+	m := Mono("n", 2, 1) // n^2 log n
+	if pow, log := m.FactorOf("n"); pow != 2 || log != 1 {
+		t.Errorf("FactorOf(n) = (%d, %d), want (2, 1)", pow, log)
+	}
+	if pow, log := m.FactorOf("m"); pow != 0 || log != 0 {
+		t.Errorf("FactorOf(absent) = (%d, %d), want (0, 0)", pow, log)
+	}
+	if pow, log := One().FactorOf("n"); pow != 0 || log != 0 {
+		t.Errorf("One().FactorOf(n) = (%d, %d), want (0, 0)", pow, log)
+	}
+}

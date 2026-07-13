@@ -1,6 +1,8 @@
 // Package list is the canonical-structures corpus for linked lists. Pointer
 // chasing has no size-variable trip count; the honest resolution is
-// annotate-or-trust (//bigo:cost on the traversal), not inference.
+// annotate-or-trust (//bigo:cost on the traversal), not inference. The same
+// boundary applies to pointer recursion: the recurrence solver measures slice
+// length and integer magnitude, neither of which a *Node chain exposes.
 package list
 
 type Node struct {

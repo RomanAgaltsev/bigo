@@ -51,6 +51,11 @@ type rec struct {
 	param   *ssa.Parameter // the measure parameter
 	terms   []sizeStep     // one strict step per self-call (stepSame filtered out)
 	work    bound.Bound    // f(n)
+	// mult is the branching factor a: the maximum number of self-calls executed
+	// on any single path (not the static call count). Calls in mutually
+	// exclusive branches — binary search's two arms — count once; sequential
+	// calls — merge sort's two halves — count twice.
+	mult int
 }
 
 // extract builds the recurrence, or ok=false when any soundness precondition
@@ -85,9 +90,61 @@ func extract(fn *ssa.Function, model engine.CostModel) (rec, bool) {
 		if !varsSubset(work, measureVar(p)) {
 			return rec{}, false // multivariate recurrence: out of scope
 		}
-		return rec{measure: measureVar(p), param: p, terms: terms, work: work}, true
+		return rec{
+			measure: measureVar(p),
+			param:   p,
+			terms:   terms,
+			work:    work,
+			mult:    selfCallMult(fn, calls),
+		}, true
 	}
 	return rec{}, false
+}
+
+// selfCallMult returns the branching factor a: the maximum number of self-calls
+// on any single entry→exit path. Self-calls in one basic block are sequential
+// and all count; across blocks, a call counts toward another only when one
+// block reaches the other (they lie on a common path). Because self-calls never
+// sit in a loop (extract rejects those), reachability among distinct call
+// blocks is a strict partial order, so the longest weighted chain is the answer.
+func selfCallMult(fn *ssa.Function, calls []*ssa.CallCommon) int {
+	perBlock := map[*ssa.BasicBlock]int{}
+	var blocks []*ssa.BasicBlock
+	for _, c := range calls {
+		b := callBlock(fn, c)
+		if b == nil {
+			continue
+		}
+		if perBlock[b] == 0 {
+			blocks = append(blocks, b)
+		}
+		perBlock[b]++
+	}
+	memo := map[*ssa.BasicBlock]int{}
+	var longest func(b *ssa.BasicBlock) int
+	longest = func(b *ssa.BasicBlock) int {
+		if v, ok := memo[b]; ok {
+			return v
+		}
+		down := 0
+		for _, other := range blocks {
+			if other != b && reaches(b, other) {
+				if d := longest(other); d > down {
+					down = d
+				}
+			}
+		}
+		res := perBlock[b] + down
+		memo[b] = res
+		return res
+	}
+	best := 0
+	for _, b := range blocks {
+		if v := longest(b); v > best {
+			best = v
+		}
+	}
+	return best
 }
 
 // stepsFor classifies the pi-th argument of every self-call against parameter

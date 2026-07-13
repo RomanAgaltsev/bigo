@@ -64,6 +64,13 @@ func (m Monomial) at(v Var) Factor {
 	return m.factors[v]
 }
 
+// FactorOf returns the polynomial and logarithmic exponents of variable v in
+// the monomial — (0, 0) when v is absent.
+func (m Monomial) FactorOf(v Var) (pow, log int) {
+	f := m.factors[v]
+	return f.Pow, f.Log
+}
+
 func (m Monomial) vars() []Var {
 	vs := make([]Var, 0, len(m.factors))
 	for v := range m.factors {
