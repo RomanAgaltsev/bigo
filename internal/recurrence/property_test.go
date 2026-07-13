@@ -52,7 +52,7 @@ func TestMasterProperty(t *testing.T) {
 				t.Fatalf("a=%d d=%d: build: %v\n%s", a, d, err, src)
 			}
 			fn := ssasupport.Func(pkg, "f")
-			got, ok := Solve(fn, stubModel{})
+			got, _, ok := Solve(fn, stubModel{})
 			want, wok := solveMaster(a, 2, workBound(d), size.Len("xs"))
 			if !ok || !wok || !got.Equal(want) {
 				t.Errorf("a=%d d=%d: Solve=(%q,%v), solveMaster=(%q,%v)",

@@ -102,7 +102,7 @@ func (r *Resolver) CallCost(c *ssa.CallCommon) bound.Bound {
 // straight to engine.InferDetailed.
 func (r *Resolver) InferTop(fn *ssa.Function) (bound.Bound, []engine.Cause) {
 	if recurrence.IsSelfRecursive(fn) {
-		if solved, ok := recurrence.Solve(fn, r); ok {
+		if solved, _, ok := recurrence.Solve(fn, r); ok {
 			return solved, nil
 		}
 	}
@@ -197,7 +197,7 @@ func (r *Resolver) summary(fn *ssa.Function) bound.Bound {
 	}
 	r.onStack[fn] = true
 	if recurrence.IsSelfRecursive(fn) {
-		if b, ok := recurrence.Solve(fn, r); ok {
+		if b, _, ok := recurrence.Solve(fn, r); ok {
 			r.onStack[fn] = false
 			r.memo[fn] = b
 			return b
