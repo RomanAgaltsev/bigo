@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.11.0](https://github.com/RomanAgaltsev/bigo/compare/v1.10.0...v1.11.0) (2026-07-13)
+
+
+### Features
+
+* **recurrence:** detection, level-work model, and soundness gates ([#38](https://github.com/RomanAgaltsev/bigo/issues/38)) ([d32a1ae](https://github.com/RomanAgaltsev/bigo/commit/d32a1aed4c314a3c546624fa8a3c5d35842bc099))
+
 ## [1.10.0](https://github.com/RomanAgaltsev/bigo/compare/v1.9.0...v1.10.0) (2026-07-11)
 
 
