@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.13.0](https://github.com/RomanAgaltsev/bigo/compare/v1.12.0...v1.13.0) (2026-07-13)
+
+
+### Features
+
+* space complexity ([#42](https://github.com/RomanAgaltsev/bigo/issues/42)) ([c493b2d](https://github.com/RomanAgaltsev/bigo/commit/c493b2d5981e73f5a37f4d59c4fa3f7e3973bc93))
+
 ## [1.12.0](https://github.com/RomanAgaltsev/bigo/compare/v1.11.0...v1.12.0) (2026-07-13)
 
 
