@@ -10,6 +10,7 @@ import (
 	"github.com/RomanAgaltsev/bigo/internal/bound"
 	"github.com/RomanAgaltsev/bigo/internal/costtable"
 	"github.com/RomanAgaltsev/bigo/internal/engine"
+	"github.com/RomanAgaltsev/bigo/internal/recurrence"
 	"github.com/RomanAgaltsev/bigo/internal/size"
 )
 
@@ -179,6 +180,13 @@ func (r *Resolver) summary(fn *ssa.Function) bound.Bound {
 		return bound.Top() // call-graph cycle: recursion
 	}
 	r.onStack[fn] = true
+	if recurrence.IsSelfRecursive(fn) {
+		if b, ok := recurrence.Solve(fn, r); ok {
+			r.onStack[fn] = false
+			r.memo[fn] = b
+			return b
+		}
+	}
 	b := engine.Infer(fn, r)
 	r.onStack[fn] = false
 	r.memo[fn] = b

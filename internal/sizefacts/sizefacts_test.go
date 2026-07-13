@@ -1,4 +1,4 @@
-package tripcount
+package sizefacts
 
 import (
 	"testing"
@@ -11,9 +11,9 @@ import (
 )
 
 // innerBoundOperand builds src, finds the INNER-most loop (max depth), and
-// returns its condition's bound-side operand plus a facts instance — the
-// exact value upperExtent sees in real use.
-func innerBoundOperand(t *testing.T, src string) (ssa.Value, *facts) {
+// returns its condition's bound-side operand plus a Facts instance — the
+// exact value UpperExtent sees in real use.
+func innerBoundOperand(t *testing.T, src string) (ssa.Value, *Facts) {
 	t.Helper()
 	pkg, _, err := ssasupport.Build(src)
 	if err != nil {
@@ -39,7 +39,7 @@ func innerBoundOperand(t *testing.T, src string) (ssa.Value, *facts) {
 	}
 	ifi := deepest.Header.Instrs[len(deepest.Header.Instrs)-1].(*ssa.If)
 	cmp := ifi.Cond.(*ssa.BinOp)
-	return cmp.Y, &facts{stab: fieldpath.Analyze(fn)}
+	return cmp.Y, &Facts{Stab: fieldpath.Analyze(fn)}
 }
 
 func TestUpperExtent(t *testing.T) {
@@ -82,9 +82,9 @@ func f(xs []int) int {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			v, fx := innerBoundOperand(t, tt.src)
-			got, ok := fx.upperExtent(v, 0)
+			got, ok := fx.UpperExtent(v, 0)
 			if !ok || string(got) != tt.want {
-				t.Errorf("upperExtent = (%q, %v), want (%q, true)", got, ok, tt.want)
+				t.Errorf("UpperExtent = (%q, %v), want (%q, true)", got, ok, tt.want)
 			}
 		})
 	}
@@ -116,8 +116,8 @@ func f(xs []int, m int) int {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			v, fx := innerBoundOperand(t, tt.src)
-			if got, ok := fx.upperExtent(v, 0); ok {
-				t.Errorf("upperExtent = (%q, true), want rejection — accepting is a wrong-bound bug", got)
+			if got, ok := fx.UpperExtent(v, 0); ok {
+				t.Errorf("UpperExtent = (%q, true), want rejection — accepting is a wrong-bound bug", got)
 			}
 		})
 	}

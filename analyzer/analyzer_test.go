@@ -78,6 +78,10 @@ func TestAnalyzerFieldsize(t *testing.T) {
 	analysistest.Run(t, analysistest.TestData(), Analyzer, "fieldsize")
 }
 
+func TestAnalyzerRecursion(t *testing.T) {
+	analysistest.Run(t, analysistest.TestData(), Analyzer, "recursion")
+}
+
 func TestReportModeUsesStdoutNotDiagnostics(t *testing.T) {
 	if err := Analyzer.Flags.Set("report", "true"); err != nil {
 		t.Fatal(err)

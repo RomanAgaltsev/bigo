@@ -8,6 +8,7 @@ import (
 	"github.com/RomanAgaltsev/bigo/internal/bound"
 	"github.com/RomanAgaltsev/bigo/internal/loopnest"
 	"github.com/RomanAgaltsev/bigo/internal/size"
+	"github.com/RomanAgaltsev/bigo/internal/sizefacts"
 )
 
 // ruleIncreasing — R1, the generalized counted loop.
@@ -39,7 +40,7 @@ func ruleIncreasing(sh *shape) (bound.Bound, bool) {
 	if !ok || phi.Block() != sh.loop.Header || !isIncreasingInductionPhi(sh, phi) {
 		return bound.Bound{}, false
 	}
-	v, ok := sh.f.upperExtent(boundV, 0)
+	v, ok := sh.f.UpperExtent(boundV, 0)
 	if !ok {
 		return bound.Bound{}, false
 	}
@@ -59,10 +60,10 @@ func affineOfPhi(v ssa.Value) (*ssa.Phi, bool) {
 	}
 	switch bo.Op {
 	case token.ADD:
-		if c, ok := constIntV(bo.Y); ok && c >= 0 {
+		if c, ok := sizefacts.ConstIntV(bo.Y); ok && c >= 0 {
 			return mulOfPhi(bo.X)
 		}
-		if c, ok := constIntV(bo.X); ok && c >= 0 {
+		if c, ok := sizefacts.ConstIntV(bo.X); ok && c >= 0 {
 			return mulOfPhi(bo.Y)
 		}
 	case token.MUL:
@@ -80,11 +81,11 @@ func mulOfPhi(v ssa.Value) (*ssa.Phi, bool) {
 	if !ok || bo.Op != token.MUL {
 		return nil, false
 	}
-	if c, ok := constIntV(bo.X); ok && c >= 1 {
+	if c, ok := sizefacts.ConstIntV(bo.X); ok && c >= 1 {
 		p, ok := bo.Y.(*ssa.Phi)
 		return p, ok
 	}
-	if c, ok := constIntV(bo.Y); ok && c >= 1 {
+	if c, ok := sizefacts.ConstIntV(bo.Y); ok && c >= 1 {
 		p, ok := bo.X.(*ssa.Phi)
 		return p, ok
 	}
@@ -97,11 +98,11 @@ func mulOfPhi(v ssa.Value) (*ssa.Phi, bool) {
 func isIncreasingInductionPhi(sh *shape, phi *ssa.Phi) bool {
 	hasStep, hasInit := false, false
 	for _, e := range phi.Edges {
-		if isPositiveStep(phi, e) {
+		if sizefacts.IsPositiveStep(phi, e) {
 			hasStep = true
 			continue
 		}
-		if _, ok := sh.f.lowerBoundConst(e, 0); !ok {
+		if _, ok := sh.f.LowerBoundConst(e, 0); !ok {
 			return false
 		}
 		hasInit = true
@@ -131,7 +132,7 @@ func ruleDecreasing(sh *shape) (bound.Bound, bool) {
 	default:
 		return bound.Bound{}, false
 	}
-	if _, ok := constIntV(lowV); !ok {
+	if _, ok := sizefacts.ConstIntV(lowV); !ok {
 		return bound.Bound{}, false
 	}
 	phi, ok := indV.(*ssa.Phi)
@@ -145,7 +146,7 @@ func ruleDecreasing(sh *shape) (bound.Bound, bool) {
 			hasStep = true
 			continue
 		}
-		v, ok := sh.f.upperExtent(e, 0)
+		v, ok := sh.f.UpperExtent(e, 0)
 		if !ok {
 			return bound.Bound{}, false
 		}
@@ -169,16 +170,16 @@ func isNegStep(phi *ssa.Phi, e ssa.Value) bool {
 	switch bo.Op {
 	case token.SUB:
 		if bo.X == phi {
-			c, ok := constIntV(bo.Y)
+			c, ok := sizefacts.ConstIntV(bo.Y)
 			return ok && c > 0
 		}
 	case token.ADD:
 		switch {
 		case bo.X == phi:
-			c, ok := constIntV(bo.Y)
+			c, ok := sizefacts.ConstIntV(bo.Y)
 			return ok && c < 0
 		case bo.Y == phi:
-			c, ok := constIntV(bo.X)
+			c, ok := sizefacts.ConstIntV(bo.X)
 			return ok && c < 0
 		}
 	}
@@ -223,7 +224,7 @@ func ruleGeometricUp(sh *shape) (bound.Bound, bool) {
 			}
 			continue
 		}
-		lo, ok := sh.f.lowerBoundConst(e, 0)
+		lo, ok := sh.f.LowerBoundConst(e, 0)
 		if !ok {
 			return bound.Bound{}, false
 		}
@@ -238,7 +239,7 @@ func ruleGeometricUp(sh *shape) (bound.Bound, bool) {
 	if minInit < 1 && (minInit < 0 || !allD1) {
 		return bound.Bound{}, false
 	}
-	v, ok := sh.f.upperExtent(boundV, 0)
+	v, ok := sh.f.UpperExtent(boundV, 0)
 	if !ok {
 		return bound.Bound{}, false
 	}
@@ -259,11 +260,15 @@ func mulStep(phi *ssa.Phi, e ssa.Value) (k, d int64, ok bool) {
 	return k, d, true
 }
 
+// maxStepDepth bounds recursion through phi/arithmetic chains in mulStepRaw.
+// Too shallow costs coverage, never correctness — rejection is the fallback.
+const maxStepDepth = 8
+
 // mulStepRaw returns the exact (k, d) of e = k*phi + d (sign of d checked by
 // mulStep), descending through intermediate phis. depth guards against cyclic
 // SSA; a header-phi self-reference (an identity, non-growing edge) is rejected.
 func mulStepRaw(phi *ssa.Phi, e ssa.Value, depth int) (k, d int64, ok bool) {
-	if depth > maxFactsDepth {
+	if depth > maxStepDepth {
 		return 0, 0, false
 	}
 	if p, isPhi := e.(*ssa.Phi); isPhi {
@@ -307,12 +312,12 @@ func affineMul(phi *ssa.Phi, e ssa.Value) (k, d int64, ok bool) {
 			return kk, 0, true
 		}
 	case token.ADD:
-		if c, isC := constIntV(bo.Y); isC {
+		if c, isC := sizefacts.ConstIntV(bo.Y); isC {
 			if kk, dd, ok := affineMul(phi, bo.X); ok {
 				return kk, dd + c, true
 			}
 		}
-		if c, isC := constIntV(bo.X); isC {
+		if c, isC := sizefacts.ConstIntV(bo.X); isC {
 			if kk, dd, ok := affineMul(phi, bo.Y); ok {
 				return kk, dd + c, true
 			}
@@ -329,10 +334,10 @@ func mulOf(phi *ssa.Phi, v ssa.Value) (int64, bool) {
 	}
 	switch {
 	case bo.X == phi:
-		c, ok := constIntV(bo.Y)
+		c, ok := sizefacts.ConstIntV(bo.Y)
 		return c, ok && c >= 2
 	case bo.Y == phi:
-		c, ok := constIntV(bo.X)
+		c, ok := sizefacts.ConstIntV(bo.X)
 		return c, ok && c >= 2
 	}
 	return 0, false
@@ -365,7 +370,7 @@ func ruleGeometricDown(sh *shape) (bound.Bound, bool) {
 	default:
 		return bound.Bound{}, false
 	}
-	c, ok := constIntV(lowV)
+	c, ok := sizefacts.ConstIntV(lowV)
 	if !ok || (op == token.GTR && c < 0) || (op == token.GEQ && c < 1) {
 		return bound.Bound{}, false
 	}
@@ -380,7 +385,7 @@ func ruleGeometricDown(sh *shape) (bound.Bound, bool) {
 			hasStep = true
 			continue
 		}
-		v, ok := sh.f.upperExtent(e, 0)
+		v, ok := sh.f.UpperExtent(e, 0)
 		if !ok {
 			return bound.Bound{}, false
 		}
@@ -401,7 +406,7 @@ func divStep(phi *ssa.Phi, e ssa.Value) bool {
 	if !ok || bo.Op != token.QUO {
 		return false
 	}
-	k, ok := constIntV(bo.Y)
+	k, ok := sizefacts.ConstIntV(bo.Y)
 	if !ok || k < 2 {
 		return false
 	}
@@ -412,7 +417,7 @@ func divStep(phi *ssa.Phi, e ssa.Value) bool {
 	if !ok || sub.Op != token.SUB || sub.X != phi {
 		return false
 	}
-	d, ok := constIntV(sub.Y)
+	d, ok := sizefacts.ConstIntV(sub.Y)
 	return ok && d >= 0
 }
 
@@ -446,7 +451,7 @@ func ruleRangeNext(sh *shape) (bound.Bound, bool) {
 	if p, ok := x.(*ssa.Parameter); ok {
 		return bound.Of(bound.Term(size.Len(p.Name()))), true
 	}
-	if path, ok := sh.f.stab.PathFor(x); ok {
+	if path, ok := sh.f.Stab.PathFor(x); ok {
 		return bound.Of(bound.Term(size.Len(path))), true
 	}
 	return bound.Bound{}, false
@@ -515,11 +520,11 @@ func ruleBisection(sh *shape) (bound.Bound, bool) {
 	for i, pred := range lo.Block().Preds {
 		le, he := lo.Edges[i], hi.Edges[i]
 		if !sh.loop.Blocks[pred] { // init edge pair
-			c, ok := sh.f.lowerBoundConst(le, 0)
+			c, ok := sh.f.LowerBoundConst(le, 0)
 			if !ok || c < 0 {
 				return bound.Bound{}, false
 			}
-			v, ok := sh.f.upperExtent(he, 0)
+			v, ok := sh.f.UpperExtent(he, 0)
 			if !ok {
 				return bound.Bound{}, false
 			}
@@ -549,10 +554,10 @@ func isLoUpdate(sh *shape, v ssa.Value, lo, hi *ssa.Phi) bool {
 	if !ok || bo.Op != token.ADD {
 		return false
 	}
-	if c, okC := constIntV(bo.Y); okC && c >= 1 {
+	if c, okC := sizefacts.ConstIntV(bo.Y); okC && c >= 1 {
 		return isMid(sh, bo.X, lo, hi)
 	}
-	if c, okC := constIntV(bo.X); okC && c >= 1 {
+	if c, okC := sizefacts.ConstIntV(bo.X); okC && c >= 1 {
 		return isMid(sh, bo.Y, lo, hi)
 	}
 	return false
@@ -567,7 +572,7 @@ func isHiUpdate(sh *shape, v ssa.Value, lo, hi *ssa.Phi) bool {
 	if !ok || bo.Op != token.SUB {
 		return false
 	}
-	c, okC := constIntV(bo.Y)
+	c, okC := sizefacts.ConstIntV(bo.Y)
 	return okC && c >= 0 && isMid(sh, bo.X, lo, hi)
 }
 
@@ -583,7 +588,7 @@ func isMid(sh *shape, v ssa.Value, lo, hi *ssa.Phi) bool {
 	}
 	// (lo+hi)/2
 	if bo.Op == token.QUO {
-		if c, okC := constIntV(bo.Y); okC && c == 2 {
+		if c, okC := sizefacts.ConstIntV(bo.Y); okC && c == 2 {
 			if add, okA := bo.X.(*ssa.BinOp); okA && add.Op == token.ADD {
 				return (add.X == lo && add.Y == hi) || (add.X == hi && add.Y == lo)
 			}
@@ -603,7 +608,7 @@ func isMid(sh *shape, v ssa.Value, lo, hi *ssa.Phi) bool {
 		if !ok || q.Op != token.QUO {
 			return false
 		}
-		if c, okC := constIntV(q.Y); !okC || c != 2 {
+		if c, okC := sizefacts.ConstIntV(q.Y); !okC || c != 2 {
 			return false
 		}
 		sub, ok := q.X.(*ssa.BinOp)
