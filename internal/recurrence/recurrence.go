@@ -56,7 +56,13 @@ func Solve(fn *ssa.Function, model engine.CostModel) (bound.Bound, bool) {
 	switch kindOf(r.terms) {
 	case allSub:
 		return solveSubtractive(r)
+	case allDiv:
+		b, uniform := uniformDiv(r.terms)
+		if !uniform {
+			return bound.Top(), false // mixed ratios: Akra–Bazzi (PR4)
+		}
+		return solveMaster(r.mult, b, r.work, r.measure)
 	default:
-		return bound.Top(), false // Master/Akra–Bazzi land in later PRs
+		return bound.Top(), false // mixed subtractive/divisive: out of scope
 	}
 }

@@ -1,7 +1,7 @@
 {
-  "total": 97,
-  "bounded": 61,
-  "coverage_pct": "62.9",
+  "total": 100,
+  "bounded": 64,
+  "coverage_pct": "64.0",
   "by_cause": {
     "call": 13,
     "go": 2,
@@ -47,8 +47,8 @@
       "bounded": 4
     },
     "recursion": {
-      "total": 7,
-      "bounded": 3
+      "total": 10,
+      "bounded": 6
     },
     "smoke": {
       "total": 2,
@@ -464,6 +464,12 @@
     },
     {
       "pkg": "recursion",
+      "func": "BinarySearchRec",
+      "verdict": "bounded",
+      "bound": "O(log(len(xs)))"
+    },
+    {
+      "pkg": "recursion",
       "func": "CountdownWork",
       "verdict": "bounded",
       "bound": "O(n)"
@@ -488,6 +494,12 @@
     },
     {
       "pkg": "recursion",
+      "func": "ScanHalve",
+      "verdict": "bounded",
+      "bound": "O(len(xs) log(len(xs)))"
+    },
+    {
+      "pkg": "recursion",
       "func": "SelfInLoop",
       "verdict": "unverifiable",
       "cause": "call"
@@ -495,6 +507,12 @@
     {
       "pkg": "recursion",
       "func": "SumSlice",
+      "verdict": "bounded",
+      "bound": "O(len(xs))"
+    },
+    {
+      "pkg": "recursion",
+      "func": "TreeSum",
       "verdict": "bounded",
       "bound": "O(len(xs))"
     },
