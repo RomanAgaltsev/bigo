@@ -28,3 +28,51 @@ func TestLocalWorkExcludingPartner(t *testing.T) {
 		t.Errorf("localWorkExcluding = (%q, %v), want (O(1), true)", w.String(), ok)
 	}
 }
+
+func partnerOf(t *testing.T, src, name string) (string, bool) {
+	t.Helper()
+	pkg, _, err := ssasupport.Build(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	p, ok := MutualPartner(ssasupport.Func(pkg, name))
+	if !ok {
+		return "", false
+	}
+	return p.Name(), true
+}
+
+func TestMutualPartnerEvenOdd(t *testing.T) {
+	if p, ok := partnerOf(t, evenOddSrc, "IsEven"); !ok || p != "IsOdd" {
+		t.Errorf("partner = (%q,%v), want IsOdd", p, ok)
+	}
+}
+
+func TestMutualPartnerRejectsSelfRecursiveMember(t *testing.T) {
+	src := `package input
+func A(n int) int { if n <= 0 { return 0 }; return A(n-1) + B(n-1) }
+func B(n int) int { if n <= 0 { return 0 }; return A(n - 1) }`
+	if _, ok := partnerOf(t, src, "B"); ok {
+		t.Error("A self-recurses: multi-cycle SCC must be rejected")
+	}
+}
+
+func TestMutualPartnerRejectsTwoPartners(t *testing.T) {
+	src := `package input
+func A(n int) int { if n <= 0 { return 0 }; return B(n-1) + C(n-1) }
+func B(n int) int { if n <= 0 { return 0 }; return A(n - 1) }
+func C(n int) int { if n <= 0 { return 0 }; return A(n - 1) }`
+	if _, ok := partnerOf(t, src, "A"); ok {
+		t.Error("A cycles with both B and C: ambiguous, must be rejected")
+	}
+}
+
+func TestMutualPartnerRejectsThreeCycle(t *testing.T) {
+	src := `package input
+func A(n int) int { if n <= 0 { return 0 }; return B(n - 1) }
+func B(n int) int { if n <= 0 { return 0 }; return C(n - 1) }
+func C(n int) int { if n <= 0 { return 0 }; return A(n - 1) }`
+	if _, ok := partnerOf(t, src, "A"); ok {
+		t.Error("A->B->C->A is a 3-cycle, out of scope")
+	}
+}
