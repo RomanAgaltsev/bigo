@@ -96,13 +96,12 @@ func SolvePair(fn, partner *ssa.Function, model engine.CostModel) (bound.Bound, 
 	return w, depthOf(r), true
 }
 
-// pairEdge is one direction of the cycle: the caller's measure parameter, the
-// callee position it feeds, and the per-call steps.
+// pairEdge is one direction of the cycle: the callee position the measure
+// lands in, the per-call steps, and the call sites.
 type pairEdge struct {
-	fromParam *ssa.Parameter // measure param in the calling member
-	toIndex   int            // parameter index it lands in at the callee
-	steps     []sizeStep     // one per call site (stepSame allowed)
-	calls     []*ssa.CallCommon
+	toIndex int        // parameter index the measure lands in at the callee
+	steps   []sizeStep // one per call site (stepSame allowed)
+	calls   []*ssa.CallCommon
 }
 
 // extractPair composes the two-cycle a→b→a into a virtual self-recurrence in
@@ -168,7 +167,7 @@ func extractPair(a, b *ssa.Function, model engine.CostModel) (rec, bool) {
 // with a recognized step (Same/Sub/Div) of p. Growing or unrecognized args at
 // the winning index — or an inconsistent index across calls — reject.
 func threadMeasure(p *ssa.Parameter, calls []*ssa.CallCommon, callee *ssa.Function) (pairEdge, bool) {
-	edge := pairEdge{fromParam: p, toIndex: -1, calls: calls}
+	edge := pairEdge{toIndex: -1, calls: calls}
 	for _, c := range calls {
 		found := -1
 		var st sizeStep
