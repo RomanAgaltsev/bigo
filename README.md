@@ -136,10 +136,31 @@ unverifiable (⊤):
   measure `>= 1` — an `n > 0` guard, or an `n == 0` / `len(xs) == 0` base.
 - **Exponential recurrences**: naive Fibonacci (`T(n-1)+T(n-2)`).
 - **Non-integer critical exponents**: `2·T(n/4)` (exponent ½).
-- **Non-constant multiplicity** (self-calls under a size loop), mutual and
-  multi-function recursion, and per-level work whose cost depends on the
-  recursion's *results* (merge sort's `merge(l, r)`, which would need relational
-  length tracking).
+- **Non-constant multiplicity** (self-calls under a size loop),
+  three-or-more-function recursion cycles, and per-level work whose cost depends
+  on the recursion's *results* (merge sort's `merge(l, r)`, which would need
+  relational length tracking). Two-function cycles are solved — see below.
+
+### Mutual recursion
+
+bigo solves **two-function cycles** `A → B → A` that thread a single size
+measure, by composing the two per-edge steps into one virtual self-recurrence
+and feeding it to the same subtractive/Master/Akra–Bazzi solvers. Even/odd
+counters (`IsEven`/`IsOdd`, `O(n)`) and helper-mediated divide-and-conquer
+(`WalkSum` splitting through a helper, `O(n log n)`) resolve. The same
+well-foundedness proof applies per cycle: one member's guard suffices, and a
+divisive cycle still requires the recursing side to prove the measure `>= 1`.
+
+These stay unverifiable (⊤); annotate with `//bigo:cost` where a bound is known:
+
+- **Three-or-more-function cycles** (recursive-descent parsers `expr → term →
+  factor → expr`).
+- **Mixed subtractive/divisive cycles** (one edge `n-1`, the other `n/2`).
+- **Cycles through function values or interface methods** — the edge is not a
+  static call, so the cycle is invisible.
+- **Members that also self-recurse** (a larger SCC than the two-cycle).
+
+Space budgets on mutual pairs remain unverifiable in this release.
 
 ## Space budgets
 

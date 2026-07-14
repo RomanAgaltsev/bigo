@@ -3,7 +3,7 @@
 package mutual
 
 //bigo:max O(n)
-func EvenStep(n int) bool { // want `cannot verify budget O\(n\)`
+func EvenStep(n int) bool { // graduates: composed Sub(2), guarded -> O(n)
 	if n <= 0 {
 		return true
 	}
@@ -15,6 +15,33 @@ func OddStep(n int) bool {
 		return false
 	}
 	return EvenStep(n - 1)
+}
+
+//bigo:max O(n)
+func SumViaHelper(xs []int) int { // graduates: Sub(1) via helper -> O(len(xs))
+	if len(xs) == 0 {
+		return 0
+	}
+	return xs[0] + helperStep(xs)
+}
+
+func helperStep(xs []int) int { return SumViaHelper(xs[1:]) }
+
+//bigo:max O(n log n)
+func WalkSum(xs []int) int { // graduates: 2·T(n/2)+O(n) across the pair -> Master case 2
+	if len(xs) < 2 {
+		return len(xs)
+	}
+	return walkParts(xs)
+}
+
+func walkParts(xs []int) int {
+	s := 0
+	for _, v := range xs { // O(len(xs)) level work in the helper
+		s += v
+	}
+	m := len(xs) / 2
+	return s + WalkSum(xs[:m]) + WalkSum(xs[m:])
 }
 
 //bigo:max O(n)
@@ -81,13 +108,22 @@ func ParseFactor(n int) int {
 	return ParseExpr(n - 1)
 }
 
+// funcValImpl is assigned in init (not a package-var initializer) to avoid a
+// types init cycle while keeping the FuncValA→FuncValB edge a dynamic call: a
+// local `f := FuncValB` is constant-folded by SSA into a static call, which
+// would (soundly) be detected as a real 2-cycle. Routing through a func-typed
+// variable keeps StaticCallee nil, so it stays ⊤ as the func-value non-goal
+// intends.
+var funcValImpl func(int) int
+
+func init() { funcValImpl = FuncValB }
+
 //bigo:max O(n)
 func FuncValA(n int) int { // want `cannot verify budget O\(n\)`
 	if n <= 0 {
 		return 0
 	}
-	f := FuncValB
-	return f(n - 1) // dynamic edge: not a static 2-cycle -> ⊤
+	return funcValImpl(n - 1) // dynamic edge: not a static 2-cycle -> ⊤
 }
 
 func FuncValB(n int) int { return FuncValA(n - 1) }

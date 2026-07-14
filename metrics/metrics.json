@@ -1,9 +1,9 @@
 {
-  "total": 129,
-  "bounded": 74,
-  "coverage_pct": "57.4",
+  "total": 134,
+  "bounded": 81,
+  "coverage_pct": "60.4",
   "by_cause": {
-    "call": 32,
+    "call": 30,
     "go": 2,
     "irreducible": 1,
     "loop": 13,
@@ -39,8 +39,8 @@
       "bounded": 3
     },
     "mutual": {
-      "total": 15,
-      "bounded": 0
+      "total": 20,
+      "bounded": 7
     },
     "negative": {
       "total": 3,
@@ -443,8 +443,8 @@
     {
       "pkg": "mutual",
       "func": "EvenStep",
-      "verdict": "unverifiable",
-      "cause": "call"
+      "verdict": "bounded",
+      "bound": "O(n)"
     },
     {
       "pkg": "mutual",
@@ -497,8 +497,8 @@
     {
       "pkg": "mutual",
       "func": "OddStep",
-      "verdict": "unverifiable",
-      "cause": "call"
+      "verdict": "bounded",
+      "bound": "O(n)"
     },
     {
       "pkg": "mutual",
@@ -517,6 +517,36 @@
       "func": "ParseTerm",
       "verdict": "unverifiable",
       "cause": "call"
+    },
+    {
+      "pkg": "mutual",
+      "func": "SumViaHelper",
+      "verdict": "bounded",
+      "bound": "O(len(xs))"
+    },
+    {
+      "pkg": "mutual",
+      "func": "WalkSum",
+      "verdict": "bounded",
+      "bound": "O(len(xs) log(len(xs)))"
+    },
+    {
+      "pkg": "mutual",
+      "func": "helperStep",
+      "verdict": "bounded",
+      "bound": "O(len(xs))"
+    },
+    {
+      "pkg": "mutual",
+      "func": "init",
+      "verdict": "bounded",
+      "bound": "O(1)"
+    },
+    {
+      "pkg": "mutual",
+      "func": "walkParts",
+      "verdict": "bounded",
+      "bound": "O(len(xs) log(len(xs)))"
     },
     {
       "pkg": "negative",
