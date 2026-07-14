@@ -1,9 +1,9 @@
 {
-  "total": 107,
-  "bounded": 70,
-  "coverage_pct": "65.4",
+  "total": 111,
+  "bounded": 71,
+  "coverage_pct": "64.0",
   "by_cause": {
-    "call": 14,
+    "call": 17,
     "go": 2,
     "irreducible": 1,
     "loop": 13,
@@ -47,8 +47,8 @@
       "bounded": 4
     },
     "recursion": {
-      "total": 11,
-      "bounded": 7
+      "total": 15,
+      "bounded": 8
     },
     "smoke": {
       "total": 2,
@@ -477,6 +477,30 @@
       "func": "CountdownWork",
       "verdict": "bounded",
       "bound": "O(n)"
+    },
+    {
+      "pkg": "recursion",
+      "func": "DivGEZero",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "recursion",
+      "func": "DivGuardedPositive",
+      "verdict": "bounded",
+      "bound": "O(log(n))"
+    },
+    {
+      "pkg": "recursion",
+      "func": "DivNegFloor",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "recursion",
+      "func": "DivSliceNoBase",
+      "verdict": "unverifiable",
+      "cause": "call"
     },
     {
       "pkg": "recursion",
