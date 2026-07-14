@@ -106,6 +106,11 @@ func (r *Resolver) InferTop(fn *ssa.Function) (bound.Bound, []engine.Cause) {
 			return solved, nil
 		}
 	}
+	if partner, ok := recurrence.MutualPartner(fn); ok {
+		if solved, _, ok := recurrence.SolvePair(fn, partner, r); ok {
+			return solved, nil
+		}
+	}
 	return engine.InferDetailed(fn, r)
 }
 
@@ -198,6 +203,13 @@ func (r *Resolver) summary(fn *ssa.Function) bound.Bound {
 	r.onStack[fn] = true
 	if recurrence.IsSelfRecursive(fn) {
 		if b, _, ok := recurrence.Solve(fn, r); ok {
+			r.onStack[fn] = false
+			r.memo[fn] = b
+			return b
+		}
+	}
+	if partner, ok := recurrence.MutualPartner(fn); ok {
+		if b, _, ok := recurrence.SolvePair(fn, partner, r); ok {
 			r.onStack[fn] = false
 			r.memo[fn] = b
 			return b
