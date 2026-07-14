@@ -17,6 +17,12 @@ package recurrence
 // recursion fires only while n > 0. A base guard on the false side of a `<=`
 // test is therefore a valid lower-bound floor — the polarity is handled in
 // boundsMeasureBelow, not by hard-coding which successor recurses.
+//
+// Subtractive and divisive steps have different well-foundedness obligations: a
+// subtractive measure halts at any floor (the arithmetic sequence crosses it),
+// but a divisive measure has a fixed point at 0 (0/b == 0), so it graduates only
+// when the recursing side proves the measure >= 1 — see boundsMeasureBelow and
+// guardedBySliceBase.
 
 import (
 	"go/token"

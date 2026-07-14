@@ -129,6 +129,11 @@ unverifiable (⊤):
 - **Pointer-structure recursion** (walking a `*Node` tree or list): no
   slice/integer measure to decrease.
 - **Non-terminating or growing recursion**: `f(n-1)` with no base guard, `f(n+1)`.
+- **Divisive recursion whose measure can reach 0 without a base**: `f(n/2)`
+  guarded only by `n >= 0` (integer division truncates toward zero, so `0/2 == 0`
+  is a fixed point), or `f(xs[:len/2])` with no empty-slice base (`xs[:0]` stays
+  empty). A divisive step graduates only when the recursing side proves the
+  measure `>= 1` — an `n > 0` guard, or an `n == 0` / `len(xs) == 0` base.
 - **Exponential recurrences**: naive Fibonacci (`T(n-1)+T(n-2)`).
 - **Non-integer critical exponents**: `2·T(n/4)` (exponent ½).
 - **Non-constant multiplicity** (self-calls under a size loop), mutual and
