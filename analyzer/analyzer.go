@@ -117,10 +117,23 @@ func checkSpace(pass *analysis.Pass, decl *ast.FuncDecl, fn *ssa.Function, space
 	case bound.Exceeds:
 		pass.Reportf(decl.Pos(), "space %s exceeds budget %s", inferred.String(), budget.String())
 	case bound.Unknown:
-		pass.Reportf(decl.Pos(), "cannot verify space budget %s: %s", budget.String(), causeText(pass, causes, fn))
+		pass.Reportf(decl.Pos(), "cannot verify space budget %s: %s", budget.String(), spaceCause(pass, sp, causes, fn))
 	case bound.Within:
 		// ok
 	}
+}
+
+// spaceCause explains an Unknown space verdict. When both heap and stack are
+// fully known (not ⊤), the budget failed only because heap is a total-allocation
+// upper bound that cannot prove a smaller peak — so report the known space, not
+// causeText's misleading "unresolved cost" (there is no unresolved call). A
+// genuinely ⊤ sub-bound (unknown make length, unresolved callee) keeps the
+// causeText annotate hint.
+func spaceCause(pass *analysis.Pass, sp engine.Space, causes []engine.Cause, fn *ssa.Function) string {
+	if !sp.Heap.IsTop() && !sp.Stack.IsTop() {
+		return fmt.Sprintf("inferred space %s is a total-allocation upper bound and cannot prove a smaller peak", sp.Heap.Join(sp.Stack).String())
+	}
+	return causeText(pass, causes, fn)
 }
 
 // spaceVerdict applies the heap/stack asymmetry: stack (a real peak) can prove

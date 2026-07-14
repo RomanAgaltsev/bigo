@@ -50,6 +50,14 @@ func UnknownMake(g func() int) []int { // want `cannot verify space budget O\(1\
 	return make([]int, g())
 }
 
+// HeapOverBudget's space is a fully known O(n) — no unresolved call — so the
+// message must name the known space, not a nonexistent unresolved cost.
+
+//bigo:space O(1)
+func HeapOverBudget(n int) []int { // want `cannot verify space budget O\(1\): inferred space O\(n\) is a total-allocation upper bound`
+	return make([]int, n)
+}
+
 // RecSum is all-stack: it allocates nothing, but recurses len(xs) deep, so its
 // true peak space is the O(len(xs)) recursion stack (heap O(1) ∨ stack O(n)).
 // Stack is a real peak, so O(n) verifies as `within` here.
