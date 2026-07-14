@@ -72,6 +72,17 @@ func MutualPartner(fn *ssa.Function) (*ssa.Function, bool) {
 	return partner, partner != nil
 }
 
+// SolvePair solves the two-function cycle fn↔partner as a virtual
+// self-recurrence in fn's measure vocabulary. PR1: extraction runs (so the
+// soundness path is exercised end-to-end) but solving is not yet connected —
+// always (⊤, ⊤, false). PR2 connects solveWork/depthOf.
+func SolvePair(fn, partner *ssa.Function, model engine.CostModel) (bound.Bound, bound.Bound, bool) {
+	if _, ok := extractPair(fn, partner, model); !ok {
+		return bound.Top(), bound.Top(), false
+	}
+	return bound.Top(), bound.Top(), false // PR2 connects solveWork/depthOf
+}
+
 // pairEdge is one direction of the cycle: the caller's measure parameter, the
 // callee position it feeds, and the per-call steps.
 type pairEdge struct {

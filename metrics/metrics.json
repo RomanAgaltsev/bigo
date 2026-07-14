@@ -1,9 +1,9 @@
 {
-  "total": 114,
+  "total": 129,
   "bounded": 74,
-  "coverage_pct": "64.9",
+  "coverage_pct": "57.4",
   "by_cause": {
-    "call": 17,
+    "call": 32,
     "go": 2,
     "irreducible": 1,
     "loop": 13,
@@ -37,6 +37,10 @@
     "multivar": {
       "total": 3,
       "bounded": 3
+    },
+    "mutual": {
+      "total": 15,
+      "bounded": 0
     },
     "negative": {
       "total": 3,
@@ -423,6 +427,96 @@
       "func": "PairsOverBudget",
       "verdict": "bounded",
       "bound": "O(len(a) len(b))"
+    },
+    {
+      "pkg": "mutual",
+      "func": "DivGEZeroA",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "mutual",
+      "func": "DivGEZeroB",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "mutual",
+      "func": "EvenStep",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "mutual",
+      "func": "FuncValA",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "mutual",
+      "func": "FuncValB",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "mutual",
+      "func": "GrowA",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "mutual",
+      "func": "GrowB",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "mutual",
+      "func": "MultiA",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "mutual",
+      "func": "MultiB",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "mutual",
+      "func": "NoBaseSliceA",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "mutual",
+      "func": "NoBaseSliceB",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "mutual",
+      "func": "OddStep",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "mutual",
+      "func": "ParseExpr",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "mutual",
+      "func": "ParseFactor",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "mutual",
+      "func": "ParseTerm",
+      "verdict": "unverifiable",
+      "cause": "call"
     },
     {
       "pkg": "negative",
