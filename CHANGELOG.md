@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.15.0](https://github.com/RomanAgaltsev/bigo/compare/v1.14.0...v1.15.0) (2026-07-14)
+
+
+### Features
+
+* **recurrence:** solve two-function recursion cycles ([#53](https://github.com/RomanAgaltsev/bigo/issues/53)) ([69134e2](https://github.com/RomanAgaltsev/bigo/commit/69134e25b1362647c354b8c2e8089bdf291b6057))
+
 ## [1.14.0](https://github.com/RomanAgaltsev/bigo/compare/v1.13.1...v1.14.0) (2026-07-14)
 
 
