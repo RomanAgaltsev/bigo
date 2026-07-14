@@ -34,6 +34,44 @@ func SelfInLoop(xs []int) int { // want `cannot verify budget O\(len\(xs\)\)`
 	return s
 }
 
+//bigo:max O(log n)
+func DivGEZero(n int) int { // want `cannot verify budget O\(log\(n\)\)`
+	if n >= 0 {
+		return DivGEZero(n / 2) // 0/2==0 is a fixed point: infinite for all n>=0 -> ⊤
+	}
+	return 0
+}
+
+//bigo:max O(log n)
+func DivNegFloor(n int) int { // want `cannot verify budget O\(log\(n\)\)`
+	if n > -5 {
+		return DivNegFloor(n / 2) // negative floor: still infinite at n=0 -> ⊤
+	}
+	return 0
+}
+
+//bigo:max O(log n)
+func DivGuardedPositive(n int) int { // n>0 => n>=1: the n<=0 base is reached -> O(log n)
+	if n > 0 {
+		return DivGuardedPositive(n / 2)
+	}
+	return 0
+}
+
+//bigo:max O(log n)
+func FastPow(n int) int { // n==0 base: magnitude halves to 0 -> O(log n) (power-by-squaring)
+	if n == 0 {
+		return 1
+	}
+	return FastPow(n / 2)
+}
+
+//bigo:max O(log n)
+func DivSliceNoBase(xs []int) int { // want `cannot verify budget O\(log\(len\(xs\)\)\)`
+	m := len(xs) / 2
+	return DivSliceNoBase(xs[:m]) // xs[:0] stays empty, no base guard -> ⊤
+}
+
 //bigo:max O(n)
 func SumSlice(xs []int) int { // graduates: T(n)=T(n-1)+O(1) -> O(len(xs))
 	if len(xs) == 0 {

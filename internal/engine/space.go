@@ -40,13 +40,20 @@ func InferSpace(fn *ssa.Function, model SpaceModel) (Space, []Cause) {
 	var causes []Cause
 	total, started := bound.Constant(), false
 	for _, b := range fn.Blocks {
-		factor := bound.Constant()
-		for _, lp := range forest.EnclosingLoops(b) {
-			factor = factor.Mul(tripFactor(lp, stab, &causes))
-		}
-		bc, bcauses := blockAlloc(b, model, stab)
+		bc, allocated, bcauses := blockAlloc(b, model, stab)
 		causes = append(causes, bcauses...)
-		contrib := bc.Mul(factor)
+		// A block that allocates nothing contributes O(1) total heap regardless
+		// of enclosing loops — the loop repeats work, not allocation. Only a
+		// block that actually allocates is scaled by its loop trips (a per-
+		// iteration allocation accumulates as a safe over-approximation of peak).
+		contrib := bc
+		if allocated {
+			factor := bound.Constant()
+			for _, lp := range forest.EnclosingLoops(b) {
+				factor = factor.Mul(tripFactor(lp, stab, &causes))
+			}
+			contrib = bc.Mul(factor)
+		}
 		if !started {
 			total, started = contrib, true
 			continue
@@ -74,59 +81,70 @@ func tripFactor(lp *loopnest.Loop, stab *fieldpath.Stability, causes *[]Cause) b
 	return tc
 }
 
-// blockAlloc scores one block's allocation. MakeSlice(n) -> O(n); heap Alloc,
-// MakeMap, MakeChan -> O(1); append(a, b...) -> O(len(b)) when b is a sized
-// value, else O(1) per call (a loop factor scales it); any other call ->
-// model.CallSpace; a go statement makes the block ⊤ (concurrent alloc is
-// unverifiable in v1). Allocations within a straight-line block Join (their max
-// dominates asymptotically); the enclosing-loop factor is applied by the caller.
-func blockAlloc(b *ssa.BasicBlock, model SpaceModel, stab *fieldpath.Stability) (bound.Bound, []Cause) {
+// blockAlloc scores one block's allocation and reports whether the block
+// allocates at all. MakeSlice(n) -> O(n); heap Alloc, MakeMap, MakeChan -> O(1);
+// append(a, b...) -> O(len(b)) when b is a sized value, else O(1) per call (a
+// loop factor scales it); any other call -> model.CallSpace; a go statement
+// makes the block ⊤ (concurrent alloc is unverifiable in v1). The allocated flag
+// lets InferSpace leave a non-allocating block at O(1) instead of multiplying it
+// by an enclosing loop's trip count. Allocations within a straight-line block
+// Join (their max dominates asymptotically).
+func blockAlloc(b *ssa.BasicBlock, model SpaceModel, stab *fieldpath.Stability) (bound.Bound, bool, []Cause) {
 	cost := bound.Constant()
+	allocated := false
 	var causes []Cause
 	for _, instr := range b.Instrs {
 		switch v := instr.(type) {
 		case *ssa.MakeSlice:
+			allocated = true
 			if sv, ok := size.Value(v.Len); ok {
 				cost = cost.Join(bound.Of(bound.Term(sv)))
 			} else if fv, ok := stab.VarFor(v.Len); ok {
 				cost = cost.Join(bound.Of(bound.Term(fv)))
 			} else if !isConstLen(v.Len) {
 				causes = append(causes, Cause{Pos: v.Pos(), Kind: CauseCall, What: "make with unknown length"})
-				return bound.Top(), causes
+				return bound.Top(), true, causes
 			}
 		case *ssa.Alloc:
+			allocated = true
 			cost = cost.Join(bound.Constant())
 		case *ssa.MakeMap, *ssa.MakeChan:
+			allocated = true
 			cost = cost.Join(bound.Constant())
 		case *ssa.Call:
-			c := callSpaceOf(v, model, stab, &causes)
+			c, alloc := callSpaceOf(v, model, stab, &causes)
+			allocated = allocated || alloc
 			cost = cost.Join(c)
 		case *ssa.Defer:
+			allocated = true
 			cost = cost.Join(model.CallSpace(&v.Call))
 		case *ssa.Go:
 			causes = append(causes, Cause{Pos: v.Pos(), Kind: CauseGo, What: "goroutine allocation is unverifiable in v1"})
-			return bound.Top(), causes
+			return bound.Top(), true, causes
 		}
 	}
-	return cost, causes
+	return cost, allocated, causes
 }
 
-// callSpaceOf resolves a call's allocation. append is the one allocating builtin
-// (go/ssa lowers every append to append(a, b...), packing scalar varargs into a
-// fresh slice); other builtins (len, cap, copy, ...) allocate nothing. A
-// non-builtin call delegates to the space model.
-func callSpaceOf(c *ssa.Call, model SpaceModel, stab *fieldpath.Stability, causes *[]Cause) bound.Bound {
+// callSpaceOf resolves a call's allocation and reports whether it allocates.
+// append is the one allocating builtin (go/ssa lowers every append to
+// append(a, b...), packing scalar varargs into a fresh slice); other builtins
+// (len, cap, copy, ...) allocate nothing. A non-builtin call delegates to the
+// space model and is treated as allocating (its body may allocate O(1) the
+// resolver reports as Constant), so a call inside a loop is conservatively
+// scaled by the loop trips.
+func callSpaceOf(c *ssa.Call, model SpaceModel, stab *fieldpath.Stability, causes *[]Cause) (bound.Bound, bool) {
 	if bi, ok := c.Call.Value.(*ssa.Builtin); ok {
 		if bi.Name() == "append" {
-			return appendSpace(c, stab)
+			return appendSpace(c, stab), true
 		}
-		return bound.Constant()
+		return bound.Constant(), false
 	}
 	sp := model.CallSpace(&c.Call)
 	if sp.IsTop() {
 		*causes = append(*causes, Cause{Pos: c.Pos(), Kind: CauseCall, What: "unresolved space at call to " + calleeName(&c.Call)})
 	}
-	return sp
+	return sp, true
 }
 
 // appendSpace scores append(a, b...): O(len(b)) when the spread argument is a

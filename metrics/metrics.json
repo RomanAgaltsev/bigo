@@ -1,9 +1,9 @@
 {
-  "total": 107,
-  "bounded": 70,
-  "coverage_pct": "65.4",
+  "total": 114,
+  "bounded": 74,
+  "coverage_pct": "64.9",
   "by_cause": {
-    "call": 14,
+    "call": 17,
     "go": 2,
     "irreducible": 1,
     "loop": 13,
@@ -47,16 +47,16 @@
       "bounded": 4
     },
     "recursion": {
-      "total": 11,
-      "bounded": 7
+      "total": 16,
+      "bounded": 9
     },
     "smoke": {
       "total": 2,
       "bounded": 1
     },
     "space": {
-      "total": 6,
-      "bounded": 5
+      "total": 8,
+      "bounded": 7
     },
     "structures/array": {
       "total": 7,
@@ -480,6 +480,36 @@
     },
     {
       "pkg": "recursion",
+      "func": "DivGEZero",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "recursion",
+      "func": "DivGuardedPositive",
+      "verdict": "bounded",
+      "bound": "O(log(n))"
+    },
+    {
+      "pkg": "recursion",
+      "func": "DivNegFloor",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "recursion",
+      "func": "DivSliceNoBase",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "recursion",
+      "func": "FastPow",
+      "verdict": "bounded",
+      "bound": "O(log(n))"
+    },
+    {
+      "pkg": "recursion",
       "func": "Fib",
       "verdict": "unverifiable",
       "cause": "call"
@@ -552,6 +582,12 @@
     },
     {
       "pkg": "space",
+      "func": "HeapOverBudget",
+      "verdict": "bounded",
+      "bound": "O(1)"
+    },
+    {
+      "pkg": "space",
       "func": "LoopAllocGCdOK",
       "verdict": "bounded",
       "bound": "O(n)"
@@ -565,6 +601,12 @@
     {
       "pkg": "space",
       "func": "MakeFill",
+      "verdict": "bounded",
+      "bound": "O(n)"
+    },
+    {
+      "pkg": "space",
+      "func": "NoAllocLoop",
       "verdict": "bounded",
       "bound": "O(n)"
     },

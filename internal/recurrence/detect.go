@@ -17,6 +17,12 @@ package recurrence
 // recursion fires only while n > 0. A base guard on the false side of a `<=`
 // test is therefore a valid lower-bound floor — the polarity is handled in
 // boundsMeasureBelow, not by hard-coding which successor recurses.
+//
+// Subtractive and divisive steps have different well-foundedness obligations: a
+// subtractive measure halts at any floor (the arithmetic sequence crosses it),
+// but a divisive measure has a fixed point at 0 (0/b == 0), so it graduates only
+// when the recursing side proves the measure >= 1 — see boundsMeasureBelow and
+// guardedBySliceBase.
 
 import (
 	"go/token"
@@ -80,7 +86,7 @@ func extract(fn *ssa.Function, model engine.CostModel) (rec, bool) {
 		if !ok {
 			continue
 		}
-		if !terminates(fn, p, calls) {
+		if !terminates(fn, p, terms, calls) {
 			continue // integer measure without a base guard, etc.
 		}
 		work, ok := localWork(fn, model)
@@ -260,29 +266,57 @@ func measureVar(p *ssa.Parameter) bound.Var {
 	return size.Num(p.Name())
 }
 
-// terminates proves the recursion is well-founded. Slice measures are
-// structurally well-founded (len >= 0, strictly decreasing, empty-slice base).
-// Integer measures require a base guard: every self-call block must be
-// dominated by an If whose condition compares the measure parameter against a
-// constant such that the recursion only fires while the measure exceeds a
-// floor.
-func terminates(fn *ssa.Function, p *ssa.Parameter, calls []*ssa.CallCommon) bool {
+// terminates proves the recursion is well-founded. The proof obligation depends
+// on the step kind, because a DIVISIVE measure has a fixed point at 0 that a
+// SUBTRACTIVE one does not: Go integer division truncates toward zero, so
+// 0/b == 0 and |n|/b < |n| only while |n| >= 1, and a divisive slice step
+// xs[:len/2] on an empty slice is xs[:0] — still empty, no panic.
+//
+//   - Subtractive slice (xs[1:]): structurally well-founded — shrinking to empty
+//     eventually panics on xs[0]/xs[1:], which halts. No guard required.
+//   - Divisive slice (xs[:len/2]): requires a base guard proving len(p) >= 1 on
+//     the recursing side (a dominating len==0 / len<c / len<=c base), else it
+//     stalls at an empty slice with no base.
+//   - Integer measure (subtractive or divisive): requires a base guard. A
+//     subtractive step needs any lower-bound floor (an arithmetic sequence
+//     crosses it); a divisive step needs the recursing side to prove measure >= 1.
+func terminates(fn *ssa.Function, p *ssa.Parameter, terms []sizeStep, calls []*ssa.CallCommon) bool {
+	strictDiv := hasDivStep(terms)
 	if isSliceLike(p.Type()) {
+		if !strictDiv {
+			return true // subtractive slice: the empty-slice panic is the base
+		}
+		for _, c := range calls {
+			if !guardedBySliceBase(callBlock(fn, c), p) {
+				return false
+			}
+		}
 		return true
 	}
 	for _, c := range calls {
-		if !guardedByMeasure(callBlock(fn, c), p) {
+		if !guardedByMeasure(callBlock(fn, c), p, strictDiv) {
 			return false
 		}
 	}
 	return true
 }
 
+// hasDivStep reports whether any recorded step divides the measure — the trigger
+// for the stricter, fixed-point-aware termination proof.
+func hasDivStep(terms []sizeStep) bool {
+	for _, t := range terms {
+		if t.kind == stepDiv {
+			return true
+		}
+	}
+	return false
+}
+
 // guardedByMeasure walks the dominator chain of blk looking for an If whose
-// condition constrains the measure parameter p below a constant floor on the
-// side that reaches blk. A base guard on a non-measure condition, or one whose
-// recursing side does NOT lower-bound p, correctly fails to prove termination.
-func guardedByMeasure(blk *ssa.BasicBlock, p *ssa.Parameter) bool {
+// condition constrains the measure parameter p on the side that reaches blk. A
+// base guard on a non-measure condition, or one whose recursing side does NOT
+// lower-bound p as required by strictDiv, correctly fails to prove termination.
+func guardedByMeasure(blk *ssa.BasicBlock, p *ssa.Parameter, strictDiv bool) bool {
 	if blk == nil {
 		return false
 	}
@@ -300,7 +334,7 @@ func guardedByMeasure(blk *ssa.BasicBlock, p *ssa.Parameter) bool {
 		if onTrue == onFalse {
 			continue // blk reachable from both sides or neither: no clean guard
 		}
-		if boundsMeasureBelow(cmp, p, onTrue) {
+		if boundsMeasureBelow(cmp, p, onTrue, strictDiv) {
 			return true
 		}
 	}
@@ -308,35 +342,118 @@ func guardedByMeasure(blk *ssa.BasicBlock, p *ssa.Parameter) bool {
 }
 
 // boundsMeasureBelow reports whether cmp — a comparison of measure parameter p
-// against a constant — constrains p to exceed a constant floor on the recursing
-// side (recurseOnTrue = the recursion is reached from the If's true successor).
-// A lower bound on a strictly decreasing measure is what proves termination.
-func boundsMeasureBelow(cmp *ssa.BinOp, p *ssa.Parameter, recurseOnTrue bool) bool {
-	op, ok := measureCmpOp(cmp, p)
+// against a constant — constrains p enough on the recursing side (recurseOnTrue
+// = the recursion is reached from the If's true successor) to prove the measure
+// is well-founded. For a SUBTRACTIVE measure any lower-bound floor halts the
+// arithmetic sequence, so the constant's value is immaterial. For a DIVISIVE
+// measure the sequence is stuck at the fixed point 0 unless the recursing side
+// proves measure >= 1, so the floor's value is load-bearing: `n > k` gives
+// n >= k+1 (need k >= 0) and `n >= k` needs k >= 1. Thus `n > 0` / `n >= 1`
+// graduate while the unsound `n >= 0`, `n > -5` are rejected. A `measure == 0`
+// base (recursing side measure != 0) also graduates: division truncates the
+// magnitude toward zero to exactly 0, which the base then catches — this is the
+// canonical power-by-squaring / fast-exponentiation shape.
+func boundsMeasureBelow(cmp *ssa.BinOp, p *ssa.Parameter, recurseOnTrue, strictDiv bool) bool {
+	op, k, ok := measureCmpOp(cmp, p)
 	if !ok {
 		return false
 	}
 	if !recurseOnTrue {
 		op = negateOp(op)
 	}
+	if strictDiv {
+		return (op == token.GTR && k >= 0) ||
+			(op == token.GEQ && k >= 1) ||
+			(op == token.NEQ && k == 0)
+	}
 	return op == token.GTR || op == token.GEQ
 }
 
 // measureCmpOp returns cmp's operator normalized with parameter p as the LEFT
-// operand and a constant on the right, or ok=false when cmp is neither
+// operand and the constant on the other side, or ok=false when cmp is neither
 // `p <cmp> const` nor `const <cmp> p`.
-func measureCmpOp(cmp *ssa.BinOp, p *ssa.Parameter) (token.Token, bool) {
+func measureCmpOp(cmp *ssa.BinOp, p *ssa.Parameter) (token.Token, int64, bool) {
 	switch {
 	case cmp.X == ssa.Value(p):
-		if _, ok := sizefacts.ConstIntV(cmp.Y); ok {
-			return cmp.Op, true
+		if k, ok := sizefacts.ConstIntV(cmp.Y); ok {
+			return cmp.Op, k, true
 		}
 	case cmp.Y == ssa.Value(p):
-		if _, ok := sizefacts.ConstIntV(cmp.X); ok {
-			return swapOp(cmp.Op), true
+		if k, ok := sizefacts.ConstIntV(cmp.X); ok {
+			return swapOp(cmp.Op), k, true
 		}
 	}
-	return token.ILLEGAL, false
+	return token.ILLEGAL, 0, false
+}
+
+// guardedBySliceBase walks the dominator chain of blk looking for an If on
+// len(p) that proves len(p) >= 1 on the side reaching blk — the base guard a
+// DIVISIVE slice recursion needs, because xs[:len/2] on an empty (or one-element)
+// slice is a fixed point (xs[:0] stays empty) with no panic and no base. A
+// dominating len==0 / len<c / len<=c base, or the equivalent len>k / len>=k
+// recurse guard, satisfies it.
+func guardedBySliceBase(blk *ssa.BasicBlock, p *ssa.Parameter) bool {
+	if blk == nil {
+		return false
+	}
+	for d := blk.Idom(); d != nil; d = d.Idom() {
+		ifi, ok := lastInstr(d).(*ssa.If)
+		if !ok || len(d.Succs) != 2 {
+			continue
+		}
+		cmp, ok := ifi.Cond.(*ssa.BinOp)
+		if !ok {
+			continue
+		}
+		onTrue := reaches(d.Succs[0], blk)
+		onFalse := reaches(d.Succs[1], blk)
+		if onTrue == onFalse {
+			continue
+		}
+		if sliceLenBoundsNonEmpty(cmp, p, onTrue) {
+			return true
+		}
+	}
+	return false
+}
+
+// sliceLenBoundsNonEmpty reports whether cmp — a comparison of len(p) against a
+// constant — keeps len(p) >= 1 on the recursing side. len(p) is always >= 0, so
+// `len > k` (need k >= 0), `len >= k` (need k >= 1), and `len != 0` (a len==0
+// base; >= 0 with != 0 is >= 1) all prove the divisive step cannot stall.
+func sliceLenBoundsNonEmpty(cmp *ssa.BinOp, p *ssa.Parameter, recurseOnTrue bool) bool {
+	op, k, ok := lenCmpOp(cmp, p)
+	if !ok {
+		return false
+	}
+	if !recurseOnTrue {
+		op = negateOp(op)
+	}
+	switch op {
+	case token.GTR:
+		return k >= 0
+	case token.GEQ:
+		return k >= 1
+	case token.NEQ:
+		return k == 0
+	}
+	return false
+}
+
+// lenCmpOp is measureCmpOp for a slice measure: it matches len(p) against a
+// constant, normalizing len(p) to the LEFT operand.
+func lenCmpOp(cmp *ssa.BinOp, p *ssa.Parameter) (token.Token, int64, bool) {
+	switch {
+	case isLenOf(cmp.X, p):
+		if k, ok := sizefacts.ConstIntV(cmp.Y); ok {
+			return cmp.Op, k, true
+		}
+	case isLenOf(cmp.Y, p):
+		if k, ok := sizefacts.ConstIntV(cmp.X); ok {
+			return swapOp(cmp.Op), k, true
+		}
+	}
+	return token.ILLEGAL, 0, false
 }
 
 // swapOp reflects a comparison operator across its operands (a<b <=> b>a).
