@@ -73,14 +73,27 @@ func MutualPartner(fn *ssa.Function) (*ssa.Function, bool) {
 }
 
 // SolvePair solves the two-function cycle fn↔partner as a virtual
-// self-recurrence in fn's measure vocabulary. PR1: extraction runs (so the
-// soundness path is exercised end-to-end) but solving is not yet connected —
-// always (⊤, ⊤, false). PR2 connects solveWork/depthOf.
+// self-recurrence in fn's measure vocabulary, routing the composed recurrence
+// through the shipped solvers (solveWork/depthOf) — no new solver math. ok=false
+// (⊤) when extraction fails a soundness precondition or the composed recurrence
+// is out of the solvers' representable families (e.g. a≥2 subtractive).
 func SolvePair(fn, partner *ssa.Function, model engine.CostModel) (bound.Bound, bound.Bound, bool) {
-	if _, ok := extractPair(fn, partner, model); !ok {
+	r, ok := extractPair(fn, partner, model)
+	if !ok {
 		return bound.Top(), bound.Top(), false
 	}
-	return bound.Top(), bound.Top(), false // PR2 connects solveWork/depthOf
+	// Branching factor per cycle traversal: calls fn→partner on a path × calls
+	// partner→fn on a path. selfCallMult is a per-path MAX (an upper bound), so
+	// the product over-approximates a at worst, which only inflates the exponent
+	// — sound. Mirrors single-function extract, which sets rec.mult likewise;
+	// solveWork reads mult for the divisive (Master) family and the composed
+	// term count for the subtractive a≥2 rejection.
+	r.mult = selfCallMult(fn, callsTo(fn, partner)) * selfCallMult(partner, callsTo(partner, fn))
+	w, ok := solveWork(r)
+	if !ok {
+		return bound.Top(), bound.Top(), false
+	}
+	return w, depthOf(r), true
 }
 
 // pairEdge is one direction of the cycle: the caller's measure parameter, the

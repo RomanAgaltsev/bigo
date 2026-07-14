@@ -184,3 +184,70 @@ func B(m int) int { return A(m - 1) }`
 		t.Error("A's argument to B is not derived from A's measure: no threading")
 	}
 }
+
+func solvePairOf(t *testing.T, src, name string) (string, bool) {
+	t.Helper()
+	pkg, _, err := ssasupport.Build(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	a := ssasupport.Func(pkg, name)
+	b, ok := MutualPartner(a)
+	if !ok {
+		return "", false
+	}
+	w, _, ok := SolvePair(a, b, stubModel{})
+	return w.String(), ok
+}
+
+func TestSolvePairEvenOdd(t *testing.T) {
+	got, ok := solvePairOf(t, evenOddSrc, "IsEven")
+	if !ok || got != "O(n)" {
+		t.Errorf("even/odd: got (%q,%v), want O(n)", got, ok)
+	}
+}
+
+func TestSolvePairDivisive(t *testing.T) {
+	src := `package input
+func SearchSplit(xs []int) int {
+	if len(xs) == 0 { return -1 }
+	return pick(xs[:len(xs)/2])
+}
+func pick(xs []int) int {
+	if len(xs) == 0 { return -1 }
+	return SearchSplit(xs)
+}`
+	got, ok := solvePairOf(t, src, "SearchSplit")
+	if !ok || got != "O(log(len(xs)))" {
+		t.Errorf("divisive pair: got (%q,%v), want O(log(len(xs)))", got, ok)
+	}
+}
+
+func TestSolvePairExponentialRejected(t *testing.T) {
+	// a=2 subtractive across the cycle: B calls A twice.
+	src := `package input
+func A(n int) int { if n <= 0 { return 0 }; return B(n - 1) }
+func B(n int) int { if n <= 0 { return 0 }; return A(n-1) + A(n-1) }`
+	if got, ok := solvePairOf(t, src, "A"); ok {
+		t.Errorf("2 calls per traversal, subtractive: exponential, must be ⊤ (got %q)", got)
+	}
+}
+
+func TestSolvePairDivisiveMasterCase2(t *testing.T) {
+	// a=2 divisive with O(len) level work in the helper -> Master case 2: n log n.
+	src := `package input
+func WalkSum(xs []int) int {
+	if len(xs) < 2 { return len(xs) }
+	return walkParts(xs)
+}
+func walkParts(xs []int) int {
+	s := 0
+	for _, v := range xs { s += v }
+	m := len(xs) / 2
+	return s + WalkSum(xs[:m]) + WalkSum(xs[m:])
+}`
+	got, ok := solvePairOf(t, src, "WalkSum")
+	if !ok || got != "O(len(xs) log(len(xs)))" {
+		t.Errorf("divisive a=2 Master case 2: got (%q,%v), want O(len(xs) log(len(xs)))", got, ok)
+	}
+}
