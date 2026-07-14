@@ -1,7 +1,7 @@
 {
-  "total": 112,
-  "bounded": 72,
-  "coverage_pct": "64.3",
+  "total": 113,
+  "bounded": 73,
+  "coverage_pct": "64.6",
   "by_cause": {
     "call": 17,
     "go": 2,
@@ -55,8 +55,8 @@
       "bounded": 1
     },
     "space": {
-      "total": 6,
-      "bounded": 5
+      "total": 7,
+      "bounded": 6
     },
     "structures/array": {
       "total": 7,
@@ -595,6 +595,12 @@
     {
       "pkg": "space",
       "func": "MakeFill",
+      "verdict": "bounded",
+      "bound": "O(n)"
+    },
+    {
+      "pkg": "space",
+      "func": "NoAllocLoop",
       "verdict": "bounded",
       "bound": "O(n)"
     },

@@ -17,6 +17,15 @@ func Constant(a, b int) int { // no allocation: O(1) within
 	return a + b
 }
 
+//bigo:space O(1)
+func NoAllocLoop(n int) int { // data-dependent loop that allocates nothing: O(1) within
+	s := 0
+	for i := 0; i < n; i++ {
+		s += i
+	}
+	return s
+}
+
 // LoopAllocGCd allocates O(1) inside an n-loop; the objects are GC'd, so PEAK
 // is O(1), but bigo bounds TOTAL allocation = O(n) as a safe over-approximation.
 // O(n) must be `within`; O(1) must be `cannot verify` — and MUST NOT be
