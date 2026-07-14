@@ -104,6 +104,15 @@ func f(xs []int) int { if len(xs) == 0 { return 0 }; m := len(xs) / 2; return f(
 	}
 }
 
+func TestExtractDivisiveEqualZeroBase(t *testing.T) {
+	// n==0 base (recurse side n!=0): magnitude halves to exactly 0. Must extract.
+	r, ok := extractOf(t, `package input
+func f(n int) int { if n == 0 { return 1 }; return f(n / 2) }`)
+	if !ok || len(r.terms) != 1 || r.terms[0].kind != stepDiv {
+		t.Fatalf("n==0-based divisive recursion must extract: %+v, %v", r, ok)
+	}
+}
+
 func TestExtractGrowingArgRejected(t *testing.T) {
 	_, ok := extractOf(t, `package input
 func f(n int) int { if n > 1000 { return 0 }; return f(n + 1) }`)

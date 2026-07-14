@@ -343,7 +343,10 @@ func guardedByMeasure(blk *ssa.BasicBlock, p *ssa.Parameter, strictDiv bool) boo
 // measure the sequence is stuck at the fixed point 0 unless the recursing side
 // proves measure >= 1, so the floor's value is load-bearing: `n > k` gives
 // n >= k+1 (need k >= 0) and `n >= k` needs k >= 1. Thus `n > 0` / `n >= 1`
-// graduate while the unsound `n >= 0`, `n > -5` are rejected.
+// graduate while the unsound `n >= 0`, `n > -5` are rejected. A `measure == 0`
+// base (recursing side measure != 0) also graduates: division truncates the
+// magnitude toward zero to exactly 0, which the base then catches — this is the
+// canonical power-by-squaring / fast-exponentiation shape.
 func boundsMeasureBelow(cmp *ssa.BinOp, p *ssa.Parameter, recurseOnTrue, strictDiv bool) bool {
 	op, k, ok := measureCmpOp(cmp, p)
 	if !ok {
@@ -353,7 +356,9 @@ func boundsMeasureBelow(cmp *ssa.BinOp, p *ssa.Parameter, recurseOnTrue, strictD
 		op = negateOp(op)
 	}
 	if strictDiv {
-		return (op == token.GTR && k >= 0) || (op == token.GEQ && k >= 1)
+		return (op == token.GTR && k >= 0) ||
+			(op == token.GEQ && k >= 1) ||
+			(op == token.NEQ && k == 0)
 	}
 	return op == token.GTR || op == token.GEQ
 }

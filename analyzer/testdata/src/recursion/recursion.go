@@ -59,6 +59,14 @@ func DivGuardedPositive(n int) int { // n>0 => n>=1: the n<=0 base is reached ->
 }
 
 //bigo:max O(log n)
+func FastPow(n int) int { // n==0 base: magnitude halves to 0 -> O(log n) (power-by-squaring)
+	if n == 0 {
+		return 1
+	}
+	return FastPow(n / 2)
+}
+
+//bigo:max O(log n)
 func DivSliceNoBase(xs []int) int { // want `cannot verify budget O\(log\(len\(xs\)\)\)`
 	m := len(xs) / 2
 	return DivSliceNoBase(xs[:m]) // xs[:0] stays empty, no base guard -> ⊤

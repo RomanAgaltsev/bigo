@@ -1,7 +1,7 @@
 {
-  "total": 111,
-  "bounded": 71,
-  "coverage_pct": "64.0",
+  "total": 112,
+  "bounded": 72,
+  "coverage_pct": "64.3",
   "by_cause": {
     "call": 17,
     "go": 2,
@@ -47,8 +47,8 @@
       "bounded": 4
     },
     "recursion": {
-      "total": 15,
-      "bounded": 8
+      "total": 16,
+      "bounded": 9
     },
     "smoke": {
       "total": 2,
@@ -501,6 +501,12 @@
       "func": "DivSliceNoBase",
       "verdict": "unverifiable",
       "cause": "call"
+    },
+    {
+      "pkg": "recursion",
+      "func": "FastPow",
+      "verdict": "bounded",
+      "bound": "O(log(n))"
     },
     {
       "pkg": "recursion",
