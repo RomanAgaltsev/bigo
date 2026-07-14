@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.14.0](https://github.com/RomanAgaltsev/bigo/compare/v1.13.1...v1.14.0) (2026-07-14)
+
+
+### Features
+
+* **recurrence:** mutual-recursion detection and termination gates ([#51](https://github.com/RomanAgaltsev/bigo/issues/51)) ([e5ab06b](https://github.com/RomanAgaltsev/bigo/commit/e5ab06b9957419072c812c64c33cb7de337296e4))
+
 ## [1.13.1](https://github.com/RomanAgaltsev/bigo/compare/v1.13.0...v1.13.1) (2026-07-14)
 
 
