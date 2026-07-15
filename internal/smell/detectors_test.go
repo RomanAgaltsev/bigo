@@ -241,9 +241,18 @@ func BinSearch(n int) int {
 func Unguarded(n int) int {
 	return Unguarded(n-1) + Unguarded(n-2)
 }
+func FibMemo(n int, memo map[int]int) int {
+	if n < 2 { return n }
+	if v, ok := memo[n]; ok { return v }
+	r := FibMemo(n-1, memo) + FibMemo(n-2, memo)
+	memo[n] = r
+	return r
+}
 `
 	wantRuleCount(t, detectOne(t, src, "Fib", ruleset("SM8")), "SM8", 1)
 	wantRuleCount(t, detectOne(t, src, "Linear", ruleset("SM8")), "SM8", 0)
 	wantRuleCount(t, detectOne(t, src, "BinSearch", ruleset("SM8")), "SM8", 0)
 	wantRuleCount(t, detectOne(t, src, "Unguarded", ruleset("SM8")), "SM8", 0)
+	// Memoized recursion is O(n), not exponential — SM8 must stay silent.
+	wantRuleCount(t, detectOne(t, src, "FibMemo", ruleset("SM8")), "SM8", 0)
 }

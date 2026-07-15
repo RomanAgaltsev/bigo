@@ -7,6 +7,7 @@ import (
 	"go/types"
 	"os"
 	"path/filepath"
+	"sort"
 
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/buildssa"
@@ -110,11 +111,19 @@ func run(pass *analysis.Pass) (any, error) {
 				ignored[fd.Decl] = true
 			}
 		}
-		for decl, fn := range byDecl {
+		// Iterate decls in source-position order: byDecl is a map, and emitting
+		// diagnostics in its randomized iteration order would make the smell
+		// output nondeterministic run to run.
+		decls := make([]*ast.FuncDecl, 0, len(byDecl))
+		for decl := range byDecl {
+			decls = append(decls, decl)
+		}
+		sort.Slice(decls, func(i, j int) bool { return decls[i].Pos() < decls[j].Pos() })
+		for _, decl := range decls {
 			if ignored[decl] {
 				continue
 			}
-			for _, f := range smell.Detect(fn, enabled) {
+			for _, f := range smell.Detect(byDecl[decl], enabled) {
 				pass.Reportf(f.Pos, "smell(%s): %s", f.Rule, f.Message)
 			}
 		}

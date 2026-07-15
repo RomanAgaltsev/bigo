@@ -56,6 +56,49 @@ func U(n int) int {
 	}
 }
 
+func TestProvablyExponentialMemoized(t *testing.T) {
+	// Memoized via a map PARAMETER: a comma-ok cache hit dominates the
+	// self-calls, so each argument is computed once — O(n), not exponential.
+	paramMemo := `package input
+func Fib(n int, memo map[int]int) int {
+	if n < 2 { return n }
+	if v, ok := memo[n]; ok { return v }
+	r := Fib(n-1, memo) + Fib(n-2, memo)
+	memo[n] = r
+	return r
+}`
+	if _, ok := expCheck(t, paramMemo, "Fib"); ok {
+		t.Error("Fib(param memo): memoized recursion is O(n), must not be exponential")
+	}
+
+	// Memoized via a package-level (captured) map: the cache is read as a load
+	// of a global, so map-root normalization must still see the read/write pair.
+	globalMemo := `package input
+var cache = map[int]int{}
+func Fib(n int) int {
+	if n < 2 { return n }
+	if v, ok := cache[n]; ok { return v }
+	r := Fib(n-1) + Fib(n-2)
+	cache[n] = r
+	return r
+}`
+	if _, ok := expCheck(t, globalMemo, "Fib"); ok {
+		t.Error("Fib(global memo): memoized recursion is O(n), must not be exponential")
+	}
+
+	// A map that is READ comma-ok but never written is not a cache — a genuine
+	// exponential that merely consults a lookup table must still fire.
+	readOnlyTable := `package input
+func Fib(n int, seen map[int]bool) int {
+	if n < 2 { return n }
+	if _, ok := seen[n]; ok { return n }
+	return Fib(n-1, seen) + Fib(n-2, seen)
+}`
+	if _, ok := expCheck(t, readOnlyTable, "Fib"); !ok {
+		t.Error("Fib(read-only table): no cache write, still provably exponential")
+	}
+}
+
 func TestProvablyExponentialMutualPair(t *testing.T) {
 	// Mutual pair: not directly self-recursive — stays out.
 	src := `package input
