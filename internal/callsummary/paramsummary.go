@@ -230,3 +230,57 @@ func paramNamesOf(fn *ssa.Function) []string {
 	}
 	return names
 }
+
+// parametricCallCost prices a call to a parametric callee using the concrete
+// func arguments: Base ⊔ Σ PerParam[i] × cost(argᵢ), all renamed into caller
+// vocabulary. ok=false when the callee has no param summary (caller falls
+// back to the plain path).
+func (r *Resolver) parametricCallCost(callee *ssa.Function, c *ssa.CallCommon) (bound.Bound, bool) {
+	ps, ok := r.paramSummaryOf(callee)
+	if !ok {
+		return bound.Bound{}, false
+	}
+	names := paramNamesOf(callee)
+	total := substArgs(ps.Base, names, c.Args)
+	for i, cnt := range ps.PerParam {
+		if i >= len(c.Args) {
+			return bound.Top(), true
+		}
+		argCost, ok := r.resolveFuncArg(c.Args[i])
+		if !ok {
+			return bound.Top(), true // unresolvable func value (pins 1, 8)
+		}
+		total = total.Join(substArgs(cnt, names, c.Args).Mul(argCost))
+	}
+	return total, true
+}
+
+// resolveFuncArg returns the cost of one invocation of the func value. PR1:
+// static functions only. PR2 adds in-scope MakeClosure; everything else is
+// unresolvable (spec §4.3 case 3 / §7 pins).
+//
+// A static function whose cost depends on ITS OWN argument sizes (a scanAll
+// that scans a passed slice) cannot be priced here — the values the parametric
+// callee will feed it are invisible at this call site. Refusing (⊤) is the
+// only sound answer until a per-invocation-argument model exists; the corpus
+// pins UseSizedArg at ⊤ for exactly this.
+func (r *Resolver) resolveFuncArg(arg ssa.Value) (bound.Bound, bool) {
+	switch v := arg.(type) {
+	case *ssa.Function:
+		s := r.summary(v)
+		if s.IsTop() {
+			return bound.Top(), false
+		}
+		// The arg's own params are opaque at this site (we don't track which
+		// values the callee will pass it) — only summaries with no residual
+		// size dependence are usable as-is. A size-dependent summary in the
+		// arg's own vocabulary cannot be renamed here: refuse.
+		for _, m := range s.Terms() {
+			if len(m.Vars()) > 0 {
+				return bound.Top(), false
+			}
+		}
+		return s, true
+	}
+	return bound.Top(), false
+}

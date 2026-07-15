@@ -92,6 +92,9 @@ func (r *Resolver) CallCost(c *ssa.CallCommon) bound.Bound {
 	if len(callee.Blocks) == 0 {
 		return bound.Top()
 	}
+	if b, ok := r.parametricCallCost(callee, c); ok {
+		return b
+	}
 	return r.callUser(callee, c.Args)
 }
 

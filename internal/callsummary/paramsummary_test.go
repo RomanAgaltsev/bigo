@@ -83,6 +83,57 @@ func Twice(ys []int, g func(int) int) []int {
 	}
 }
 
+func TestCallCostParametricStaticArg(t *testing.T) {
+	src := `package input
+func Map(xs []int, f func(int) int) []int {
+	out := make([]int, 0, len(xs))
+	for _, v := range xs {
+		out = append(out, f(v))
+	}
+	return out
+}
+func double(x int) int { return x * 2 }
+func UseConst(zs []int) []int { return Map(zs, double) }`
+	pkg, _, err := ssasupport.Build(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	r := New(nil)
+	got := r.summary(ssasupport.Func(pkg, "UseConst"))
+	if got.String() != "O(len(zs))" {
+		t.Errorf("Map with O(1) arg = %q, want O(len(zs))", got.String())
+	}
+}
+
+func TestCallCostParametricSizedArgRefused(t *testing.T) {
+	// scanAll's cost is O(len(ys)) in ITS OWN param — unresolvable at Map's site.
+	src := `package input
+var global []int
+func scanAll(x int, ys []int) bool {
+	for _, y := range ys {
+		if y == x { return true }
+	}
+	return false
+}
+func wrapper(x int) int { if scanAll(x, global) { return 1 }; return 0 }
+func Map(xs []int, f func(int) int) []int {
+	out := make([]int, 0, len(xs))
+	for _, v := range xs {
+		out = append(out, f(v))
+	}
+	return out
+}
+func UseSized(zs []int) []int { return Map(zs, wrapper) }`
+	pkg, _, err := ssasupport.Build(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	r := New(nil)
+	if got := r.summary(ssasupport.Func(pkg, "UseSized")); !got.IsTop() {
+		t.Errorf("size-dependent func arg must refuse to price: got %q", got.String())
+	}
+}
+
 func TestParamSummaryUnboundedLoopPoisons(t *testing.T) {
 	// f invoked under a loop with an unrecognized trip count -> ⊤ count.
 	ps, ok := paramSummary(t, `package input
