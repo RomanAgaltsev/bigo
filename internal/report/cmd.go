@@ -31,7 +31,7 @@ func Main(version string, args []string) int {
 	if *out == "" {
 		_, err = os.Stdout.Write(data)
 	} else {
-		err = os.WriteFile(*out, data, 0o644)
+		err = os.WriteFile(*out, data, 0o600)
 	}
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "bigo json:", err)
