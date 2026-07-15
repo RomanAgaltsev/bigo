@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.18.0](https://github.com/RomanAgaltsev/bigo/compare/v1.17.1...v1.18.0) (2026-07-15)
+
+
+### Features
+
+* bigo json — versioned machine-readable report (schema 1.0.0) ([#61](https://github.com/RomanAgaltsev/bigo/issues/61)) ([ca0875f](https://github.com/RomanAgaltsev/bigo/commit/ca0875f4c71d120f6aef50429006d068aa0f2f30))
+
 ## [1.17.1](https://github.com/RomanAgaltsev/bigo/compare/v1.17.0...v1.17.1) (2026-07-15)
 
 
