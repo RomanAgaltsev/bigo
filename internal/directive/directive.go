@@ -106,8 +106,8 @@ func directivesOf(decl *ast.FuncDecl, report Reporter) []annotation.Directive {
 	if decl.Doc == nil {
 		return nil
 	}
-	var dirs []annotation.Directive
-	seen := map[annotation.Verb]bool{}
+	dirs := make([]annotation.Directive, 0, len(decl.Doc.List))
+	seen := make(map[annotation.Verb]bool, len(decl.Doc.List))
 	for _, c := range decl.Doc.List {
 		if !strings.HasPrefix(c.Text, "//bigo:") {
 			if isNearMiss(c.Text) {

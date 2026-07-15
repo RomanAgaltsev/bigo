@@ -17,8 +17,10 @@ import (
 	"golang.org/x/tools/go/ssa"
 	"golang.org/x/tools/go/ssa/ssautil"
 
+	"github.com/RomanAgaltsev/bigo/internal/annotation"
 	"github.com/RomanAgaltsev/bigo/internal/callsummary"
 	"github.com/RomanAgaltsev/bigo/internal/directive"
+	"github.com/RomanAgaltsev/bigo/internal/smell"
 )
 
 // FuncMetric is one function's verdict.
@@ -45,6 +47,9 @@ type Report struct {
 	ByCause     map[string]int      `json:"by_cause"`
 	PerPackage  map[string]PkgCount `json:"per_package"`
 	Functions   []FuncMetric        `json:"functions"`
+	// Smells is the per-rule corpus fire count (drift alarm, NOT coverage).
+	// A change in a rule's count is a behavior change and must be deliberate.
+	Smells map[string]int `json:"smells"`
 }
 
 // Collect analyzes every package under srcRoot (a GOPATH-shaped src dir).
@@ -70,8 +75,10 @@ func Collect(srcRoot string) (Report, error) {
 	r := Report{
 		ByCause:    map[string]int{},
 		PerPackage: map[string]PkgCount{},
+		Smells:     map[string]int{},
 	}
 	nop := func(token.Pos, string, ...any) {}
+	enabled, _ := smell.ParseRules("all")
 	for _, p := range pkgs {
 		ssaFor := func(decl *ast.FuncDecl) *ssa.Function {
 			obj, ok := p.TypesInfo.Defs[decl.Name].(*types.Func)
@@ -82,6 +89,15 @@ func Collect(srcRoot string) (Report, error) {
 		}
 		fns := directive.Scan(p.Syntax, p.TypesInfo, ssaFor, nop)
 		resolver := callsummary.NewWithMethods(fns.Overrides, fns.MethodCosts)
+
+		// Build the ignored-decl set and the decl→fn map the smell pass needs,
+		// mirroring the analyzer's wiring (Task 1 Step 3).
+		ignored := map[*ast.FuncDecl]bool{}
+		for _, fd := range fns.Directives {
+			if _, has := directive.Verb(fd.Dirs, annotation.Ignore); has {
+				ignored[fd.Decl] = true
+			}
+		}
 
 		measure := func(decl *ast.FuncDecl) {
 			fn := ssaFor(decl)
@@ -110,6 +126,13 @@ func Collect(srcRoot string) (Report, error) {
 				r.ByCause[m.Cause]++
 			}
 			r.PerPackage[p.PkgPath] = pc
+			// Smell fire count: the drift alarm. Same gating as the analyzer —
+			// ignored decls are skipped.
+			if !ignored[decl] {
+				for _, f := range smell.Detect(fn, enabled) {
+					r.Smells[f.Rule]++
+				}
+			}
 		}
 		for _, fd := range fns.Directives {
 			measure(fd.Decl)

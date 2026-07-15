@@ -45,5 +45,19 @@ func (r Report) Markdown() []byte {
 		fmt.Fprintf(&b, "| %s | %d |\n", c, r.ByCause[c])
 	}
 	b.WriteString("\nThe cause histogram is the Phase-2 prioritization signal: the biggest\nbucket is the next feature.\n")
+
+	if len(r.Smells) > 0 {
+		b.WriteString("\n## Smell fires (drift alarm)\n\n")
+		b.WriteString("Not coverage. A change in a rule's corpus fire count is a behavior change and must be deliberate.\n\n")
+		b.WriteString("| Rule | Corpus fires |\n|---|---|\n")
+		var rules []string
+		for rule := range r.Smells {
+			rules = append(rules, rule)
+		}
+		sort.Strings(rules)
+		for _, rule := range rules {
+			fmt.Fprintf(&b, "| %s | %d |\n", rule, r.Smells[rule])
+		}
+	}
 	return b.Bytes()
 }

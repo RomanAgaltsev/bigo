@@ -117,7 +117,7 @@ func isCycle(scc []*ssa.BasicBlock) bool {
 
 // Build constructs the loop-nesting forest of fn.
 func Build(fn *ssa.Function) *Forest {
-	headers := map[*ssa.BasicBlock]*Loop{}
+	headers := make(map[*ssa.BasicBlock]*Loop, len(fn.Blocks))
 	for _, b := range fn.Blocks {
 		for _, s := range b.Succs {
 			if dominates(s, b) { // b -> s is a back-edge, s is a loop header

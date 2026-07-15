@@ -1,12 +1,12 @@
 {
-  "total": 160,
-  "bounded": 93,
-  "coverage_pct": "58.1",
+  "total": 183,
+  "bounded": 106,
+  "coverage_pct": "57.9",
   "by_cause": {
-    "call": 42,
+    "call": 50,
     "go": 3,
     "irreducible": 1,
-    "loop": 13,
+    "loop": 15,
     "nobody": 8
   },
   "per_package": {
@@ -61,6 +61,10 @@
     "recursion": {
       "total": 16,
       "bounded": 9
+    },
+    "smells": {
+      "total": 23,
+      "bounded": 13
     },
     "smoke": {
       "total": 2,
@@ -851,6 +855,144 @@
       "cause": "call"
     },
     {
+      "pkg": "smells",
+      "func": "Clean",
+      "verdict": "bounded",
+      "bound": "O(len(xs))"
+    },
+    {
+      "pkg": "smells",
+      "func": "SM1Concat",
+      "verdict": "bounded",
+      "bound": "O(len(xs))"
+    },
+    {
+      "pkg": "smells",
+      "func": "SM1ConcatChained",
+      "verdict": "bounded",
+      "bound": "O(len(xs))"
+    },
+    {
+      "pkg": "smells",
+      "func": "SM1NoFireBuilder",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "smells",
+      "func": "SM1NoFireConstTrip",
+      "verdict": "unverifiable",
+      "cause": "loop"
+    },
+    {
+      "pkg": "smells",
+      "func": "SM1Sprintf",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "smells",
+      "func": "SM2NoFireInvariantNeedle",
+      "verdict": "bounded",
+      "bound": "O(len(s)^2)"
+    },
+    {
+      "pkg": "smells",
+      "func": "SM2NoFireNonParam",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "smells",
+      "func": "SM2Scan",
+      "verdict": "bounded",
+      "bound": "O(len(items) len(s))"
+    },
+    {
+      "pkg": "smells",
+      "func": "SM3Append",
+      "verdict": "bounded",
+      "bound": "O(len(xs))"
+    },
+    {
+      "pkg": "smells",
+      "func": "SM3NoFirePrealloc",
+      "verdict": "bounded",
+      "bound": "O(len(xs))"
+    },
+    {
+      "pkg": "smells",
+      "func": "SM4Compile",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "smells",
+      "func": "SM4NoFireHoisted",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "smells",
+      "func": "SM5NoFireConstTrip",
+      "verdict": "unverifiable",
+      "cause": "loop"
+    },
+    {
+      "pkg": "smells",
+      "func": "SM5NoFireOutside",
+      "verdict": "bounded",
+      "bound": "O(len(g) log(len(g)))"
+    },
+    {
+      "pkg": "smells",
+      "func": "SM5Sort",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "smells",
+      "func": "SM5SortSlice",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "smells",
+      "func": "SM6Map",
+      "verdict": "bounded",
+      "bound": "O(len(ks))"
+    },
+    {
+      "pkg": "smells",
+      "func": "SM6NoFireHint",
+      "verdict": "bounded",
+      "bound": "O(len(ks))"
+    },
+    {
+      "pkg": "smells",
+      "func": "SM7Double",
+      "verdict": "bounded",
+      "bound": "O(1)"
+    },
+    {
+      "pkg": "smells",
+      "func": "SM7NoFireNoSecond",
+      "verdict": "bounded",
+      "bound": "O(1)"
+    },
+    {
+      "pkg": "smells",
+      "func": "SM8Fib",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "smells",
+      "func": "SM8NoFireLinear",
+      "verdict": "bounded",
+      "bound": "O(n)"
+    },
+    {
       "pkg": "smoke",
       "func": "Closure",
       "verdict": "unverifiable",
@@ -1060,5 +1202,15 @@
       "verdict": "unverifiable",
       "cause": "call"
     }
-  ]
+  ],
+  "smells": {
+    "SM1": 4,
+    "SM2": 1,
+    "SM3": 1,
+    "SM4": 1,
+    "SM5": 2,
+    "SM6": 1,
+    "SM7": 1,
+    "SM8": 2
+  }
 }

@@ -18,7 +18,7 @@ func Growing(n int) int { // want `cannot verify budget O\(n\)`
 }
 
 //bigo:max O(1)
-func Fib(n int) int { // want `cannot verify budget O\(1\)`
+func Fib(n int) int { // want `cannot verify budget O\(1\)` `smell\(SM8\): provably exponential recursion`
 	if n < 2 {
 		return n
 	}

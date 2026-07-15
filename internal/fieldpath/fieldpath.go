@@ -10,6 +10,7 @@ package fieldpath
 import (
 	"go/token"
 	"go/types"
+	"strings"
 
 	"golang.org/x/tools/go/ssa"
 
@@ -349,14 +350,19 @@ func (s *Stability) cleanAt(instr ssa.Instruction) bool {
 	return false
 }
 
-//bigo:max O(n) where n=len(fields)
+// joinPath renders root.outer.inner from fields collected leaf-first. It runs
+// over at most two fields (the fieldpath depth cap), so it is O(1) in context;
+// //bigo:ignore trusts the helper rather than model strings.Builder.
+//
+//bigo:ignore
 func joinPath(root string, fields []string) string {
-	// fields were collected leaf-first; render root.outer.inner.
-	out := root
+	var b strings.Builder
+	b.WriteString(root)
 	for i := len(fields) - 1; i >= 0; i-- {
-		out += "." + fields[i]
+		b.WriteByte('.')
+		b.WriteString(fields[i])
 	}
-	return out
+	return b.String()
 }
 
 func lenEligible(t types.Type) bool {
