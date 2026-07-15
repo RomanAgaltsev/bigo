@@ -1,9 +1,9 @@
 {
-  "total": 172,
-  "bounded": 98,
-  "coverage_pct": "57.0",
+  "total": 178,
+  "bounded": 103,
+  "coverage_pct": "57.9",
   "by_cause": {
-    "call": 47,
+    "call": 48,
     "go": 3,
     "irreducible": 1,
     "loop": 15,
@@ -63,8 +63,8 @@
       "bounded": 9
     },
     "smells": {
-      "total": 12,
-      "bounded": 5
+      "total": 18,
+      "bounded": 10
     },
     "smoke": {
       "total": 2,
@@ -875,8 +875,8 @@
     {
       "pkg": "smells",
       "func": "SM1NoFireBuilder",
-      "verdict": "bounded",
-      "bound": "O(len(xs))"
+      "verdict": "unverifiable",
+      "cause": "call"
     },
     {
       "pkg": "smells",
@@ -889,6 +889,18 @@
       "func": "SM1Sprintf",
       "verdict": "unverifiable",
       "cause": "call"
+    },
+    {
+      "pkg": "smells",
+      "func": "SM3Append",
+      "verdict": "bounded",
+      "bound": "O(len(xs))"
+    },
+    {
+      "pkg": "smells",
+      "func": "SM3NoFirePrealloc",
+      "verdict": "bounded",
+      "bound": "O(len(xs))"
     },
     {
       "pkg": "smells",
@@ -925,6 +937,30 @@
       "func": "SM5SortSlice",
       "verdict": "unverifiable",
       "cause": "call"
+    },
+    {
+      "pkg": "smells",
+      "func": "SM6Map",
+      "verdict": "bounded",
+      "bound": "O(len(ks))"
+    },
+    {
+      "pkg": "smells",
+      "func": "SM6NoFireHint",
+      "verdict": "bounded",
+      "bound": "O(len(ks))"
+    },
+    {
+      "pkg": "smells",
+      "func": "SM7Double",
+      "verdict": "bounded",
+      "bound": "O(1)"
+    },
+    {
+      "pkg": "smells",
+      "func": "SM7NoFireNoSecond",
+      "verdict": "bounded",
+      "bound": "O(1)"
     },
     {
       "pkg": "smoke",

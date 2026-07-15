@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"slices"
 	"sort"
+	"strings"
 )
 
 // Clean is the zero-spray baseline: no smell fires on clean code.
@@ -49,13 +50,13 @@ func SM1Sprintf(xs []string) string {
 	return s
 }
 
-// SM1NoFireBuilder uses bytes append (no string phi), no smell.
+// SM1NoFireBuilder uses strings.Builder (no string phi), no SM1 smell.
 func SM1NoFireBuilder(xs []string) string {
-	var b []byte
+	var b strings.Builder
 	for _, x := range xs {
-		b = append(b, x...)
+		b.WriteString(x)
 	}
-	return string(b)
+	return b.String()
 }
 
 // SM1NoFireConstTrip does not fire: constant-trip loop is not a smell.
@@ -115,4 +116,62 @@ func SM5NoFireConstTrip(groups [][]int) {
 // SM5NoFireOutside does not fire: sort outside any loop.
 func SM5NoFireOutside(g []int) {
 	slices.Sort(g)
+}
+
+// --- SM3: append without prealloc ---
+
+// SM3Append fires: zero-capacity slice grown by append in a resolvable loop.
+func SM3Append(xs []int) []int {
+	var out []int // want `smell\(SM3\): append in a loop bounded by`
+	for _, x := range xs {
+		out = append(out, x)
+	}
+	return out
+}
+
+// SM3NoFirePrealloc does not fire: capacity given.
+func SM3NoFirePrealloc(xs []int) []int {
+	out := make([]int, 0, len(xs))
+	for _, x := range xs {
+		out = append(out, x)
+	}
+	return out
+}
+
+// --- SM6: map without size hint ---
+
+// SM6Map fires: make(map) without size hint, grown in a resolvable loop.
+func SM6Map(ks []string, vs []int) map[string]int {
+	m := make(map[string]int) // want `smell\(SM6\): map built without a size hint in a loop bounded by`
+	for i, k := range ks {
+		m[k] = vs[i]
+	}
+	return m
+}
+
+// SM6NoFireHint does not fire: size hint given.
+func SM6NoFireHint(ks []string, vs []int) map[string]int {
+	m := make(map[string]int, len(ks))
+	for i, k := range ks {
+		m[k] = vs[i]
+	}
+	return m
+}
+
+// --- SM7: double-lookup ---
+
+// SM7Double fires: comma-ok then plain lookup, same X and key.
+func SM7Double(m map[int]int, k int) int {
+	if _, ok := m[k]; ok { // want `smell\(SM7\): redundant map lookup`
+		return m[k]
+	}
+	return 0
+}
+
+// SM7NoFireNoSecond does not fire: only one lookup.
+func SM7NoFireNoSecond(m map[int]int, k int) int {
+	if v, ok := m[k]; ok {
+		return v
+	}
+	return 0
 }
