@@ -59,3 +59,38 @@ func FromStructField(xs []int) { // want `cannot verify budget O\(len\(xs\)\)`
 		fieldHeld.cb(v) // pin 1: func value from a struct field -> ⊤
 	}
 }
+
+//bigo:max O(n)
+func EachClosureCapturingConst(xs []int, base int) { // graduates: O(1) closure capturing an int
+	each(xs, func(v int) { _ = v + base })
+}
+
+//bigo:max O(n)
+func EachClosureSelfCapture(xs []int) { // graduates: O(1) closure capturing the iterated slice
+	each(xs, func(i int) { _ = xs[0] + i }) // read-only capture -> spill size recovered
+}
+
+func makeCB() func(int) { return func(int) {} }
+
+//bigo:max O(n)
+func EachReturnedClosure(xs []int) { // want `cannot verify budget O\(len\(xs\)\)`
+	each(xs, makeCB()) // pin 2: value from a call is not an in-scope MakeClosure -> ⊤
+}
+
+//bigo:max O(n)
+func EachMutatedCapture(xs []int) { // want `cannot verify budget O\(len\(xs\)\)`
+	f := func(i int) { _ = xs[0] + i }
+	xs = append(xs, 1) // pin 3: capture reassigned -> second store -> spill refuses
+	each(xs, f)
+}
+
+//bigo:max O(n)
+func EachCaptureSizedDeferred(xs, ys []int) { // want `cannot verify budget`
+	each(ys, func(int) { // capture-sized closure body: product pricing is deferred -> ⊤
+		s := 0
+		for _, v := range xs {
+			s += v
+		}
+		_ = s
+	})
+}
