@@ -82,7 +82,7 @@ func allSubtractive(terms []sizeStep) bool {
 // exponential that merely touches a map is safe; a false "provably exponential"
 // on memoized code is not (it is the smell analogue of a wrong bound).
 func memoized(fn *ssa.Function, calls []*ssa.CallCommon) bool {
-	updated := map[ssa.Value]bool{}
+	updated := make(map[ssa.Value]bool, len(fn.Blocks))
 	for _, b := range fn.Blocks {
 		for _, instr := range b.Instrs {
 			if upd, ok := instr.(*ssa.MapUpdate); ok {
@@ -93,7 +93,7 @@ func memoized(fn *ssa.Function, calls []*ssa.CallCommon) bool {
 	if len(updated) == 0 {
 		return false // no cache write: a read-only lookup table is not memoization
 	}
-	var callBlocks []*ssa.BasicBlock
+	callBlocks := make([]*ssa.BasicBlock, 0, len(calls))
 	for _, c := range calls {
 		if b := callBlock(fn, c); b != nil {
 			callBlocks = append(callBlocks, b)
