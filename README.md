@@ -287,7 +287,7 @@ the fixed `smell(SMn):` prefix so golangci-lint users can filter on the class.
 | **SM5** | sorting inside a data-dependent loop | constant-trip loop; sort outside any loop |
 | **SM6** | `make(map[K]V)` without a size hint, grown in a resolvable loop | `make(map[K]V, n)` with a hint |
 | **SM7** | a redundant second lookup the first already answered (map comma-ok then plain; `slices.Contains` then `slices.Index`) | a single lookup; a map mutated between them |
-| **SM8** | provably exponential recursion (Θ(aⁿ), a ≥ 2 — naive Fibonacci) | linear countdown (a=1); divisive binary search; unguarded recursion |
+| **SM8** | provably exponential recursion (Θ(aⁿ), a ≥ 2 — naive Fibonacci) | linear countdown (a=1); divisive binary search; unguarded recursion; **memoized recursion** (a comma-ok cache hit dominating the self-calls — O(n), not exponential) |
 
 SM8 is the differentiator: it is powered by the recurrence solver's termination
 proof and branching-factor analysis, so it can positively identify the Θ(aⁿ)

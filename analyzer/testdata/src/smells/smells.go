@@ -229,3 +229,17 @@ func SM8NoFireLinear(n int) int {
 	}
 	return 1 + SM8NoFireLinear(n-1)
 }
+
+// SM8NoFireMemo does not fire: the comma-ok cache hit dominates the self-calls,
+// so each argument is computed once — O(n), not exponential.
+func SM8NoFireMemo(n int, memo map[int]int) int {
+	if n < 2 {
+		return n
+	}
+	if v, ok := memo[n]; ok {
+		return v
+	}
+	r := SM8NoFireMemo(n-1, memo) + SM8NoFireMemo(n-2, memo)
+	memo[n] = r
+	return r
+}

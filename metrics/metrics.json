@@ -1,9 +1,9 @@
 {
-  "total": 183,
+  "total": 184,
   "bounded": 106,
-  "coverage_pct": "57.9",
+  "coverage_pct": "57.6",
   "by_cause": {
-    "call": 50,
+    "call": 51,
     "go": 3,
     "irreducible": 1,
     "loop": 15,
@@ -63,7 +63,7 @@
       "bounded": 9
     },
     "smells": {
-      "total": 23,
+      "total": 24,
       "bounded": 13
     },
     "smoke": {
@@ -991,6 +991,12 @@
       "func": "SM8NoFireLinear",
       "verdict": "bounded",
       "bound": "O(n)"
+    },
+    {
+      "pkg": "smells",
+      "func": "SM8NoFireMemo",
+      "verdict": "unverifiable",
+      "cause": "call"
     },
     {
       "pkg": "smoke",
