@@ -217,6 +217,10 @@ What **resolves** today:
   each priced as its documented-contract count × the callback cost.
 - **Composition** — a helper that forwards its function parameter to another
   known-parametric helper composes the counts.
+- **`range`-over-func over a stdlib producer** — `for v := range slices.Values(s)`
+  (and `slices.All`/`Backward`, `maps.Keys`/`Values`/`All`) costs the producer's
+  yield count times the loop body: an O(1) body over `slices.Values(s)` is
+  `O(len(s))`.
 
 The counting rule is a **whitelist**: a function parameter is priced only when
 it is invoked directly or handed to another known-parametric callee. Every
@@ -228,7 +232,9 @@ under-counted.
 What still stays `⊤` (annotate the callee with `//bigo:cost`, or trust it): a
 closure whose body cost depends on a captured size (product bounds are
 deferred), a closure created in one function and consumed in another, a func
-value from a struct field or channel, and goroutine-invoked callbacks.
+value from a struct field or channel, goroutine-invoked callbacks, and
+`range`-over-func over a user-defined or recursive iterator (only the curated
+stdlib producers above resolve).
 
 ## What bigo does not count (yet)
 

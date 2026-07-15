@@ -90,6 +90,10 @@ func TestAnalyzerFuncValue(t *testing.T) {
 	analysistest.Run(t, analysistest.TestData(), Analyzer, "funcvalue")
 }
 
+func TestAnalyzerIterator(t *testing.T) {
+	analysistest.Run(t, analysistest.TestData(), Analyzer, "iterator")
+}
+
 func TestAnalyzerMutual(t *testing.T) {
 	analysistest.Run(t, analysistest.TestData(), Analyzer, "mutual")
 }

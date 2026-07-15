@@ -1,9 +1,9 @@
 {
-  "total": 154,
-  "bounded": 89,
-  "coverage_pct": "57.8",
+  "total": 160,
+  "bounded": 93,
+  "coverage_pct": "58.1",
   "by_cause": {
-    "call": 40,
+    "call": 42,
     "go": 3,
     "irreducible": 1,
     "loop": 13,
@@ -37,6 +37,10 @@
     "interproc": {
       "total": 5,
       "bounded": 5
+    },
+    "iterator": {
+      "total": 6,
+      "bounded": 4
     },
     "multivar": {
       "total": 3,
@@ -533,6 +537,42 @@
       "func": "scan",
       "verdict": "bounded",
       "bound": "O(len(ys))"
+    },
+    {
+      "pkg": "iterator",
+      "func": "CountKeys",
+      "verdict": "bounded",
+      "bound": "O(len(m))"
+    },
+    {
+      "pkg": "iterator",
+      "func": "FromChannel",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "iterator",
+      "func": "SumBreak",
+      "verdict": "bounded",
+      "bound": "O(len(s))"
+    },
+    {
+      "pkg": "iterator",
+      "func": "SumRecursive",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "iterator",
+      "func": "SumValues",
+      "verdict": "bounded",
+      "bound": "O(len(s))"
+    },
+    {
+      "pkg": "iterator",
+      "func": "recSeq",
+      "verdict": "bounded",
+      "bound": "O(1)"
     },
     {
       "pkg": "multivar",
