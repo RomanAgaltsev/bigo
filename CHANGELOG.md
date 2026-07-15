@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.17.1](https://github.com/RomanAgaltsev/bigo/compare/v1.17.0...v1.17.1) (2026-07-15)
+
+
+### Bug Fixes
+
+* v1.17.0 review findings ([#59](https://github.com/RomanAgaltsev/bigo/issues/59)) ([5ead8aa](https://github.com/RomanAgaltsev/bigo/commit/5ead8aa066283da7eec6d811d9336a3ebdb6fb39))
+
 ## [1.17.0](https://github.com/RomanAgaltsev/bigo/compare/v1.16.0...v1.17.0) (2026-07-15)
 
 
