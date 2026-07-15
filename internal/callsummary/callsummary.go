@@ -157,7 +157,7 @@ func substArgs(summary bound.Bound, paramNames []string, args []ssa.Value) bound
 			}
 		}
 	}
-	rename := map[bound.Var]bound.Var{}
+	rename := make(map[bound.Var]bound.Var, len(paramNames))
 	for i, name := range paramNames {
 		if i >= len(args) {
 			return bound.Top()

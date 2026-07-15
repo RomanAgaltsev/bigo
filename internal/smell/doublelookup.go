@@ -35,7 +35,7 @@ func smDoubleLookup(fn *ssa.Function, _ *fnContext) []Finding {
 // mapDoubleLookups implements the map variant of SM7.
 func mapDoubleLookups(fn *ssa.Function) []Finding {
 	// Gather all Lookup instructions and the set of maps updated anywhere.
-	updated := map[ssa.Value]bool{}
+	updated := make(map[ssa.Value]bool, len(fn.Blocks))
 	for _, b := range fn.Blocks {
 		for _, instr := range b.Instrs {
 			if upd, ok := instr.(*ssa.MapUpdate); ok {

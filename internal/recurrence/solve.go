@@ -143,8 +143,8 @@ type ratio struct {
 // divisor). Over-counting from mutually exclusive branches only inflates p, a
 // conservative (sound) over-estimate.
 func ratiosOf(terms []sizeStep) []ratio {
-	counts := map[int64]int{}
-	var order []int64
+	counts := make(map[int64]int, len(terms))
+	order := make([]int64, 0, len(terms))
 	for _, t := range terms {
 		if counts[t.div] == 0 {
 			order = append(order, t.div)

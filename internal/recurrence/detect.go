@@ -157,7 +157,7 @@ func selfCallMult(fn *ssa.Function, calls []*ssa.CallCommon) int {
 // p. Returns the strict steps (Sub/Div) when every call is a strict step or an
 // unchanged pass-through with at least one strict step; else ok=false.
 func stepsFor(p *ssa.Parameter, pi int, calls []*ssa.CallCommon) ([]sizeStep, bool) {
-	var terms []sizeStep
+	terms := make([]sizeStep, 0, len(calls))
 	hasStrict := false
 	for _, c := range calls {
 		if pi >= len(c.Args) {
