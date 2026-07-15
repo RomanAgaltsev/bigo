@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.17.0](https://github.com/RomanAgaltsev/bigo/compare/v1.16.0...v1.17.0) (2026-07-15)
+
+
+### Features
+
+* code smell rules ([#57](https://github.com/RomanAgaltsev/bigo/issues/57)) ([78537df](https://github.com/RomanAgaltsev/bigo/commit/78537df62f22f44136524cccfce75860461bcbdd))
+
 ## [1.16.0](https://github.com/RomanAgaltsev/bigo/compare/v1.15.0...v1.16.0) (2026-07-15)
 
 
