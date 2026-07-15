@@ -1,13 +1,13 @@
 {
-  "total": 134,
-  "bounded": 81,
-  "coverage_pct": "60.4",
+  "total": 145,
+  "bounded": 85,
+  "coverage_pct": "58.6",
   "by_cause": {
-    "call": 30,
-    "go": 2,
+    "call": 35,
+    "go": 3,
     "irreducible": 1,
     "loop": 13,
-    "nobody": 7
+    "nobody": 8
   },
   "per_package": {
     "budget": {
@@ -29,6 +29,10 @@
     "fieldsize": {
       "total": 13,
       "bounded": 8
+    },
+    "funcvalue": {
+      "total": 11,
+      "bounded": 4
     },
     "interproc": {
       "total": 5,
@@ -379,6 +383,72 @@
       "func": "work",
       "verdict": "bounded",
       "bound": "O(1)"
+    },
+    {
+      "pkg": "funcvalue",
+      "func": "ApplyOnce",
+      "verdict": "bounded",
+      "bound": "O(1)"
+    },
+    {
+      "pkg": "funcvalue",
+      "func": "EachConst",
+      "verdict": "bounded",
+      "bound": "O(len(xs))"
+    },
+    {
+      "pkg": "funcvalue",
+      "func": "ForwardedToUnknown",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "funcvalue",
+      "func": "FromStructField",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "funcvalue",
+      "func": "GoInvoked",
+      "verdict": "unverifiable",
+      "cause": "go"
+    },
+    {
+      "pkg": "funcvalue",
+      "func": "StoredEscapes",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "funcvalue",
+      "func": "apply",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "funcvalue",
+      "func": "each",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "funcvalue",
+      "func": "inc",
+      "verdict": "bounded",
+      "bound": "O(1)"
+    },
+    {
+      "pkg": "funcvalue",
+      "func": "noop",
+      "verdict": "bounded",
+      "bound": "O(1)"
+    },
+    {
+      "pkg": "funcvalue",
+      "func": "opaque",
+      "verdict": "unverifiable",
+      "cause": "nobody"
     },
     {
       "pkg": "interproc",

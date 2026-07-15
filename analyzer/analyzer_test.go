@@ -86,6 +86,10 @@ func TestAnalyzerRecursion(t *testing.T) {
 	analysistest.Run(t, analysistest.TestData(), Analyzer, "recursion")
 }
 
+func TestAnalyzerFuncValue(t *testing.T) {
+	analysistest.Run(t, analysistest.TestData(), Analyzer, "funcvalue")
+}
+
 func TestAnalyzerMutual(t *testing.T) {
 	analysistest.Run(t, analysistest.TestData(), Analyzer, "mutual")
 }
