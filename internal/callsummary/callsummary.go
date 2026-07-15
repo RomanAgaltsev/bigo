@@ -20,6 +20,7 @@ type Resolver struct {
 	onStack     map[*ssa.Function]bool
 	overrides   map[*ssa.Function]bound.Bound
 	methodCosts map[*types.Func]bound.Bound
+	paramMemo   map[*ssa.Function]ParamSummary
 }
 
 // New returns a resolver. overrides maps functions to asserted summaries (from
@@ -33,6 +34,7 @@ func New(overrides map[*ssa.Function]bound.Bound) *Resolver {
 		memo:      map[*ssa.Function]bound.Bound{},
 		onStack:   map[*ssa.Function]bool{},
 		overrides: overrides,
+		paramMemo: map[*ssa.Function]ParamSummary{},
 	}
 }
 
