@@ -10,6 +10,7 @@ import (
 	"github.com/RomanAgaltsev/bigo/internal/bound"
 	"github.com/RomanAgaltsev/bigo/internal/costtable"
 	"github.com/RomanAgaltsev/bigo/internal/engine"
+	"github.com/RomanAgaltsev/bigo/internal/fieldpath"
 	"github.com/RomanAgaltsev/bigo/internal/recurrence"
 	"github.com/RomanAgaltsev/bigo/internal/size"
 )
@@ -156,11 +157,20 @@ func substArgs(summary bound.Bound, paramNames []string, args []ssa.Value) bound
 			return bound.Top()
 		}
 		av, class, ok := size.ValueClass(args[i])
+		sliceParam, _ := args[i].(*ssa.Parameter)
+		isSliceArg := ok && sliceParam != nil && isSliceParam(sliceParam)
+		if !ok {
+			// A parameter captured by a read-only closure reads back as a load
+			// of its spill cell; recover its entry-stable size (never its cap).
+			if sv, cl, sok := fieldpath.SpillArgSize(args[i]); sok {
+				av, class, ok = sv, cl, true
+			}
+		}
 		switch {
 		case ok && class == size.Length:
 			rename[size.Len(name)] = av
-			if ap, isParam := args[i].(*ssa.Parameter); isParam && isSliceParam(ap) {
-				rename[size.Cap(name)] = size.Cap(ap.Name())
+			if isSliceArg {
+				rename[size.Cap(name)] = size.Cap(sliceParam.Name())
 			} else if dependsOnVar(summary, size.Cap(name)) {
 				return bound.Top()
 			}

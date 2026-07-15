@@ -134,6 +134,77 @@ func UseSized(zs []int) []int { return Map(zs, wrapper) }`
 	}
 }
 
+func TestClosureCostO1Comparator(t *testing.T) {
+	// The sort.Slice shape: captures xs, but the BODY bound is O(1) — no free
+	// var appears in the bound, so nothing needs renaming.
+	src := `package input
+func each(xs []int, f func(int)) {
+	for _, v := range xs { f(v) }
+}
+func Use(xs []int) {
+	each(xs, func(i int) { _ = xs[0] + i })
+}`
+	pkg, _, err := ssasupport.Build(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	r := New(nil)
+	if got := r.summary(ssasupport.Func(pkg, "Use")); got.String() != "O(len(xs))" {
+		t.Errorf("O(1)-closure each = %q, want O(len(xs))", got.String())
+	}
+}
+
+func TestClosureCostCaptureSizedRefused(t *testing.T) {
+	// Sound-subset outcome (see closure.go): the closure body loops over the
+	// captured slice, so its plain summary is ⊤ (free-var sizes are not
+	// canonical roots), and closureCost refuses. Product-bound pricing of
+	// capture-sized closures is deferred.
+	src := `package input
+func each(ys []int, f func(int)) {
+	for _, v := range ys { f(v) }
+}
+func Use(xs, ys []int) {
+	each(ys, func(int) {
+		s := 0
+		for _, v := range xs { s += v }
+		_ = s
+	})
+}`
+	pkg, _, err := ssasupport.Build(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	r := New(nil)
+	if got := r.summary(ssasupport.Func(pkg, "Use")); !got.IsTop() {
+		t.Errorf("capture-sized closure must refuse (deferred): got %q", got.String())
+	}
+}
+
+func TestClosureCostMutatedCaptureRefused(t *testing.T) {
+	// Pin 3: the captured slice is reassigned between MakeClosure and the call.
+	src := `package input
+func each(ys []int, f func(int)) {
+	for _, v := range ys { f(v) }
+}
+func Use(xs, ys []int) {
+	f := func(int) {
+		s := 0
+		for _, v := range xs { s += v }
+		_ = s
+	}
+	xs = append(xs, 1) // capture no longer entry-stable at the consuming call
+	each(ys, f)
+}`
+	pkg, _, err := ssasupport.Build(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	r := New(nil)
+	if got := r.summary(ssasupport.Func(pkg, "Use")); !got.IsTop() {
+		t.Errorf("mutated capture must refuse: got %q", got.String())
+	}
+}
+
 func TestParamSummaryUnboundedLoopPoisons(t *testing.T) {
 	// f invoked under a loop with an unrecognized trip count -> ⊤ count.
 	ps, ok := paramSummary(t, `package input

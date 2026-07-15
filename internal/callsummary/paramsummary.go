@@ -281,6 +281,8 @@ func (r *Resolver) resolveFuncArg(arg ssa.Value) (bound.Bound, bool) {
 			}
 		}
 		return s, true
+	case *ssa.MakeClosure:
+		return r.closureCost(v)
 	}
 	return bound.Top(), false
 }
