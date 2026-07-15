@@ -41,3 +41,26 @@ func f(g func() int) []int { return make([]int, g()) }`, "unverifiable"},
 		}
 	}
 }
+
+func TestSpaceVerdict(t *testing.T) {
+	n := bound.Of(bound.Term("n"))
+	c := bound.Constant()
+	cases := []struct {
+		name   string
+		sp     Space
+		budget bound.Bound
+		want   bound.Verdict
+	}{
+		{"stack exceeds is exceeds", Space{Heap: c, Stack: n}, c, bound.Exceeds},
+		{"heap and stack within", Space{Heap: n, Stack: c}, n, bound.Within},
+		{"heap over budget is unknown never exceeds", Space{Heap: n, Stack: c}, c, bound.Unknown},
+		{"top heap is unknown", Space{Heap: bound.Top(), Stack: c}, n, bound.Unknown},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := SpaceVerdict(tc.sp, tc.budget); got != tc.want {
+				t.Errorf("SpaceVerdict(%v, %s) = %v, want %v", tc.sp, tc.budget.String(), got, tc.want)
+			}
+		})
+	}
+}

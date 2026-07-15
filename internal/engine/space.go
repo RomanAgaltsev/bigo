@@ -172,3 +172,16 @@ func isConstLen(v ssa.Value) bool {
 	_, ok := v.(*ssa.Const)
 	return ok
 }
+
+// SpaceVerdict applies the heap/stack asymmetry: stack (a real peak) can prove
+// Within and Exceeds; heap (an upper bound on peak) proves Within only. So a
+// budget can only be Exceeded on the stack term, never on heap over-approximation.
+func SpaceVerdict(sp Space, budget bound.Bound) bound.Verdict {
+	if bound.Check(sp.Stack, budget) == bound.Exceeds {
+		return bound.Exceeds
+	}
+	if bound.Check(sp.Heap.Join(sp.Stack), budget) == bound.Within {
+		return bound.Within
+	}
+	return bound.Unknown
+}
