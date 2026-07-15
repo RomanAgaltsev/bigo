@@ -6,6 +6,7 @@ import (
 	"golang.org/x/tools/go/ssa"
 
 	"github.com/RomanAgaltsev/bigo/internal/bound"
+	"github.com/RomanAgaltsev/bigo/internal/costtable"
 	"github.com/RomanAgaltsev/bigo/internal/engine"
 	"github.com/RomanAgaltsev/bigo/internal/fieldpath"
 	"github.com/RomanAgaltsev/bigo/internal/loopnest"
@@ -251,6 +252,29 @@ func (r *Resolver) parametricCallCost(callee *ssa.Function, c *ssa.CallCommon) (
 			return bound.Top(), true // unresolvable func value (pins 1, 8)
 		}
 		total = total.Join(substArgs(cnt, names, c.Args).Mul(argCost))
+	}
+	return total, true
+}
+
+// parametricTableCost prices a call to a curated callback-taking stdlib
+// function (sort.Slice, slices.SortFunc, …): Base ⊔ Σ PerArg[i] × cost(argᵢ),
+// the callback cost supplied by resolveFuncArg. Any unresolvable func value
+// forces ⊤ (pin 8). ok=false when the callee is not curated.
+func (r *Resolver) parametricTableCost(c *ssa.CallCommon) (bound.Bound, bool) {
+	pe, ok := costtable.LookupParametric(c)
+	if !ok {
+		return bound.Bound{}, false
+	}
+	total := pe.Base(c.Args)
+	for i, count := range pe.PerArg {
+		if i >= len(c.Args) {
+			return bound.Top(), true
+		}
+		argCost, ok := r.resolveFuncArg(c.Args[i])
+		if !ok {
+			return bound.Top(), true // unresolvable func value (pin 8)
+		}
+		total = total.Join(count(c.Args).Mul(argCost))
 	}
 	return total, true
 }

@@ -205,6 +205,41 @@ func Use(xs, ys []int) {
 	}
 }
 
+func TestSortSliceParametric(t *testing.T) {
+	src := `package input
+import "sort"
+func Sort(xs []int) {
+	sort.Slice(xs, func(i, j int) bool { return xs[i] < xs[j] })
+}`
+	pkg, _, err := ssasupport.Build(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	r := New(nil)
+	got := r.summary(ssasupport.Func(pkg, "Sort")).String()
+	if got != "O(len(xs) log(len(xs)))" {
+		t.Errorf("sort.Slice with O(1) comparator = %q, want O(len(xs) log(len(xs)))", got)
+	}
+}
+
+func TestSortSliceUnresolvedCallbackTop(t *testing.T) {
+	// Pin 8: the comparator is a func value from a struct field -> ⊤.
+	src := `package input
+import "sort"
+var held struct{ less func(i, j int) bool }
+func Sort(xs []int) {
+	sort.Slice(xs, held.less)
+}`
+	pkg, _, err := ssasupport.Build(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	r := New(nil)
+	if got := r.summary(ssasupport.Func(pkg, "Sort")); !got.IsTop() {
+		t.Errorf("sort.Slice with unresolved comparator must be ⊤: got %q", got.String())
+	}
+}
+
 func TestParamSummaryUnboundedLoopPoisons(t *testing.T) {
 	// f invoked under a loop with an unrecognized trip count -> ⊤ count.
 	ps, ok := paramSummary(t, `package input

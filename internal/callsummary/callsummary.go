@@ -91,6 +91,9 @@ func (r *Resolver) CallCost(c *ssa.CallCommon) bound.Bound {
 	// instantiation of one. Pkg is not a proxy for this: instances always have
 	// a nil Pkg, and imported functions have a non-nil Pkg with no blocks.
 	if len(callee.Blocks) == 0 {
+		if b, ok := r.parametricTableCost(c); ok {
+			return b
+		}
 		return bound.Top()
 	}
 	if b, ok := r.parametricCallCost(callee, c); ok {
