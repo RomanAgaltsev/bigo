@@ -1,6 +1,8 @@
 // Package funcvalue is the corpus for parametric (function-valued) costs.
 package funcvalue
 
+import "sort"
+
 func apply(f func(int) int, x int) int { return f(x) } // parametric helper
 
 func each(xs []int, f func(int)) { // PerParam[f] = O(len(xs))
@@ -92,5 +94,29 @@ func EachCaptureSizedDeferred(xs, ys []int) { // want `cannot verify budget`
 			s += v
 		}
 		_ = s
+	})
+}
+
+//bigo:max O(n log n)
+func SortWithO1Comparator(xs []int) { // graduates: the sort.Slice headline
+	sort.Slice(xs, func(i, j int) bool { return xs[i] < xs[j] })
+}
+
+var heldLess struct{ less func(i, j int) bool }
+
+//bigo:max O(n log n)
+func SortWithUnresolvedComparator(xs []int) { // want `cannot verify budget`
+	sort.Slice(xs, heldLess.less) // pin 8: comparator is an unresolved func value -> ⊤
+}
+
+//bigo:max O(n log n)
+func SortWithLinearComparator(xs []int) { // want `cannot verify budget`
+	// capture-sized comparator (O(len(xs)) scan): product pricing is deferred -> ⊤
+	sort.Slice(xs, func(i, j int) bool {
+		s := 0
+		for _, v := range xs {
+			s += v
+		}
+		return xs[i]+s < xs[j]
 	})
 }

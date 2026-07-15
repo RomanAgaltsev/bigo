@@ -1,9 +1,9 @@
 {
-  "total": 151,
-  "bounded": 88,
-  "coverage_pct": "58.3",
+  "total": 154,
+  "bounded": 89,
+  "coverage_pct": "57.8",
   "by_cause": {
-    "call": 38,
+    "call": 40,
     "go": 3,
     "irreducible": 1,
     "loop": 13,
@@ -31,8 +31,8 @@
       "bounded": 8
     },
     "funcvalue": {
-      "total": 17,
-      "bounded": 7
+      "total": 20,
+      "bounded": 8
     },
     "interproc": {
       "total": 5,
@@ -443,6 +443,24 @@
       "func": "GoInvoked",
       "verdict": "unverifiable",
       "cause": "go"
+    },
+    {
+      "pkg": "funcvalue",
+      "func": "SortWithLinearComparator",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "funcvalue",
+      "func": "SortWithO1Comparator",
+      "verdict": "bounded",
+      "bound": "O(len(xs) log(len(xs)))"
+    },
+    {
+      "pkg": "funcvalue",
+      "func": "SortWithUnresolvedComparator",
+      "verdict": "unverifiable",
+      "cause": "call"
     },
     {
       "pkg": "funcvalue",

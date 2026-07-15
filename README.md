@@ -195,6 +195,41 @@ func RecSum(xs []int) int { // stack O(len(xs)); within
 Concurrent allocation (`go`) and calls whose space is unknown are `⊤`
 (unverifiable), exactly as on the time axis.
 
+## Function values
+
+Calls through a function value used to be unverifiable across the board. bigo
+now prices the common, statically resolvable shapes by summarizing a
+higher-order function parametrically: a `Base` cost plus, per function-typed
+parameter, an upper bound on how many times it is invoked. At a call site that
+count is multiplied by the cost of the concrete argument.
+
+What **resolves** today:
+
+- **Static function arguments** — `Map(xs, double)` costs the invocation count
+  times `double`'s own cost.
+- **In-scope closures with an O(1) body** — the `sort.Slice` comparator that
+  captures the slice only for O(1) index reads. A read-only captured slice's
+  size is recovered even though Go boxes the capture (`sort.Slice(xs, less)` →
+  `O(len(xs)·log(len(xs)))`).
+- **Curated `sort`/`slices` callbacks** — `sort.Slice`, `sort.SliceStable`,
+  `sort.Search`, `slices.SortFunc`, `slices.BinarySearchFunc`,
+  `slices.ContainsFunc`/`IndexFunc`/`MaxFunc`/`MinFunc`/`CompactFunc`/`EqualFunc`,
+  each priced as its documented-contract count × the callback cost.
+- **Composition** — a helper that forwards its function parameter to another
+  known-parametric helper composes the counts.
+
+The counting rule is a **whitelist**: a function parameter is priced only when
+it is invoked directly or handed to another known-parametric callee. Every
+other use — stored to a field or global, passed to an unknown/bodyless callee,
+launched in a goroutine, captured then mutated, or read from a struct field or
+channel — forces its count to `⊤`, so an invocation bound is never
+under-counted.
+
+What still stays `⊤` (annotate the callee with `//bigo:cost`, or trust it): a
+closure whose body cost depends on a captured size (product bounds are
+deferred), a closure created in one function and consumed in another, a func
+value from a struct field or channel, and goroutine-invoked callbacks.
+
 ## What bigo does not count (yet)
 
 Each can only *miss* a violation, never invent one:
@@ -203,7 +238,9 @@ Each can only *miss* a violation, never invent one:
 - String concatenation and comparison are O(1) per operation.
 - Map index/assign/delete are O(1).
 - Self-recursion over a size measure is solved (see [Recursion](#recursion));
-  interface calls without `//bigo:cost`, closures, and `range`-over-func
+  the statically resolvable function-value shapes are priced (see
+  [Function values](#function-values)). Interface calls without `//bigo:cost`,
+  out-of-scope closures, capture-sized closures, and `range`-over-func
   iterators remain **unverifiable** (in progress).
 - Cross-package calls resolve only through the curated stdlib cost table or
   your `//bigo:cost` annotations.
