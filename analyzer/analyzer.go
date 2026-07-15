@@ -18,9 +18,12 @@ import (
 	"github.com/RomanAgaltsev/bigo/internal/directive"
 	"github.com/RomanAgaltsev/bigo/internal/engine"
 	"github.com/RomanAgaltsev/bigo/internal/normalize"
+	"github.com/RomanAgaltsev/bigo/internal/smell"
 )
 
 var reportMode bool
+
+var smellsFlag string
 
 // Analyzer is the bigo complexity analyzer.
 var Analyzer = newAnalyzer()
@@ -33,6 +36,7 @@ func newAnalyzer() *analysis.Analyzer {
 		Run:      run,
 	}
 	a.Flags.BoolVar(&reportMode, "report", false, "report inferred complexity for every function")
+	a.Flags.StringVar(&smellsFlag, "smells", "all", "smell rules to run: all, none, or comma-separated (SM1..SM8)")
 	return a
 }
 
@@ -92,6 +96,27 @@ func run(pass *analysis.Pass) (any, error) {
 		}
 		if spaceDir, hasSpace := directive.Verb(fd.Dirs, annotation.Space); hasSpace {
 			checkSpace(pass, fd.Decl, fd.Fn, spaceResolver, resolver, spaceDir)
+		}
+	}
+
+	// Smell pass: advisory complexity smells, firewalled from verdicts. Runs after
+	// and independent of the budget pass; //bigo:ignore suppresses smells too.
+	if enabled, err := smell.ParseRules(smellsFlag); err != nil {
+		return nil, err
+	} else if len(enabled) > 0 {
+		ignored := map[*ast.FuncDecl]bool{}
+		for _, fd := range fns.Directives {
+			if _, has := directive.Verb(fd.Dirs, annotation.Ignore); has {
+				ignored[fd.Decl] = true
+			}
+		}
+		for decl, fn := range byDecl {
+			if ignored[decl] {
+				continue
+			}
+			for _, f := range smell.Detect(fn, enabled) {
+				pass.Reportf(f.Pos, "smell(%s): %s", f.Rule, f.Message)
+			}
 		}
 	}
 	return nil, nil

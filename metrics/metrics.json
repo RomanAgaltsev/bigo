@@ -1,12 +1,12 @@
 {
-  "total": 160,
-  "bounded": 93,
-  "coverage_pct": "58.1",
+  "total": 172,
+  "bounded": 98,
+  "coverage_pct": "57.0",
   "by_cause": {
-    "call": 42,
+    "call": 47,
     "go": 3,
     "irreducible": 1,
-    "loop": 13,
+    "loop": 15,
     "nobody": 8
   },
   "per_package": {
@@ -61,6 +61,10 @@
     "recursion": {
       "total": 16,
       "bounded": 9
+    },
+    "smells": {
+      "total": 12,
+      "bounded": 5
     },
     "smoke": {
       "total": 2,
@@ -847,6 +851,78 @@
     {
       "pkg": "recursion",
       "func": "Unguarded",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "smells",
+      "func": "Clean",
+      "verdict": "bounded",
+      "bound": "O(len(xs))"
+    },
+    {
+      "pkg": "smells",
+      "func": "SM1Concat",
+      "verdict": "bounded",
+      "bound": "O(len(xs))"
+    },
+    {
+      "pkg": "smells",
+      "func": "SM1ConcatChained",
+      "verdict": "bounded",
+      "bound": "O(len(xs))"
+    },
+    {
+      "pkg": "smells",
+      "func": "SM1NoFireBuilder",
+      "verdict": "bounded",
+      "bound": "O(len(xs))"
+    },
+    {
+      "pkg": "smells",
+      "func": "SM1NoFireConstTrip",
+      "verdict": "unverifiable",
+      "cause": "loop"
+    },
+    {
+      "pkg": "smells",
+      "func": "SM1Sprintf",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "smells",
+      "func": "SM4Compile",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "smells",
+      "func": "SM4NoFireHoisted",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "smells",
+      "func": "SM5NoFireConstTrip",
+      "verdict": "unverifiable",
+      "cause": "loop"
+    },
+    {
+      "pkg": "smells",
+      "func": "SM5NoFireOutside",
+      "verdict": "bounded",
+      "bound": "O(len(g) log(len(g)))"
+    },
+    {
+      "pkg": "smells",
+      "func": "SM5Sort",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "smells",
+      "func": "SM5SortSlice",
       "verdict": "unverifiable",
       "cause": "call"
     },
