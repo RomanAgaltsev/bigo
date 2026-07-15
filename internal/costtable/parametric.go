@@ -149,3 +149,44 @@ var parametric = map[string]ParamEntry{
 		PerArg: map[int]func([]ssa.Value) bound.Bound{2: func(a []ssa.Value) bound.Bound { return linearP(a, 0) }},
 	},
 }
+
+// IteratorProducer is a curated stdlib function that returns a range-over-func
+// sequence (iter.Seq / iter.Seq2). Base is the producer's own cost when the
+// loop runs to completion; Yield upper-bounds how many times the loop body
+// runs. Both are in caller vocabulary, sized off the producer's argument.
+type IteratorProducer struct {
+	Base  func(args []ssa.Value) bound.Bound
+	Yield func(args []ssa.Value) bound.Bound
+}
+
+// LookupIteratorProducer returns the curated producer for a static call that
+// yields a range-over-func sequence, through generic instantiations.
+// ok=false when the callee is not a curated producer.
+func LookupIteratorProducer(c *ssa.CallCommon) (IteratorProducer, bool) {
+	callee := c.StaticCallee()
+	if callee == nil {
+		return IteratorProducer{}, false
+	}
+	if orig := callee.Origin(); orig != nil {
+		callee = orig
+	}
+	if callee.Pkg == nil || callee.Pkg.Pkg == nil {
+		return IteratorProducer{}, false
+	}
+	key := callee.Pkg.Pkg.Path() + "." + callee.Name()
+	e, ok := iteratorProducers[key]
+	return e, ok
+}
+
+func linearArg0(a []ssa.Value) bound.Bound { return linearP(a, 0) }
+
+// iteratorProducers maps a stdlib sequence producer to its linear yield count.
+// Each yields once per element of its single collection/map argument.
+var iteratorProducers = map[string]IteratorProducer{
+	"slices.Values":   {Base: linearArg0, Yield: linearArg0},
+	"slices.All":      {Base: linearArg0, Yield: linearArg0},
+	"slices.Backward": {Base: linearArg0, Yield: linearArg0},
+	"maps.Keys":       {Base: linearArg0, Yield: linearArg0},
+	"maps.Values":     {Base: linearArg0, Yield: linearArg0},
+	"maps.All":        {Base: linearArg0, Yield: linearArg0},
+}

@@ -240,6 +240,53 @@ func Sort(xs []int) {
 	}
 }
 
+func TestRangeOverFuncProducer(t *testing.T) {
+	src := `package input
+import "slices"
+func Sum(s []int) int {
+	total := 0
+	for v := range slices.Values(s) {
+		total += v
+	}
+	return total
+}`
+	pkg, _, err := ssasupport.Build(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	r := New(nil)
+	if got := r.summary(ssasupport.Func(pkg, "Sum")).String(); got != "O(len(s))" {
+		t.Errorf("range slices.Values(s) with O(1) body = %q, want O(len(s))", got)
+	}
+}
+
+func TestRangeOverFuncUserSeqTop(t *testing.T) {
+	// A user iterator producer is not curated -> ⊤ (return-value tracing absent).
+	src := `package input
+func count(n int) func(yield func(int) bool) {
+	return func(yield func(int) bool) {
+		for i := 0; i < n; i++ {
+			if !yield(i) { return }
+		}
+	}
+}
+func Sum(n int) int {
+	total := 0
+	for v := range count(n) {
+		total += v
+	}
+	return total
+}`
+	pkg, _, err := ssasupport.Build(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	r := New(nil)
+	if got := r.summary(ssasupport.Func(pkg, "Sum")); !got.IsTop() {
+		t.Errorf("user iterator producer must be ⊤: got %q", got.String())
+	}
+}
+
 func TestParamSummaryUnboundedLoopPoisons(t *testing.T) {
 	// f invoked under a loop with an unrecognized trip count -> ⊤ count.
 	ps, ok := paramSummary(t, `package input

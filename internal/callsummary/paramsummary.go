@@ -256,6 +256,51 @@ func (r *Resolver) parametricCallCost(callee *ssa.Function, c *ssa.CallCommon) (
 	return total, true
 }
 
+// resolveSeq resolves a range-over-func sequence value to a ParamSummary whose
+// single func parameter (index 0, the yield/body closure) carries the yield
+// count. PR4 handles curated stdlib producers only (slices.Values/All/Backward,
+// maps.Keys/Values/All); an in-scope closure sequence is unwrapped by
+// StaticCallee and priced by parametricCallCost instead, so it never reaches
+// here. Everything else — a user iterator, a channel/struct-field seq — refuses.
+func (r *Resolver) resolveSeq(v ssa.Value) (ParamSummary, bool) {
+	call, ok := v.(*ssa.Call)
+	if !ok {
+		return ParamSummary{}, false
+	}
+	pe, ok := costtable.LookupIteratorProducer(&call.Call)
+	if !ok {
+		return ParamSummary{}, false
+	}
+	return ParamSummary{
+		Base:     pe.Base(call.Call.Args),
+		PerParam: map[int]bound.Bound{0: pe.Yield(call.Call.Args)},
+	}, true
+}
+
+// rangeFuncCost prices a range-over-func loop. The lowering calls the sequence
+// value with the loop body as a yield closure: Call.Value is the sequence and
+// Call.Args[0] is the body. The cost is the producer's Base ⊔ yield-count ×
+// body cost. Any unresolvable body forces ⊤ (pin 5 and channel/user seqs).
+// ok=false when the sequence is not a curated producer.
+func (r *Resolver) rangeFuncCost(c *ssa.CallCommon) (bound.Bound, bool) {
+	ps, ok := r.resolveSeq(c.Value)
+	if !ok {
+		return bound.Bound{}, false
+	}
+	total := ps.Base
+	for i, count := range ps.PerParam {
+		if i >= len(c.Args) {
+			return bound.Top(), true
+		}
+		argCost, ok := r.resolveFuncArg(c.Args[i])
+		if !ok {
+			return bound.Top(), true
+		}
+		total = total.Join(count.Mul(argCost))
+	}
+	return total, true
+}
+
 // parametricTableCost prices a call to a curated callback-taking stdlib
 // function (sort.Slice, slices.SortFunc, …): Base ⊔ Σ PerArg[i] × cost(argᵢ),
 // the callback cost supplied by resolveFuncArg. Any unresolvable func value

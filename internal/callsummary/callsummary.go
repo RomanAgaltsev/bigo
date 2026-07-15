@@ -82,6 +82,9 @@ func (r *Resolver) CallCost(c *ssa.CallCommon) bound.Bound {
 				return substArgs(summary, names, c.Args)
 			}
 		}
+		if b, ok := r.rangeFuncCost(c); ok { // range-over-func: seq(body) call
+			return b
+		}
 		return bound.Top() // closure / func value / unannotated interface
 	}
 	if _, ok := r.override(callee); ok {
