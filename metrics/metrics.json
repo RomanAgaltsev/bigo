@@ -1,9 +1,9 @@
 {
-  "total": 178,
-  "bounded": 103,
+  "total": 183,
+  "bounded": 106,
   "coverage_pct": "57.9",
   "by_cause": {
-    "call": 48,
+    "call": 50,
     "go": 3,
     "irreducible": 1,
     "loop": 15,
@@ -63,8 +63,8 @@
       "bounded": 9
     },
     "smells": {
-      "total": 18,
-      "bounded": 10
+      "total": 23,
+      "bounded": 13
     },
     "smoke": {
       "total": 2,
@@ -892,6 +892,24 @@
     },
     {
       "pkg": "smells",
+      "func": "SM2NoFireInvariantNeedle",
+      "verdict": "bounded",
+      "bound": "O(len(s)^2)"
+    },
+    {
+      "pkg": "smells",
+      "func": "SM2NoFireNonParam",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "smells",
+      "func": "SM2Scan",
+      "verdict": "bounded",
+      "bound": "O(len(items) len(s))"
+    },
+    {
+      "pkg": "smells",
       "func": "SM3Append",
       "verdict": "bounded",
       "bound": "O(len(xs))"
@@ -961,6 +979,18 @@
       "func": "SM7NoFireNoSecond",
       "verdict": "bounded",
       "bound": "O(1)"
+    },
+    {
+      "pkg": "smells",
+      "func": "SM8Fib",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "smells",
+      "func": "SM8NoFireLinear",
+      "verdict": "bounded",
+      "bound": "O(n)"
     },
     {
       "pkg": "smoke",
@@ -1172,5 +1202,15 @@
       "verdict": "unverifiable",
       "cause": "call"
     }
-  ]
+  ],
+  "smells": {
+    "SM1": 4,
+    "SM2": 1,
+    "SM3": 1,
+    "SM4": 1,
+    "SM5": 2,
+    "SM6": 1,
+    "SM7": 1,
+    "SM8": 2
+  }
 }

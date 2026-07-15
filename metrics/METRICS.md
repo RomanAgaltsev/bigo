@@ -2,7 +2,7 @@
 
 GENERATED — do not edit; regenerate with `task metrics`.
 
-**Coverage: 57.9%** — 103 of 178 corpus functions bounded.
+**Coverage: 57.9%** — 106 of 183 corpus functions bounded.
 
 ## Per package
 
@@ -21,7 +21,7 @@ GENERATED — do not edit; regenerate with `task metrics`.
 | negative | 3 | 0 | 3 |
 | positive | 4 | 4 | 0 |
 | recursion | 16 | 9 | 7 |
-| smells | 18 | 10 | 8 |
+| smells | 23 | 13 | 10 |
 | smoke | 2 | 1 | 1 |
 | space | 8 | 7 | 1 |
 | structures/array | 7 | 7 | 0 |
@@ -36,7 +36,7 @@ GENERATED — do not edit; regenerate with `task metrics`.
 
 | Cause | Count |
 |---|---|
-| call | 48 |
+| call | 50 |
 | go | 3 |
 | irreducible | 1 |
 | loop | 15 |
@@ -44,3 +44,18 @@ GENERATED — do not edit; regenerate with `task metrics`.
 
 The cause histogram is the Phase-2 prioritization signal: the biggest
 bucket is the next feature.
+
+## Smell fires (drift alarm)
+
+Not coverage. A change in a rule's corpus fire count is a behavior change and must be deliberate.
+
+| Rule | Corpus fires |
+|---|---|
+| SM1 | 4 |
+| SM2 | 1 |
+| SM3 | 1 |
+| SM4 | 1 |
+| SM5 | 2 |
+| SM6 | 1 |
+| SM7 | 1 |
+| SM8 | 2 |

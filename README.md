@@ -263,6 +263,66 @@ Each can only *miss* a violation, never invent one:
   (requires a length above 2^62). The `lo + (hi-lo)/2` form needs no
   assumption.
 
+## Smells
+
+In addition to the three-valued budget verdicts, bigo emits **advisory
+complexity smells** — patterns that are *provably* the shape of a known
+inefficiency, reported with the prefix `smell(SMn):`. Smells are firewalled
+from verdicts: they never affect a budget's within/exceeds/unverifiable result,
+never read a budget, and are never consulted by the cost engine. They catch
+the patterns bigo's allocation-blind cost model deliberately does not charge
+(string concatenation), plus ones no Go linter can name (exponential
+recursion).
+
+A smell fires only on a **proved** SSA pattern — the analogue of bigo's ⊤ rule:
+when the detector cannot prove the pattern, it stays silent. Diagnostics carry
+the fixed `smell(SMn):` prefix so golangci-lint users can filter on the class.
+
+| Rule | Fires on | Headline no-fire |
+|---|---|---|
+| **SM1** | string built by `+=` (or `fmt.Sprintf` self-accumulation) in a data-dependent loop | `strings.Builder`; constant-trip loop |
+| **SM2** | repeated `slices.Contains`/`Index` over a parameter slice with a loop-varying needle | loop-invariant needle; rebuilt scan target |
+| **SM3** | `append` into a zero-capacity slice bounded by a resolvable loop | `make([]T, 0, n)` with capacity given |
+| **SM4** | `regexp.Compile`/`MustCompile` inside any loop | compile hoisted before the loop |
+| **SM5** | sorting inside a data-dependent loop | constant-trip loop; sort outside any loop |
+| **SM6** | `make(map[K]V)` without a size hint, grown in a resolvable loop | `make(map[K]V, n)` with a hint |
+| **SM7** | a redundant second lookup the first already answered (map comma-ok then plain; `slices.Contains` then `slices.Index`) | a single lookup; a map mutated between them |
+| **SM8** | provably exponential recursion (Θ(aⁿ), a ≥ 2 — naive Fibonacci) | linear countdown (a=1); divisive binary search; unguarded recursion |
+
+SM8 is the differentiator: it is powered by the recurrence solver's termination
+proof and branching-factor analysis, so it can positively identify the Θ(aⁿ)
+family — a diagnostic no other Go linter can make.
+
+### The `-smells` flag
+
+```sh
+bigo -smells=none ./...     # budgets only, no smells
+bigo -smells=SM1,SM8 ./...  # just two rules
+bigo -smells=all ./...      # all rules (the default)
+```
+
+`//bigo:ignore` suppresses smells on a function just as it suppresses budget
+analysis. `//nolint:bigo` in golangci-lint suppresses individual diagnostics.
+
+### Filtering smells out of a budgets-only pipeline
+
+Teams wanting budget verdicts without the advisory smells can filter on the
+`smell(` prefix:
+
+```yaml
+# .golangci.yml — exclude the smell class, keep budget diagnostics
+issues:
+  exclude-rules:
+    - path: "\.go$"
+      text: "^smell\\(SM\\d\\):"
+      linters:
+        - bigo
+```
+
+The fire counts per rule are tracked as a drift alarm in `metrics/METRICS.md`
+("Smell fires") — not coverage, but a change in a rule's corpus count is a
+behavior change that must be deliberate.
+
 ## Status & versioning
 
 Complete: intraprocedural engine, cost tables, acyclic interprocedural

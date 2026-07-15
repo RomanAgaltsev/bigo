@@ -191,3 +191,59 @@ func ContainsOnly(s []int, v int) bool { return slices.Contains(s, v) }
 	wantRuleCount(t, detectOne(t, src, "ContainsIndex", ruleset("SM7")), "SM7", 1)
 	wantRuleCount(t, detectOne(t, src, "ContainsOnly", ruleset("SM7")), "SM7", 0)
 }
+
+func TestSM2LinearScan(t *testing.T) {
+	src := `package input
+import "slices"
+// fires: Contains over a parameter slice, loop-varying needle.
+func Scan(s []int, items []int) int {
+	n := 0
+	for _, v := range items {
+		if slices.Contains(s, v) { n += v }
+	}
+	return n
+}
+// no-fire: needle loop-invariant.
+func InvariantNeedle(s []int, v int) int {
+	n := 0
+	for _, x := range s { _ = x; if slices.Contains(s, v) { n++ } }
+	return n
+}
+// no-fire: scan target is a range variable, not a parameter.
+func NonParam(items [][]int) int {
+	n := 0
+	for _, g := range items { if slices.Contains(g, 0) { n++ } }
+	return n
+}
+// no-fire: outside a data-dependent loop.
+func OutsideLoop(s []int, v int) bool { return slices.Contains(s, v) }
+`
+	wantRuleCount(t, detectOne(t, src, "Scan", ruleset("SM2")), "SM2", 1)
+	wantRuleCount(t, detectOne(t, src, "InvariantNeedle", ruleset("SM2")), "SM2", 0)
+	wantRuleCount(t, detectOne(t, src, "NonParam", ruleset("SM2")), "SM2", 0)
+	wantRuleCount(t, detectOne(t, src, "OutsideLoop", ruleset("SM2")), "SM2", 0)
+}
+
+func TestSM8Exponential(t *testing.T) {
+	src := `package input
+func Fib(n int) int {
+	if n < 2 { return n }
+	return Fib(n-1) + Fib(n-2)
+}
+func Linear(n int) int {
+	if n <= 0 { return 0 }
+	return 1 + Linear(n-1)
+}
+func BinSearch(n int) int {
+	if n > 0 { return BinSearch(n / 2) }
+	return 0
+}
+func Unguarded(n int) int {
+	return Unguarded(n-1) + Unguarded(n-2)
+}
+`
+	wantRuleCount(t, detectOne(t, src, "Fib", ruleset("SM8")), "SM8", 1)
+	wantRuleCount(t, detectOne(t, src, "Linear", ruleset("SM8")), "SM8", 0)
+	wantRuleCount(t, detectOne(t, src, "BinSearch", ruleset("SM8")), "SM8", 0)
+	wantRuleCount(t, detectOne(t, src, "Unguarded", ruleset("SM8")), "SM8", 0)
+}

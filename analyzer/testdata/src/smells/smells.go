@@ -175,3 +175,57 @@ func SM7NoFireNoSecond(m map[int]int, k int) int {
 	}
 	return 0
 }
+
+// --- SM2: linear-scan-where-map-fits ---
+
+// SM2Scan fires: repeated Contains over a parameter slice in a data-dependent loop.
+func SM2Scan(s []int, items []int) int {
+	n := 0
+	for _, v := range items {
+		if slices.Contains(s, v) { // want `smell\(SM2\): repeated linear scan over the same slice`
+			n += v
+		}
+	}
+	return n
+}
+
+// SM2NoFireInvariantNeedle does not fire: needle loop-invariant.
+func SM2NoFireInvariantNeedle(s []int, v int) int {
+	n := 0
+	for _, x := range s {
+		_ = x
+		if slices.Contains(s, v) {
+			n++
+		}
+	}
+	return n
+}
+
+// SM2NoFireNonParam does not fire: scan target is not a parameter (rebuilt slice).
+func SM2NoFireNonParam(items [][]int) int {
+	n := 0
+	for _, s := range items {
+		if slices.Contains(s, 0) {
+			n++
+		}
+	}
+	return n
+}
+
+// --- SM8: exponential recursion ---
+
+// SM8Fib fires: provably exponential recursion.
+func SM8Fib(n int) int { // want `smell\(SM8\): provably exponential recursion`
+	if n < 2 {
+		return n
+	}
+	return SM8Fib(n-1) + SM8Fib(n-2)
+}
+
+// SM8NoFireLinear does not fire: a=1 countdown is linear.
+func SM8NoFireLinear(n int) int {
+	if n <= 0 {
+		return 0
+	}
+	return 1 + SM8NoFireLinear(n-1)
+}
