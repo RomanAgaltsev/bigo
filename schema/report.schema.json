@@ -1,0 +1,136 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/RomanAgaltsev/bigo/main/schema/report.schema.json",
+  "title": "bigo report",
+  "description": "Machine-readable output of `bigo json`: per-function inferred asymptotic bounds, budget verdicts, unverifiability causes, and the trust surface. Stability policy: schema_version is semver, independent of bigo releases; within a major version changes are additive-only and no field is ever reinterpreted. Consumers must ignore unknown fields.",
+  "type": "object",
+  "required": ["schema_version", "bigo_version", "module", "generated", "functions"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "description": "Semver of this document format."
+    },
+    "bigo_version": {
+      "type": "string",
+      "description": "The bigo release that produced the document."
+    },
+    "module": {
+      "type": "string",
+      "description": "Go module path of the analyzed code; empty outside module mode."
+    },
+    "generated": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Document creation time, RFC 3339 UTC."
+    },
+    "functions": {
+      "type": "array",
+      "description": "Every analyzed function and method, budgeted or not, sorted by package, file, line.",
+      "items": { "$ref": "#/$defs/function" }
+    },
+    "trusted": {
+      "type": "array",
+      "description": "Every //bigo:cost and //bigo:ignore assertion found — the document's trust surface. Any entry may have influenced any verdict; audit these when auditing a document. v1 lists function-attached assertions; interface-method costs are a planned additive extension.",
+      "items": { "$ref": "#/$defs/trustEntry" }
+    }
+  },
+  "$defs": {
+    "function": {
+      "type": "object",
+      "required": ["package", "func", "file", "line", "time"],
+      "properties": {
+        "package": { "type": "string", "description": "Import path." },
+        "func": { "type": "string", "description": "Function or method name." },
+        "receiver": { "type": "string", "description": "Method receiver type as written, e.g. \"*Tree\"; absent for plain functions." },
+        "file": { "type": "string", "description": "Module-relative path, forward slashes." },
+        "line": { "type": "integer" },
+        "time": { "$ref": "#/$defs/bound", "description": "Inferred asymptotic time bound." },
+        "causes": {
+          "type": "array",
+          "description": "Why the time bound is top; present exactly when time.top is true.",
+          "items": { "$ref": "#/$defs/cause" }
+        },
+        "budget": { "$ref": "#/$defs/budget", "description": "The //bigo:max declaration and its verdict, when declared." },
+        "space": { "$ref": "#/$defs/space", "description": "The //bigo:space picture, when declared." },
+        "trust": {
+          "type": "array",
+          "description": "Raw //bigo:cost / //bigo:ignore directives declared on this function.",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "bound": {
+      "type": "object",
+      "description": "An asymptotic bound: either top (unverifiable) or a canonical string plus the antichain of poly-log monomials.",
+      "oneOf": [
+        { "required": ["top"] },
+        { "required": ["str", "terms"] }
+      ],
+      "properties": {
+        "top": { "type": "boolean", "description": "True for the unverifiable bound; str and terms are absent." },
+        "str": { "type": "string", "description": "Canonical rendering, e.g. \"O(n log n)\"." },
+        "terms": {
+          "type": "array",
+          "description": "Antichain of monomials, sorted by canonical string. A monomial maps each size variable to its exponents; the empty object is O(1).",
+          "items": {
+            "type": "object",
+            "additionalProperties": { "$ref": "#/$defs/factor" }
+          }
+        }
+      }
+    },
+    "factor": {
+      "type": "object",
+      "description": "One variable's exponents within a monomial: v^pow · (log v)^log. Omitted members are zero.",
+      "properties": {
+        "pow": { "type": "integer" },
+        "log": { "type": "integer" }
+      }
+    },
+    "cause": {
+      "type": "object",
+      "required": ["kind", "detail"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "description": "Machine-readable cause category. Known kinds: call, defer, go, loop, irreducible, nobody. Open set — new engine work may add kinds; consumers must tolerate unknown values."
+        },
+        "detail": { "type": "string", "description": "Human-readable description. Presentation text — never dispatch on it." },
+        "file": { "type": "string", "description": "Module-relative position of the blocker, when known." },
+        "line": { "type": "integer" }
+      }
+    },
+    "budget": {
+      "type": "object",
+      "required": ["raw", "verdict"],
+      "properties": {
+        "raw": { "type": "string", "description": "The directive as written, including any where-bindings." },
+        "bound": { "$ref": "#/$defs/bound", "description": "The normalized budget; absent when verdict is invalid." },
+        "verdict": {
+          "type": "string",
+          "enum": ["within", "exceeds", "unverifiable", "invalid"],
+          "description": "Sound three-valued verdict, plus invalid for budgets that failed to normalize. Closed vocabulary — a new verdict would be a major schema change."
+        }
+      }
+    },
+    "space": {
+      "type": "object",
+      "required": ["heap", "stack"],
+      "properties": {
+        "heap": { "$ref": "#/$defs/bound", "description": "Total-allocation upper bound; proves within only, never exceeds." },
+        "stack": { "$ref": "#/$defs/bound", "description": "Peak recursion depth; proves both within and exceeds." },
+        "budget": { "$ref": "#/$defs/budget" }
+      }
+    },
+    "trustEntry": {
+      "type": "object",
+      "required": ["package", "func", "directive"],
+      "properties": {
+        "package": { "type": "string" },
+        "func": { "type": "string" },
+        "receiver": { "type": "string" },
+        "directive": { "type": "string", "description": "The assertion as written." }
+      }
+    }
+  }
+}

@@ -147,7 +147,7 @@ func checkSpace(pass *analysis.Pass, decl *ast.FuncDecl, fn *ssa.Function, space
 		pass.Reportf(decl.Pos(), "invalid //bigo:space: %v", err)
 		return
 	}
-	switch spaceVerdict(sp, budget) {
+	switch engine.SpaceVerdict(sp, budget) {
 	case bound.Exceeds:
 		pass.Reportf(decl.Pos(), "space %s exceeds budget %s", inferred.String(), budget.String())
 	case bound.Unknown:
@@ -168,19 +168,6 @@ func spaceCause(pass *analysis.Pass, sp engine.Space, causes []engine.Cause, fn 
 		return fmt.Sprintf("inferred space %s is a total-allocation upper bound and cannot prove a smaller peak", sp.Heap.Join(sp.Stack).String())
 	}
 	return causeText(pass, causes, fn)
-}
-
-// spaceVerdict applies the heap/stack asymmetry: stack (a real peak) can prove
-// Within and Exceeds; heap (an upper bound on peak) proves Within only. So a
-// budget can only be Exceeded on the stack term, never on heap over-approximation.
-func spaceVerdict(sp engine.Space, budget bound.Bound) bound.Verdict {
-	if bound.Check(sp.Stack, budget) == bound.Exceeds {
-		return bound.Exceeds
-	}
-	if bound.Check(sp.Heap.Join(sp.Stack), budget) == bound.Within {
-		return bound.Within
-	}
-	return bound.Unknown
 }
 
 func checkBudget(pass *analysis.Pass, decl *ast.FuncDecl, fn *ssa.Function, inferred bound.Bound, causes []engine.Cause, dir annotation.Directive) {

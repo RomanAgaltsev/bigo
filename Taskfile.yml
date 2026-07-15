@@ -6,6 +6,11 @@ tasks:
     cmds:
       - go test ./internal/metrics/ -run TestGolden -update
 
+  report-golden:
+    desc: Regenerate the report schema golden (internal/report/testdata/golden/report.json)
+    cmds:
+      - go test ./internal/report/ -run TestGolden -update
+
   test:
     desc: Run all tests with the race detector
     cmds:

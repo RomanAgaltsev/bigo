@@ -1,0 +1,264 @@
+{
+  "schema_version": "1.0.0",
+  "bigo_version": "test",
+  "module": "example.com/reportfix",
+  "generated": "2026-01-02T03:04:05Z",
+  "functions": [
+    {
+      "package": "example.com/reportfix",
+      "func": "Linear",
+      "file": "fix.go",
+      "line": 16,
+      "time": {
+        "str": "O(len(xs))",
+        "terms": [
+          {
+            "len(xs)": {
+              "pow": 1
+            }
+          }
+        ]
+      }
+    },
+    {
+      "package": "example.com/reportfix",
+      "func": "WithinBudget",
+      "file": "fix.go",
+      "line": 27,
+      "time": {
+        "str": "O(len(xs))",
+        "terms": [
+          {
+            "len(xs)": {
+              "pow": 1
+            }
+          }
+        ]
+      },
+      "budget": {
+        "raw": "//bigo:max O(n) where n=len(xs)",
+        "bound": {
+          "str": "O(len(xs))",
+          "terms": [
+            {
+              "len(xs)": {
+                "pow": 1
+              }
+            }
+          ]
+        },
+        "verdict": "within"
+      }
+    },
+    {
+      "package": "example.com/reportfix",
+      "func": "ExceedsBudget",
+      "file": "fix.go",
+      "line": 38,
+      "time": {
+        "str": "O(len(xs)^2)",
+        "terms": [
+          {
+            "len(xs)": {
+              "pow": 2
+            }
+          }
+        ]
+      },
+      "budget": {
+        "raw": "//bigo:max O(n) where n=len(xs)",
+        "bound": {
+          "str": "O(len(xs))",
+          "terms": [
+            {
+              "len(xs)": {
+                "pow": 1
+              }
+            }
+          ]
+        },
+        "verdict": "exceeds"
+      }
+    },
+    {
+      "package": "example.com/reportfix",
+      "func": "Unverifiable",
+      "file": "fix.go",
+      "line": 52,
+      "time": {
+        "top": true
+      },
+      "causes": [
+        {
+          "kind": "call",
+          "detail": "unresolved cost at call to Get",
+          "file": "fix.go",
+          "line": 53
+        }
+      ],
+      "budget": {
+        "raw": "//bigo:max O(1)",
+        "bound": {
+          "str": "O(1)",
+          "terms": [
+            {}
+          ]
+        },
+        "verdict": "unverifiable"
+      }
+    },
+    {
+      "package": "example.com/reportfix",
+      "func": "Sum",
+      "receiver": "*Tree",
+      "file": "fix.go",
+      "line": 63,
+      "time": {
+        "str": "O(len(t.items))",
+        "terms": [
+          {
+            "len(t.items)": {
+              "pow": 1
+            }
+          }
+        ]
+      }
+    },
+    {
+      "package": "example.com/reportfix",
+      "func": "telemetry",
+      "file": "fix.go",
+      "line": 74,
+      "time": {
+        "str": "O(1)",
+        "terms": [
+          {}
+        ]
+      },
+      "trust": [
+        "//bigo:ignore"
+      ]
+    },
+    {
+      "package": "example.com/reportfix",
+      "func": "extLookup",
+      "file": "fix.go",
+      "line": 81,
+      "time": {
+        "str": "O(len(xs))",
+        "terms": [
+          {
+            "len(xs)": {
+              "pow": 1
+            }
+          }
+        ]
+      },
+      "trust": [
+        "//bigo:cost O(log n) where n=len(xs)"
+      ]
+    },
+    {
+      "package": "example.com/reportfix",
+      "func": "UsesTrust",
+      "file": "fix.go",
+      "line": 94,
+      "time": {
+        "str": "O(log(len(xs)))",
+        "terms": [
+          {
+            "len(xs)": {
+              "log": 1
+            }
+          }
+        ]
+      },
+      "budget": {
+        "raw": "//bigo:max O(log n) where n=len(xs)",
+        "bound": {
+          "str": "O(log(len(xs)))",
+          "terms": [
+            {
+              "len(xs)": {
+                "log": 1
+              }
+            }
+          ]
+        },
+        "verdict": "within"
+      }
+    },
+    {
+      "package": "example.com/reportfix",
+      "func": "Doubled",
+      "file": "fix.go",
+      "line": 102,
+      "time": {
+        "str": "O(1)",
+        "terms": [
+          {}
+        ]
+      },
+      "space": {
+        "heap": {
+          "str": "O(len(xs))",
+          "terms": [
+            {
+              "len(xs)": {
+                "pow": 1
+              }
+            }
+          ]
+        },
+        "stack": {
+          "str": "O(1)",
+          "terms": [
+            {}
+          ]
+        },
+        "budget": {
+          "raw": "//bigo:space O(n) where n=len(xs)",
+          "bound": {
+            "str": "O(len(xs))",
+            "terms": [
+              {
+                "len(xs)": {
+                  "pow": 1
+                }
+              }
+            ]
+          },
+          "verdict": "within"
+        }
+      }
+    },
+    {
+      "package": "example.com/reportfix",
+      "func": "InvalidBudget",
+      "file": "fix.go",
+      "line": 115,
+      "time": {
+        "str": "O(1)",
+        "terms": [
+          {}
+        ]
+      },
+      "budget": {
+        "raw": "//bigo:max O(m)",
+        "verdict": "invalid"
+      }
+    }
+  ],
+  "trusted": [
+    {
+      "package": "example.com/reportfix",
+      "func": "extLookup",
+      "directive": "//bigo:cost O(log n) where n=len(xs)"
+    },
+    {
+      "package": "example.com/reportfix",
+      "func": "telemetry",
+      "directive": "//bigo:ignore"
+    }
+  ]
+}
