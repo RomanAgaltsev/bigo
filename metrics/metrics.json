@@ -1,13 +1,13 @@
 {
-  "total": 134,
-  "bounded": 81,
-  "coverage_pct": "60.4",
+  "total": 160,
+  "bounded": 93,
+  "coverage_pct": "58.1",
   "by_cause": {
-    "call": 30,
-    "go": 2,
+    "call": 42,
+    "go": 3,
     "irreducible": 1,
     "loop": 13,
-    "nobody": 7
+    "nobody": 8
   },
   "per_package": {
     "budget": {
@@ -30,9 +30,17 @@
       "total": 13,
       "bounded": 8
     },
+    "funcvalue": {
+      "total": 20,
+      "bounded": 8
+    },
     "interproc": {
       "total": 5,
       "bounded": 5
+    },
+    "iterator": {
+      "total": 6,
+      "bounded": 4
     },
     "multivar": {
       "total": 3,
@@ -381,6 +389,126 @@
       "bound": "O(1)"
     },
     {
+      "pkg": "funcvalue",
+      "func": "ApplyOnce",
+      "verdict": "bounded",
+      "bound": "O(1)"
+    },
+    {
+      "pkg": "funcvalue",
+      "func": "EachCaptureSizedDeferred",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "funcvalue",
+      "func": "EachClosureCapturingConst",
+      "verdict": "bounded",
+      "bound": "O(len(xs))"
+    },
+    {
+      "pkg": "funcvalue",
+      "func": "EachClosureSelfCapture",
+      "verdict": "bounded",
+      "bound": "O(len(xs))"
+    },
+    {
+      "pkg": "funcvalue",
+      "func": "EachConst",
+      "verdict": "bounded",
+      "bound": "O(len(xs))"
+    },
+    {
+      "pkg": "funcvalue",
+      "func": "EachMutatedCapture",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "funcvalue",
+      "func": "EachReturnedClosure",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "funcvalue",
+      "func": "ForwardedToUnknown",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "funcvalue",
+      "func": "FromStructField",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "funcvalue",
+      "func": "GoInvoked",
+      "verdict": "unverifiable",
+      "cause": "go"
+    },
+    {
+      "pkg": "funcvalue",
+      "func": "SortWithLinearComparator",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "funcvalue",
+      "func": "SortWithO1Comparator",
+      "verdict": "bounded",
+      "bound": "O(len(xs) log(len(xs)))"
+    },
+    {
+      "pkg": "funcvalue",
+      "func": "SortWithUnresolvedComparator",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "funcvalue",
+      "func": "StoredEscapes",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "funcvalue",
+      "func": "apply",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "funcvalue",
+      "func": "each",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "funcvalue",
+      "func": "inc",
+      "verdict": "bounded",
+      "bound": "O(1)"
+    },
+    {
+      "pkg": "funcvalue",
+      "func": "makeCB",
+      "verdict": "bounded",
+      "bound": "O(1)"
+    },
+    {
+      "pkg": "funcvalue",
+      "func": "noop",
+      "verdict": "bounded",
+      "bound": "O(1)"
+    },
+    {
+      "pkg": "funcvalue",
+      "func": "opaque",
+      "verdict": "unverifiable",
+      "cause": "nobody"
+    },
+    {
       "pkg": "interproc",
       "func": "CallsLinearOK",
       "verdict": "bounded",
@@ -409,6 +537,42 @@
       "func": "scan",
       "verdict": "bounded",
       "bound": "O(len(ys))"
+    },
+    {
+      "pkg": "iterator",
+      "func": "CountKeys",
+      "verdict": "bounded",
+      "bound": "O(len(m))"
+    },
+    {
+      "pkg": "iterator",
+      "func": "FromChannel",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "iterator",
+      "func": "SumBreak",
+      "verdict": "bounded",
+      "bound": "O(len(s))"
+    },
+    {
+      "pkg": "iterator",
+      "func": "SumRecursive",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "iterator",
+      "func": "SumValues",
+      "verdict": "bounded",
+      "bound": "O(len(s))"
+    },
+    {
+      "pkg": "iterator",
+      "func": "recSeq",
+      "verdict": "bounded",
+      "bound": "O(1)"
     },
     {
       "pkg": "multivar",

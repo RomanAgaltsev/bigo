@@ -10,6 +10,7 @@ import (
 	"github.com/RomanAgaltsev/bigo/internal/bound"
 	"github.com/RomanAgaltsev/bigo/internal/costtable"
 	"github.com/RomanAgaltsev/bigo/internal/engine"
+	"github.com/RomanAgaltsev/bigo/internal/fieldpath"
 	"github.com/RomanAgaltsev/bigo/internal/recurrence"
 	"github.com/RomanAgaltsev/bigo/internal/size"
 )
@@ -20,6 +21,7 @@ type Resolver struct {
 	onStack     map[*ssa.Function]bool
 	overrides   map[*ssa.Function]bound.Bound
 	methodCosts map[*types.Func]bound.Bound
+	paramMemo   map[*ssa.Function]ParamSummary
 }
 
 // New returns a resolver. overrides maps functions to asserted summaries (from
@@ -33,6 +35,7 @@ func New(overrides map[*ssa.Function]bound.Bound) *Resolver {
 		memo:      map[*ssa.Function]bound.Bound{},
 		onStack:   map[*ssa.Function]bool{},
 		overrides: overrides,
+		paramMemo: map[*ssa.Function]ParamSummary{},
 	}
 }
 
@@ -79,6 +82,9 @@ func (r *Resolver) CallCost(c *ssa.CallCommon) bound.Bound {
 				return substArgs(summary, names, c.Args)
 			}
 		}
+		if b, ok := r.rangeFuncCost(c); ok { // range-over-func: seq(body) call
+			return b
+		}
 		return bound.Top() // closure / func value / unannotated interface
 	}
 	if _, ok := r.override(callee); ok {
@@ -88,7 +94,13 @@ func (r *Resolver) CallCost(c *ssa.CallCommon) bound.Bound {
 	// instantiation of one. Pkg is not a proxy for this: instances always have
 	// a nil Pkg, and imported functions have a non-nil Pkg with no blocks.
 	if len(callee.Blocks) == 0 {
+		if b, ok := r.parametricTableCost(c); ok {
+			return b
+		}
 		return bound.Top()
+	}
+	if b, ok := r.parametricCallCost(callee, c); ok {
+		return b
 	}
 	return r.callUser(callee, c.Args)
 }
@@ -151,11 +163,20 @@ func substArgs(summary bound.Bound, paramNames []string, args []ssa.Value) bound
 			return bound.Top()
 		}
 		av, class, ok := size.ValueClass(args[i])
+		sliceParam, _ := args[i].(*ssa.Parameter)
+		isSliceArg := ok && sliceParam != nil && isSliceParam(sliceParam)
+		if !ok {
+			// A parameter captured by a read-only closure reads back as a load
+			// of its spill cell; recover its entry-stable size (never its cap).
+			if sv, cl, sok := fieldpath.SpillArgSize(args[i]); sok {
+				av, class, ok = sv, cl, true
+			}
+		}
 		switch {
 		case ok && class == size.Length:
 			rename[size.Len(name)] = av
-			if ap, isParam := args[i].(*ssa.Parameter); isParam && isSliceParam(ap) {
-				rename[size.Cap(name)] = size.Cap(ap.Name())
+			if isSliceArg {
+				rename[size.Cap(name)] = size.Cap(sliceParam.Name())
 			} else if dependsOnVar(summary, size.Cap(name)) {
 				return bound.Top()
 			}

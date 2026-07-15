@@ -388,3 +388,112 @@ func (s *Stability) PathFor(v ssa.Value) (string, bool) {
 	}
 	return s.fieldPath(v)
 }
+
+// SpillArgSize resolves v to a canonical size variable when v is a stable read
+// of a parameter that was captured by a closure. Go boxes a captured variable
+// on the heap, so later reads of the parameter become a load of that
+// non-escaping-beyond-read *ssa.Alloc; sort.Slice's `any` argument additionally
+// wraps the load in a *ssa.MakeInterface. When the cell is written exactly once
+// (the entry spill of the parameter) and every capturing closure only READS it,
+// len/cap/num of the load equal the parameter's value at entry — sound to
+// rename into the parameter's size var. A mutating capture (e.g. `xs =
+// append(xs, 1)`) adds a second store, capturedSpillRoot refuses, and the
+// caller stays ⊤ (pin 3). Nil-safe: operates on the value alone.
+func SpillArgSize(v ssa.Value) (bound.Var, size.Class, bool) {
+	if mi, ok := v.(*ssa.MakeInterface); ok {
+		v = mi.X
+	}
+	ld, ok := v.(*ssa.UnOp)
+	if !ok || ld.Op != token.MUL {
+		return "", 0, false
+	}
+	alloc, ok := ld.X.(*ssa.Alloc)
+	if !ok {
+		return "", 0, false
+	}
+	root, ok := capturedSpillRoot(alloc)
+	if !ok {
+		return "", 0, false
+	}
+	switch {
+	case lenEligible(v.Type()):
+		return size.Len(root), size.Length, true
+	case isInteger(v.Type()):
+		return size.Num(root), size.Numeric, true
+	}
+	return "", 0, false
+}
+
+// capturedSpillRoot reports the source parameter name when alloc holds a
+// parameter captured by one or more read-only closures. It is paramSpill
+// generalized to the heap-boxed capture case: the alloc may be referenced by
+// *ssa.MakeClosure (that is how the capture escapes), provided the matching
+// free variable is never mutated inside the closure. The alloc must have
+// exactly one store — the whole-value spill of an *ssa.Parameter — so any
+// reassignment of the captured variable (a second store) refuses. Every other
+// referrer must be a plain load; anything else (a derived address stored
+// through, a call passing the cell on) refuses.
+func capturedSpillRoot(alloc *ssa.Alloc) (string, bool) {
+	root := ""
+	for _, ref := range *alloc.Referrers() {
+		switch r := ref.(type) {
+		case *ssa.Store:
+			if r.Addr != alloc {
+				return "", false // alloc used as a stored value: escapes
+			}
+			p, ok := r.Val.(*ssa.Parameter)
+			if !ok || root != "" {
+				return "", false // not the single param spill, or a second write
+			}
+			root = p.Name()
+		case *ssa.UnOp:
+			if r.Op != token.MUL {
+				return "", false // only loads are harmless
+			}
+		case *ssa.MakeClosure:
+			if !closureReadsOnlyBinding(r, alloc) {
+				return "", false
+			}
+		case *ssa.DebugRef:
+			// debug metadata: harmless
+		default:
+			return "", false
+		}
+	}
+	if root == "" {
+		return "", false
+	}
+	return root, true
+}
+
+// closureReadsOnlyBinding reports whether the closure mc, for each binding equal
+// to alloc, only reads the captured cell — the matching free variable is used
+// solely by loads (and debug refs). A store through the free var, or the free
+// var escaping into another call or closure, means the capture could mutate the
+// cell and refuses.
+func closureReadsOnlyBinding(mc *ssa.MakeClosure, alloc ssa.Value) bool {
+	fn, ok := mc.Fn.(*ssa.Function)
+	if !ok {
+		return false
+	}
+	for i, b := range mc.Bindings {
+		if b != alloc {
+			continue
+		}
+		if i >= len(fn.FreeVars) {
+			return false
+		}
+		for _, ref := range *fn.FreeVars[i].Referrers() {
+			switch r := ref.(type) {
+			case *ssa.UnOp:
+				if r.Op != token.MUL {
+					return false
+				}
+			case *ssa.DebugRef:
+			default:
+				return false // stored through, passed on, re-captured: may mutate
+			}
+		}
+	}
+	return true
+}

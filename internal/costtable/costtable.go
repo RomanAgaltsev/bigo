@@ -131,8 +131,12 @@ var stdlib = map[string]func(args []ssa.Value) bound.Bound{
 	"bytes.Contains": func(a []ssa.Value) bound.Bound { return linear(a, 0) },
 	"bytes.Index":    func(a []ssa.Value) bound.Bound { return linear(a, 0) },
 	"bytes.Count":    func(a []ssa.Value) bound.Bound { return linear(a, 0) },
-	// maps.Keys/Values return iterators: construction is O(1); the cost is
-	// paid at the range site (range-over-func is unverifiable, honestly).
-	"maps.Keys":   constCost,
-	"maps.Values": constCost,
+	// Iterator producers return a lazy iter.Seq: construction is O(1); the
+	// iteration cost is paid at the range site (see LookupIteratorProducer).
+	"maps.Keys":       constCost,
+	"maps.Values":     constCost,
+	"maps.All":        constCost,
+	"slices.Values":   constCost,
+	"slices.All":      constCost,
+	"slices.Backward": constCost,
 }
