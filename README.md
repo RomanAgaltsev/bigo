@@ -69,6 +69,26 @@ field is not mutated between function entry and the loop:
 func (s *S) Sum() int { ... }
 ```
 
+## Machine-readable reports
+
+`bigo json` emits the full analysis as a single JSON document — every
+function's inferred time (and, where budgeted, space) bound, three-valued
+verdict, unverifiability causes, and the trust surface (`//bigo:cost` /
+`//bigo:ignore` assertions in effect):
+
+```sh
+bigo json ./... > report.json
+bigo json -C path/to/module -o report.json ./...
+```
+
+The document format is versioned independently of bigo releases
+(`schema_version`, currently 1.0.0) and specified normatively by
+[`schema/report.schema.json`](schema/report.schema.json). Within a major
+version, changes are additive-only and no field is ever reinterpreted —
+consumers must ignore unknown fields. Verdicts never affect the exit code:
+the report describes; enforcement belongs to tools built on it (a
+complexity-diff CI action is the planned first consumer).
+
 ## Install & run
 
 ```sh

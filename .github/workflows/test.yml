@@ -21,6 +21,8 @@ jobs:
           go-version: ${{ matrix.go }}
       - name: race tests + coverage
         run: go test -race -shuffle=on -covermode=atomic -coverprofile=coverage.out ./...
+      - name: bigo json self-run smoke
+        run: go run ./cmd/bigo json ./... > /dev/null
       - name: upload coverage
         if: matrix.go == 'stable'
         uses: codecov/codecov-action@v7
