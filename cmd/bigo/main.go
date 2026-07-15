@@ -8,6 +8,7 @@ import (
 	"golang.org/x/tools/go/analysis/singlechecker"
 
 	"github.com/RomanAgaltsev/bigo/analyzer"
+	"github.com/RomanAgaltsev/bigo/internal/report"
 )
 
 // version is injected by GoReleaser via -X main.version; "dev" locally.
@@ -18,6 +19,11 @@ func main() {
 	if len(os.Args) == 2 && (os.Args[1] == "-version" || os.Args[1] == "--version") {
 		fmt.Println("bigo " + version)
 		return
+	}
+	// The json subcommand needs one document per run; go/analysis runs per
+	// package with no end hook, so it gets its own go/packages driver.
+	if len(os.Args) >= 2 && os.Args[1] == "json" {
+		os.Exit(report.Main(version, os.Args[2:]))
 	}
 	singlechecker.Main(analyzer.Analyzer)
 }
