@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.16.0](https://github.com/RomanAgaltsev/bigo/compare/v1.15.0...v1.16.0) (2026-07-15)
+
+
+### Features
+
+* function value cost ([#55](https://github.com/RomanAgaltsev/bigo/issues/55)) ([f6ad90f](https://github.com/RomanAgaltsev/bigo/commit/f6ad90fbbf6777a8416b20d88b075fded0bfd417))
+
 ## [1.15.0](https://github.com/RomanAgaltsev/bigo/compare/v1.14.0...v1.15.0) (2026-07-14)
 
 
