@@ -89,6 +89,27 @@ consumers must ignore unknown fields. Verdicts never affect the exit code:
 the report describes; enforcement belongs to tools built on it (a
 complexity-diff CI action is the planned first consumer).
 
+### Budget badge
+
+`bigo badge` projects the report into a [shields.io endpoint badge](https://shields.io/badges/endpoint-badge) — an honest summary of the budgets a module declares, degrading from "all within" to name any `exceeds`, `invalid`, or `unverifiable` budget:
+
+```sh
+bigo badge ./... > badge.json                     # analyze and emit
+bigo json ./... | bigo badge -i - > badge.json    # or project an existing report
+```
+
+Commit `badge.json` (or publish it as a CI artifact) and point shields.io at it:
+
+```
+https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/OWNER/REPO/main/badge.json
+```
+
+The badge claims only that the functions the module chose to budget are verified
+within those budgets — a verified-contract statement about annotated API, like
+coverage of tested code. It is not a repo grade, does not rank projects, and
+never hides unverifiable budgets. Like `bigo json`, verdicts do not affect the
+exit code.
+
 ## Install & run
 
 ```sh
