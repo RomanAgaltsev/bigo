@@ -110,6 +110,36 @@ coverage of tested code. It is not a repo grade, does not rank projects, and
 never hides unverifiable budgets. Like `bigo json`, verdicts do not affect the
 exit code.
 
+### Complexity diff
+
+`bigo diff` compares two reports and names what a change did to the module's
+asymptotics — the CI-facing half of the schema:
+
+```sh
+git stash && bigo json ./... > base.json && git stash pop
+bigo json ./... > head.json
+bigo diff base.json head.json
+```
+
+It reports five classes, in severity order: a **budget break** (`within` →
+`exceeds`), a **proven regression** (both sides proven, head asymptotically
+worse — budget or not), a **new unverifiable** (a proven bound became `⊤`,
+with the blocking cause named), a **new function already over budget**, and
+**improvements** (`exceeds` → `within`, a tightened bound, `⊤` → proven).
+
+Silence is the default and is deliberate: `⊤` → `⊤` reports nothing, unchanged
+bounds report nothing, and a break that already existed in the base is not
+blamed on this change. That is what makes diffing usable on real code where the
+honest answer is often "not proven" — the noise cancels.
+
+`-format markdown` renders a PR comment body; `-o` writes to a file; `-` reads
+a document from stdin. Like `bigo json` and `bigo badge`, findings never affect
+the exit code.
+
+Comparing reports from two different bigo versions is allowed but warns: a
+bound may have changed because the engine improved rather than because the code
+did. Comparing different modules, or across a schema major, is refused.
+
 ## Install & run
 
 ```sh
