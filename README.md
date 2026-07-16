@@ -81,8 +81,21 @@ bigo json ./... > report.json
 bigo json -C path/to/module -o report.json ./...
 ```
 
+The document also carries a top-level `smells` array — every SM1–SM8 finding,
+with rule, message, and position. It is top-level rather than per-function on
+purpose: a smell is advisory and can never move a verdict, and the schema
+mirrors that firewall. Functions carrying `//bigo:ignore` contribute no smells,
+exactly as they emit no diagnostics.
+
+Triage a codebase by rule with `jq`:
+
+```sh
+bigo json ./... | jq -r '.smells | group_by(.rule)[] | "\(.[0].rule): \(length)"'
+bigo json ./... | jq -r '.smells[] | select(.rule=="SM8") | "\(.file):\(.line) \(.message)"'
+```
+
 The document format is versioned independently of bigo releases
-(`schema_version`, currently 1.0.0) and specified normatively by
+(`schema_version`, currently 1.1.0) and specified normatively by
 [`schema/report.schema.json`](schema/report.schema.json). Within a major
 version, changes are additive-only and no field is ever reinterpreted —
 consumers must ignore unknown fields. Verdicts never affect the exit code:
