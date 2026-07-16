@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.22.0](https://github.com/RomanAgaltsev/bigo/compare/v1.21.0...v1.22.0) (2026-07-16)
+
+
+### Features
+
+* smells in the report document (schema 1.1.0) ([#71](https://github.com/RomanAgaltsev/bigo/issues/71)) ([d07ca97](https://github.com/RomanAgaltsev/bigo/commit/d07ca97f543c2313bbdf8761f53ff7302b47d44e))
+
 ## [1.21.0](https://github.com/RomanAgaltsev/bigo/compare/v1.20.0...v1.21.0) (2026-07-16)
 
 
