@@ -133,12 +133,43 @@ blamed on this change. That is what makes diffing usable on real code where the
 honest answer is often "not proven" — the noise cancels.
 
 `-format markdown` renders a PR comment body; `-o` writes to a file; `-` reads
-a document from stdin. Like `bigo json` and `bigo badge`, findings never affect
-the exit code.
+a document from stdin. Like `bigo json` and `bigo badge`, findings do not affect
+the exit code unless you ask for it with `-fail-on break|regression`, which exits
+3 on a violation — distinct from 1 (bigo failed) and 2 (usage).
 
 Comparing reports from two different bigo versions is allowed but warns: a
 bound may have changed because the engine improved rather than because the code
 did. Comparing different modules, or across a schema major, is refused.
+
+#### In CI
+
+```yaml
+- uses: actions/checkout@v4
+  with:
+    fetch-depth: 0 # required: the base commit must be reachable
+- uses: actions/setup-go@v5
+  with:
+    go-version-file: go.mod
+- uses: RomanAgaltsev/bigo@v1
+  with:
+    fail-on: none # none (default) | break | regression
+```
+
+Posts a single PR comment and updates it in place on each push. `fail-on`
+decides whether findings fail the job: `none` reports only, `break` fails on a
+broken budget or a new function that arrives already over budget, `regression`
+also fails on a proven asymptotic regression in unbudgeted code. Nothing fails
+the job on a new unverifiable — losing visibility is worth telling you about,
+but it is not a defect, and failing on it would just pressure you into avoiding
+code bigo cannot yet see.
+
+Report-only is the default on purpose: bigo's analysis surface is pre-stable
+across minors, and a tool that breaks your build by surprise is a tool you
+uninstall. Turn `fail-on` up once you trust it on your codebase.
+
+The module must build for `bigo json` to analyze it. If the base commit does not
+build — or predates your adoption of bigo — the Action says so and reports the
+head side only, rather than failing.
 
 ## Install & run
 
