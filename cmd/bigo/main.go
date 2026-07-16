@@ -25,5 +25,9 @@ func main() {
 	if len(os.Args) >= 2 && os.Args[1] == "json" {
 		os.Exit(report.Main(version, os.Args[2:]))
 	}
+	// badge projects that same document into a shields.io endpoint badge.
+	if len(os.Args) >= 2 && os.Args[1] == "badge" {
+		os.Exit(report.BadgeMain(version, os.Args[2:]))
+	}
 	singlechecker.Main(analyzer.Analyzer)
 }
