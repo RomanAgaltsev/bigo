@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.20.0](https://github.com/RomanAgaltsev/bigo/compare/v1.19.0...v1.20.0) (2026-07-16)
+
+
+### Features
+
+* diff subcommand ([#66](https://github.com/RomanAgaltsev/bigo/issues/66)) ([a3171bf](https://github.com/RomanAgaltsev/bigo/commit/a3171bf595a47d6788dc364ca8e3d49cde04e717))
+* diff subcommand ([#68](https://github.com/RomanAgaltsev/bigo/issues/68)) ([4aa1e59](https://github.com/RomanAgaltsev/bigo/commit/4aa1e59dd88bc8f84b31e76e4037c2548cdeee66))
+
 ## [1.19.0](https://github.com/RomanAgaltsev/bigo/compare/v1.18.0...v1.19.0) (2026-07-16)
 
 
