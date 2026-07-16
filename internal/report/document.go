@@ -18,7 +18,8 @@ import (
 )
 
 // SchemaVersion is the version of the document format.
-const SchemaVersion = "1.0.0"
+// 1.1.0 added the top-level smells array (additive; 1.0.0 documents remain valid).
+const SchemaVersion = "1.1.0"
 
 // Document is one `bigo json` run over one module.
 type Document struct {
@@ -28,6 +29,11 @@ type Document struct {
 	Generated     string       `json:"generated"` // RFC 3339, UTC
 	Functions     []Function   `json:"functions"`
 	Trusted       []TrustEntry `json:"trusted,omitempty"`
+
+	// Smells are advisory findings, deliberately a top-level array rather than
+	// a field on Function: the document mirrors the engine's firewall, where a
+	// smell can never influence a verdict. Present since schema 1.1.0.
+	Smells []SmellJSON `json:"smells,omitempty"`
 }
 
 // Function is one analyzed function or method.
@@ -90,6 +96,16 @@ type TrustEntry struct {
 	Func      string `json:"func"`
 	Receiver  string `json:"receiver,omitempty"`
 	Directive string `json:"directive"` // the directive as written
+}
+
+// SmellJSON is one advisory smell finding (internal/smell.Finding, serialized).
+// Rule is the canonical ID (SM1..SM8); Message carries no "smell(SMn):" prefix
+// — that is the analyzer's diagnostic presentation, not part of the data.
+type SmellJSON struct {
+	Rule    string `json:"rule"`
+	Message string `json:"message"`
+	File    string `json:"file"` // module-relative, forward slashes
+	Line    int    `json:"line"`
 }
 
 // boundJSON serializes a bound. Terms are sorted by canonical monomial string
