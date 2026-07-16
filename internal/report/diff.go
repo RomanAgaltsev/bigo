@@ -237,6 +237,22 @@ func budgetStr(b *BudgetJSON) string {
 	return b.Raw
 }
 
+// Severity reports the worst non-improvement class present, and whether any
+// exists. Improvements are never severe: a change that only makes things better
+// must never trip an exit-code policy.
+func Severity(fs []Finding) (Class, bool) {
+	worst, found := Improvement, false
+	for _, f := range fs {
+		if f.Class == Improvement {
+			continue
+		}
+		if !found || f.Class < worst {
+			worst, found = f.Class, true
+		}
+	}
+	return worst, found
+}
+
 // causeSuffix names where a new ⊤ is blocked, using causes[0] — the same
 // convention the metrics harness uses for its histogram.
 func causeSuffix(h Function) string {

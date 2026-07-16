@@ -94,3 +94,82 @@ func TestDiffMainBadFormatFails(t *testing.T) {
 		t.Error("DiffMain with an unknown -format should exit 2")
 	}
 }
+
+func TestSeverityReportsWorst(t *testing.T) {
+	fs := []Finding{{Class: Improvement}, {Class: ProvenRegression}, {Class: NewTop}}
+	got, ok := Severity(fs)
+	if !ok || got != ProvenRegression {
+		t.Errorf("Severity = %v/%v, want ProvenRegression/true", got, ok)
+	}
+}
+
+func TestSeverityIgnoresImprovements(t *testing.T) {
+	// A PR that only improves things must never trip any policy.
+	if _, ok := Severity([]Finding{{Class: Improvement}, {Class: Improvement}}); ok {
+		t.Error("Severity(improvements only) ok = true, want false")
+	}
+}
+
+func TestSeverityEmpty(t *testing.T) {
+	if _, ok := Severity(nil); ok {
+		t.Error("Severity(nil) ok = true, want false")
+	}
+}
+
+func TestDiffMainFailOnPolicy(t *testing.T) {
+	within := writeDoc(t, doc(fn("F", bj(oN), budget(oN, "within"))))
+	broke := writeDoc(t, doc(fn("F", bj(oN2), budget(oN, "exceeds"))))
+	regressed := writeDoc(t, doc(fn("F", bj(oN2), nil)))
+	plain := writeDoc(t, doc(fn("F", bj(oN), nil)))
+	improved := writeDoc(t, doc(fn("F", bj(oN), nil)))
+	worse := writeDoc(t, doc(fn("F", bj(oN2), nil)))
+
+	cases := []struct {
+		name       string
+		failOn     string
+		base, head string
+		want       int
+	}{
+		{"none never fails", "none", within, broke, 0},
+		{"default is none", "", within, broke, 0},
+		{"break fails on budget break", "break", within, broke, 3},
+		{"break ignores bare regression", "break", plain, regressed, 0},
+		{"regression fails on budget break", "regression", within, broke, 3},
+		{"regression fails on bare regression", "regression", plain, worse, 3},
+		{"no findings passes any policy", "regression", plain, improved, 0},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			args := []string{}
+			if tc.failOn != "" {
+				args = append(args, "-fail-on", tc.failOn)
+			}
+			args = append(args, tc.base, tc.head)
+			if code := DiffMain(args); code != tc.want {
+				t.Errorf("DiffMain(%v) = %d, want %d", args, code, tc.want)
+			}
+		})
+	}
+}
+
+func TestDiffMainBadFailOnFails(t *testing.T) {
+	base, head := writeDoc(t, doc()), writeDoc(t, doc())
+	if code := DiffMain([]string{"-fail-on", "everything", base, head}); code != 2 {
+		t.Error("DiffMain with an unknown -fail-on should exit 2")
+	}
+}
+
+func TestDiffMainFailOnStillWritesOutput(t *testing.T) {
+	// A policy violation must still produce the comment — the exit code is a
+	// signal, not a reason to withhold the findings.
+	within := writeDoc(t, doc(fn("F", bj(oN), budget(oN, "within"))))
+	broke := writeDoc(t, doc(fn("F", bj(oN2), budget(oN, "exceeds"))))
+	out := filepath.Join(t.TempDir(), "c.md")
+	if code := DiffMain([]string{"-fail-on", "break", "-format", "markdown", "-o", out, within, broke}); code != 3 {
+		t.Fatalf("want exit 3, got %d", code)
+	}
+	raw, err := os.ReadFile(out)
+	if err != nil || len(raw) == 0 {
+		t.Fatalf("output not written on policy violation: %v", err)
+	}
+}

@@ -113,13 +113,14 @@ func BadgeMain(version string, args []string) int {
 // nothing and reads no source.
 //
 // Exit codes match the other subcommands: 0 success, 1 IO/parse/compatibility
-// error, 2 usage error. Findings never affect the exit code — the report
-// describes and the Action enforces (spec §5's exit-code policy is a consumer
-// knob, not a property of this subcommand).
+// error, 2 usage error. Findings affect the exit code only when the caller opts
+// in with -fail-on, which then adds 3 for a policy violation: by default the
+// report describes and the consumer enforces.
 func DiffMain(args []string) int {
 	fs := flag.NewFlagSet("bigo diff", flag.ContinueOnError)
 	format := fs.String("format", "text", "output format: text | markdown")
 	out := fs.String("o", "", "write the output to this file instead of stdout")
+	failOn := fs.String("fail-on", "none", "exit 3 when findings reach this severity: none | break | regression")
 	if err := fs.Parse(args); err != nil {
 		return 2
 	}
@@ -127,8 +128,12 @@ func DiffMain(args []string) int {
 		fmt.Fprintf(os.Stderr, "bigo diff: unknown -format %q (want text or markdown)\n", *format)
 		return 2
 	}
+	if *failOn != "none" && *failOn != "break" && *failOn != "regression" {
+		fmt.Fprintf(os.Stderr, "bigo diff: unknown -fail-on %q (want none, break, or regression)\n", *failOn)
+		return 2
+	}
 	if fs.NArg() != 2 {
-		fmt.Fprintln(os.Stderr, "usage: bigo diff [-format text|markdown] [-o file] base.json head.json")
+		fmt.Fprintln(os.Stderr, "usage: bigo diff [-format text|markdown] [-fail-on none|break|regression] [-o file] base.json head.json")
 		return 2
 	}
 	base, err := loadDoc(fs.Arg(0))
@@ -160,6 +165,34 @@ func DiffMain(args []string) int {
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "bigo diff:", err)
 		return 1
+	}
+	return policyCode(findings, *failOn)
+}
+
+// policyCode applies the exit-code policy after the output has been written.
+// Exit 3 is a policy violation — distinct from 1 (bigo failed) and 2 (usage),
+// so a CI step can tell "your code broke" from "the tool broke".
+//
+// "break" fails only on a broken declared budget (class 1) and on a new
+// function that arrives already over budget (class 4): both are violations of
+// a contract the repo itself wrote. "regression" additionally fails on a proven
+// asymptotic regression in unbudgeted code (class 2). No policy fails on a new
+// ⊤ (class 3): losing visibility is worth reporting but is not a defect, and
+// failing on it would pressure authors to avoid constructs bigo cannot yet see.
+func policyCode(fs []Finding, failOn string) int {
+	worst, found := Severity(fs)
+	if !found || failOn == "none" {
+		return 0
+	}
+	switch failOn {
+	case "break":
+		if worst == BudgetBreak || worst == NewFuncBreak {
+			return 3
+		}
+	case "regression":
+		if worst == BudgetBreak || worst == NewFuncBreak || worst == ProvenRegression {
+			return 3
+		}
 	}
 	return 0
 }

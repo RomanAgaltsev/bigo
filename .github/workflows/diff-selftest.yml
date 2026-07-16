@@ -1,0 +1,39 @@
+name: diff-selftest
+
+# Runs the bigo Action on bigo's own PRs — the end-to-end smoke test for the
+# Action itself (spec §10: "an end-to-end Action smoke test on the bigo repo").
+# report-only: this must never block a bigo PR.
+#
+# EXPECTED RED until the first release that ships `bigo diff -fail-on`.
+# bigo-version: latest installs the *released* CLI, and the action passes
+# -fail-on, which v1.20.0 does not define — so the job exits 2 until that
+# release lands, after which `latest` resolves it and this goes green on its
+# own. Deliberate: pointing this at the PR's own binary would test the action
+# against an unreleased bigo and mask exactly the release breakage this job
+# exists to catch.
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  diff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # the Action needs the base commit to build a worktree
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      # Exercise the action from this checkout, not from a published tag, so a
+      # PR tests the action.yml it ships.
+      - uses: ./
+        with:
+          fail-on: none
+          bigo-version: latest
