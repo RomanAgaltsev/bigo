@@ -1,0 +1,142 @@
+name: bigo complexity diff
+description: Report asymptotic complexity regressions introduced by a pull request.
+branding:
+  icon: trending-up
+  color: blue
+
+inputs:
+  working-directory:
+    description: Directory of the Go module to analyze.
+    required: false
+    default: "."
+  packages:
+    description: Package patterns to analyze.
+    required: false
+    default: "./..."
+  fail-on:
+    description: >
+      Exit-code policy: none (report only, the default), break (fail on a broken
+      budget or a new function already over budget), or regression (also fail on
+      a proven asymptotic regression in unbudgeted code).
+    required: false
+    default: none
+  comment:
+    description: Post/update a single PR comment with the findings.
+    required: false
+    default: "true"
+  bigo-version:
+    description: Version of bigo to install, e.g. v1.20.0 or latest.
+    required: false
+    default: latest
+  github-token:
+    description: Token used to post the PR comment.
+    required: false
+    default: ${{ github.token }}
+
+outputs:
+  findings:
+    description: The rendered markdown findings body.
+    value: ${{ steps.diff.outputs.body }}
+
+runs:
+  using: composite
+  steps:
+    - name: Install bigo
+      shell: bash
+      run: go install github.com/RomanAgaltsev/bigo/cmd/bigo@${{ inputs.bigo-version }}
+
+    - name: Analyze head
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: bigo json ${{ inputs.packages }} > "${RUNNER_TEMP}/head.json"
+
+    - name: Analyze base
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      run: |
+        set -uo pipefail
+        # A base that does not build, or that predates bigo, is not this PR's
+        # fault: degrade to an empty document rather than failing the build.
+        empty='{"schema_version":"","bigo_version":"","module":"","generated":"","functions":[]}'
+        if [ -z "${BASE_SHA:-}" ]; then
+          echo "::notice::no base SHA (not a pull_request event); treating base as empty"
+          echo "$empty" > "${RUNNER_TEMP}/base.json"
+          exit 0
+        fi
+        worktree="${RUNNER_TEMP}/bigo-base"
+        if ! git worktree add --detach "$worktree" "$BASE_SHA" >/dev/null 2>&1; then
+          echo "::warning::cannot check out base ${BASE_SHA} (is fetch-depth: 0 set on actions/checkout?); treating base as empty"
+          echo "$empty" > "${RUNNER_TEMP}/base.json"
+          exit 0
+        fi
+        if ! (cd "$worktree/${{ inputs.working-directory }}" && bigo json ${{ inputs.packages }} > "${RUNNER_TEMP}/base.json"); then
+          echo "::warning::base analysis failed; treating base as empty"
+          echo "$empty" > "${RUNNER_TEMP}/base.json"
+        fi
+        git worktree remove --force "$worktree" || true
+
+    - name: Diff
+      id: diff
+      shell: bash
+      run: |
+        set -uo pipefail
+        # `shell: bash` runs with -e; a policy violation is an expected exit
+        # here, not a reason to abort before the findings are recorded.
+        set +e
+        # An empty base document has no module and would trip the compatibility
+        # gate; when base is empty there is nothing to compare, so report the
+        # all-clear rather than an error.
+        if [ "$(jq -r '.module' "${RUNNER_TEMP}/base.json")" = "" ]; then
+          printf '<!-- bigo-diff -->\n## bigo — complexity diff\n\nNo base report to compare against.\n' > "${RUNNER_TEMP}/body.md"
+          code=0
+        else
+          bigo diff -format markdown -fail-on "${{ inputs.fail-on }}" \
+            -o "${RUNNER_TEMP}/body.md" \
+            "${RUNNER_TEMP}/base.json" "${RUNNER_TEMP}/head.json"
+          code=$?
+        fi
+        # bigo writes no output when it errors out; the comment step reads this
+        # file unconditionally, so it must exist either way.
+        if [ ! -f "${RUNNER_TEMP}/body.md" ]; then
+          printf '<!-- bigo-diff -->\n## bigo — complexity diff\n\nbigo diff failed (exit %s); see the job log.\n' "$code" > "${RUNNER_TEMP}/body.md"
+        fi
+        {
+          echo 'body<<BIGO_EOF'
+          cat "${RUNNER_TEMP}/body.md"
+          echo 'BIGO_EOF'
+        } >> "$GITHUB_OUTPUT"
+        cat "${RUNNER_TEMP}/body.md" >> "$GITHUB_STEP_SUMMARY"
+        # Exit 1 and 2 are bigo failures; 3 is a policy violation. Both fail the
+        # step, but only after the findings have been recorded above.
+        echo "code=$code" >> "$GITHUB_OUTPUT"
+        exit 0
+
+    - name: Comment
+      if: ${{ inputs.comment == 'true' && github.event.pull_request.number }}
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        PR: ${{ github.event.pull_request.number }}
+        REPO: ${{ github.repository }}
+      run: |
+        set -euo pipefail
+        marker='<!-- bigo-diff -->'
+        # One comment per PR, updated in place: find ours by marker.
+        id=$(gh api "repos/${REPO}/issues/${PR}/comments" --paginate \
+              --jq "[.[] | select(.body | startswith(\"${marker}\"))] | first | .id // empty")
+        if [ -n "$id" ]; then
+          gh api -X PATCH "repos/${REPO}/issues/comments/${id}" -F body=@"${RUNNER_TEMP}/body.md" >/dev/null
+        else
+          gh api -X POST "repos/${REPO}/issues/${PR}/comments" -F body=@"${RUNNER_TEMP}/body.md" >/dev/null
+        fi
+
+    - name: Apply exit-code policy
+      shell: bash
+      run: |
+        code='${{ steps.diff.outputs.code }}'
+        if [ "$code" != "0" ]; then
+          echo "::error::bigo diff exited ${code}"
+          exit "$code"
+        fi
