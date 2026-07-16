@@ -32,9 +32,37 @@
       "type": "array",
       "description": "Every //bigo:cost and //bigo:ignore assertion found — the document's trust surface. Any entry may have influenced any verdict; audit these when auditing a document. v1 lists function-attached assertions; interface-method costs are a planned additive extension.",
       "items": { "$ref": "#/$defs/trustEntry" }
+    },
+    "smells": {
+      "type": "array",
+      "description": "Advisory smell findings (SM1..SM8), sorted by file, line, rule. Deliberately top-level and never attached to a function record: a smell is advisory and can never influence a verdict, and the schema mirrors that firewall. Added in schema 1.1.0; absent in 1.0.0 documents and omitted when empty.",
+      "items": { "$ref": "#/$defs/smell" }
     }
   },
   "$defs": {
+    "smell": {
+      "type": "object",
+      "required": ["rule", "message", "file", "line"],
+      "properties": {
+        "rule": {
+          "type": "string",
+          "description": "Canonical rule ID.",
+          "pattern": "^SM[0-9]+$"
+        },
+        "message": {
+          "type": "string",
+          "description": "Human-readable finding, without the diagnostic's \"smell(SMn):\" prefix."
+        },
+        "file": {
+          "type": "string",
+          "description": "Module-relative path, forward slashes."
+        },
+        "line": {
+          "type": "integer",
+          "description": "1-based line."
+        }
+      }
+    },
     "function": {
       "type": "object",
       "required": ["package", "func", "file", "line", "time"],

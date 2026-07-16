@@ -86,8 +86,8 @@ func TestGoldenEnvelope(t *testing.T) {
 	if doc.Generated != "2026-01-02T03:04:05Z" {
 		t.Errorf("generated = %q, want fixed injected time", doc.Generated)
 	}
-	if len(doc.Functions) != 10 {
-		t.Errorf("functions = %d, want 10 (Linear, WithinBudget, ExceedsBudget, Unverifiable, Sum, telemetry, extLookup, UsesTrust, Doubled, InvalidBudget)", len(doc.Functions))
+	if len(doc.Functions) != 12 {
+		t.Errorf("functions = %d, want 12 (Linear, WithinBudget, ExceedsBudget, Unverifiable, Sum, telemetry, extLookup, UsesTrust, Doubled, InvalidBudget, ConcatInLoop, IgnoredSmell)", len(doc.Functions))
 	}
 	if len(doc.Trusted) != 3 {
 		t.Errorf("trusted = %d, want 3 (telemetry ignore, extLookup cost, IgnoredSmell ignore)", len(doc.Trusted))
