@@ -61,7 +61,7 @@ func heading(c Class) string {
 }
 
 func filter(fs []Finding, c Class) []Finding {
-	var out []Finding
+	out := make([]Finding, 0, len(fs))
 	for _, f := range fs {
 		if f.Class == c {
 			out = append(out, f)
