@@ -107,3 +107,73 @@ func BadgeMain(version string, args []string) int {
 	}
 	return 0
 }
+
+// DiffMain runs the `bigo diff base.json head.json` subcommand: it compares two
+// report documents and renders the findings. Pure and offline — it analyzes
+// nothing and reads no source.
+//
+// Exit codes match the other subcommands: 0 success, 1 IO/parse/compatibility
+// error, 2 usage error. Findings never affect the exit code — the report
+// describes and the Action enforces (spec §5's exit-code policy is a consumer
+// knob, not a property of this subcommand).
+func DiffMain(args []string) int {
+	fs := flag.NewFlagSet("bigo diff", flag.ContinueOnError)
+	format := fs.String("format", "text", "output format: text | markdown")
+	out := fs.String("o", "", "write the output to this file instead of stdout")
+	if err := fs.Parse(args); err != nil {
+		return 2
+	}
+	if *format != "text" && *format != "markdown" {
+		fmt.Fprintf(os.Stderr, "bigo diff: unknown -format %q (want text or markdown)\n", *format)
+		return 2
+	}
+	if fs.NArg() != 2 {
+		fmt.Fprintln(os.Stderr, "usage: bigo diff [-format text|markdown] [-o file] base.json head.json")
+		return 2
+	}
+	base, err := loadDoc(fs.Arg(0))
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "bigo diff:", err)
+		return 1
+	}
+	head, err := loadDoc(fs.Arg(1))
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "bigo diff:", err)
+		return 1
+	}
+	findings, warn, err := Diff(base, head)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "bigo diff:", err)
+		return 1
+	}
+	var text string
+	if *format == "markdown" {
+		text = FormatMarkdown(findings, warn)
+	} else {
+		text = FormatText(findings, warn)
+	}
+	if *out == "" {
+		_, err = os.Stdout.WriteString(text)
+	} else {
+		err = os.WriteFile(*out, []byte(text), 0o600)
+	}
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "bigo diff:", err)
+		return 1
+	}
+	return 0
+}
+
+// loadDoc reads and parses a report document. Path "-" reads stdin, so
+// `bigo json ./... | bigo diff base.json -` composes.
+func loadDoc(path string) (Document, error) {
+	data, err := readInput(path)
+	if err != nil {
+		return Document{}, err
+	}
+	var d Document
+	if err := json.Unmarshal(data, &d); err != nil {
+		return Document{}, fmt.Errorf("%s: %w", path, err)
+	}
+	return d, nil
+}

@@ -29,5 +29,9 @@ func main() {
 	if len(os.Args) >= 2 && os.Args[1] == "badge" {
 		os.Exit(report.BadgeMain(version, os.Args[2:]))
 	}
+	// diff compares two documents; it analyzes nothing, so it takes no version.
+	if len(os.Args) >= 2 && os.Args[1] == "diff" {
+		os.Exit(report.DiffMain(os.Args[2:]))
+	}
 	singlechecker.Main(analyzer.Analyzer)
 }
