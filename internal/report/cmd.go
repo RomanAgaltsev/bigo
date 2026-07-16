@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 )
 
 // Main runs the `bigo json` subcommand. Exit codes: 0 success (verdicts never
@@ -42,12 +43,19 @@ func Main(version string, args []string) int {
 }
 
 // readInput reads a report document from a file path, or from stdin when path
-// is "-", so `bigo json ./... | bigo badge -i -` composes.
+// is "-", so `bigo json ./... | bigo badge -i -` composes. Reads are scoped
+// under the file's directory via an os.Root (Go 1.24+), which rejects any
+// traversal — the gosec G304 (CWE-22) clean idiom for a user-supplied path.
 func readInput(path string) ([]byte, error) {
 	if path == "-" {
 		return io.ReadAll(os.Stdin)
 	}
-	return os.ReadFile(path)
+	root, err := os.OpenRoot(filepath.Dir(path))
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = root.Close() }()
+	return root.ReadFile(filepath.Base(path))
 }
 
 // BadgeMain runs the `bigo badge` subcommand: it emits the shields.io endpoint
