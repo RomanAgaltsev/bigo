@@ -115,3 +115,25 @@ func Doubled(xs []int) []int {
 func InvalidBudget(xs []int) int {
 	return len(xs)
 }
+
+// ConcatInLoop is a deliberate SM1: string concatenation in a data-dependent
+// loop. Pinned by the report goldens.
+func ConcatInLoop(xs []string) string {
+	var s string
+	for _, x := range xs {
+		s += x
+	}
+	return s
+}
+
+// IgnoredSmell concatenates in a loop exactly as ConcatInLoop does, but is
+// ignored — the document must stay silent about it, as the analyzer does.
+//
+//bigo:ignore
+func IgnoredSmell(xs []string) string {
+	var s string
+	for _, x := range xs {
+		s += x
+	}
+	return s
+}

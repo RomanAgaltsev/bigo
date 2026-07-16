@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.1.0",
+  "schema_version": "1.0.0",
   "bigo_version": "test",
   "module": "example.com/reportfix",
   "generated": "2026-01-02T03:04:05Z",
@@ -247,49 +247,9 @@
         "raw": "//bigo:max O(m)",
         "verdict": "invalid"
       }
-    },
-    {
-      "package": "example.com/reportfix",
-      "func": "ConcatInLoop",
-      "file": "fix.go",
-      "line": 121,
-      "time": {
-        "str": "O(len(xs))",
-        "terms": [
-          {
-            "len(xs)": {
-              "pow": 1
-            }
-          }
-        ]
-      }
-    },
-    {
-      "package": "example.com/reportfix",
-      "func": "IgnoredSmell",
-      "file": "fix.go",
-      "line": 133,
-      "time": {
-        "str": "O(len(xs))",
-        "terms": [
-          {
-            "len(xs)": {
-              "pow": 1
-            }
-          }
-        ]
-      },
-      "trust": [
-        "//bigo:ignore"
-      ]
     }
   ],
   "trusted": [
-    {
-      "package": "example.com/reportfix",
-      "func": "IgnoredSmell",
-      "directive": "//bigo:ignore"
-    },
     {
       "package": "example.com/reportfix",
       "func": "extLookup",
@@ -299,14 +259,6 @@
       "package": "example.com/reportfix",
       "func": "telemetry",
       "directive": "//bigo:ignore"
-    }
-  ],
-  "smells": [
-    {
-      "rule": "SM1",
-      "message": "string built by repeated concatenation in a loop (quadratic); use strings.Builder",
-      "file": "fix.go",
-      "line": 122
     }
   ]
 }
