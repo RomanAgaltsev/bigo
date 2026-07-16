@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.19.0](https://github.com/RomanAgaltsev/bigo/compare/v1.18.0...v1.19.0) (2026-07-16)
+
+
+### Features
+
+* bigo badge — shields.io budget badge ([#63](https://github.com/RomanAgaltsev/bigo/issues/63)) ([a3b33da](https://github.com/RomanAgaltsev/bigo/commit/a3b33da0d932973ef3798ad02b008ae33056e9b1))
+
 ## [1.18.0](https://github.com/RomanAgaltsev/bigo/compare/v1.17.1...v1.18.0) (2026-07-15)
 
 
