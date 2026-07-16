@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.21.0](https://github.com/RomanAgaltsev/bigo/compare/v1.20.0...v1.21.0) (2026-07-16)
+
+
+### Features
+
+* bigo diff GitHub Action ([#69](https://github.com/RomanAgaltsev/bigo/issues/69)) ([57df6b2](https://github.com/RomanAgaltsev/bigo/commit/57df6b21a22d0dfb0b40ad02e93c2623d34bc24f))
+
 ## [1.20.0](https://github.com/RomanAgaltsev/bigo/compare/v1.19.0...v1.20.0) (2026-07-16)
 
 
