@@ -55,5 +55,6 @@ var rules = []func(*shape) (bound.Bound, bool){
 	ruleGeometricUp,
 	ruleGeometricDown,
 	ruleDecreasing,
+	ruleTwoPointer,
 	ruleIncreasing,
 }

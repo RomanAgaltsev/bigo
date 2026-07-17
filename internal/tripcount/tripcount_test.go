@@ -690,3 +690,135 @@ func f(s []int, x int) int {
 		})
 	}
 }
+
+func TestRuleTwoPointer(t *testing.T) {
+	tests := []struct{ name, src, want string }{
+		{
+			"merge shape: one pointer advances per iteration",
+			`package input
+func f(a, b []int) int {
+	i, j, n := 0, 0, 0
+	for i < len(a) && j < len(b) {
+		if a[i] <= b[j] { i++ } else { j++ }
+		n++
+	}
+	return n
+}`,
+			"O(len(a) + len(b))",
+		},
+		{
+			"swapped first guard: len(a) > i",
+			`package input
+func f(a, b []int) int {
+	i, j, n := 0, 0, 0
+	for len(a) > i && j < len(b) {
+		if a[i] <= b[j] { i++ } else { j++ }
+		n++
+	}
+	return n
+}`,
+			"O(len(a) + len(b))",
+		},
+		{
+			"advance by a constant step > 1",
+			`package input
+func f(a, b []int) int {
+	i, j, n := 0, 0, 0
+	for i < len(a) && j < len(b) {
+		if a[i] <= b[j] { i += 2 } else { j++ }
+		n++
+	}
+	return n
+}`,
+			"O(len(a) + len(b))",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := Of(innerLoop(t, tt.src)).String(); got != tt.want {
+				t.Errorf("Of(inner) = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestRuleTwoPointerRejects(t *testing.T) {
+	tests := []struct{ name, src string }{
+		{
+			"a path advances NEITHER pointer (may not terminate)",
+			`package input
+func f(a, b []int) int {
+	i, j, n := 0, 0, 0
+	for i < len(a) && j < len(b) {
+		if a[i] < 0 { n++; continue }
+		if a[i] <= b[j] { i++ } else { j++ }
+		n++
+	}
+	return n
+}`,
+		},
+		{
+			"a path moves one pointer BACKWARD",
+			`package input
+func f(a, b []int) int {
+	i, j, n := 0, 0, 0
+	for i < len(a) && j < len(b) {
+		if a[i] <= b[j] { i++; j-- } else { j++ }
+		n++
+	}
+	return n
+}`,
+		},
+		{
+			"i may start negative",
+			`package input
+func f(a, b []int, i int) int {
+	j, n := 0, 0
+	for i < len(a) && j < len(b) {
+		if a[i] <= b[j] { i++ } else { j++ }
+		n++
+	}
+	return n
+}`,
+		},
+		{
+			"second condition exits somewhere else (not the same loop exit)",
+			`package input
+func f(a, b []int) int {
+	i, j, n := 0, 0, 0
+	for i < len(a) {
+		if j < len(b) {
+			if a[i] <= b[j] { i++ } else { j++ }
+			n++
+		} else {
+			i++
+		}
+	}
+	return n
+}`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := Of(innerLoop(t, tt.src)); !got.IsTop() {
+				t.Errorf("Of = %q, want Top — unproven two-pointer measure", got.String())
+			}
+		})
+	}
+}
+
+// TestRuleTwoPointerDoesNotStealR1 pins the shape boundary: when BOTH pointers
+// advance every iteration the loop is a plain counted loop and R1 bounds it at
+// O(len(a)) — tighter than R7's O(len(a) + len(b)). R7 must decline so the
+// tighter rule wins. This is a precision pin, not a soundness one.
+func TestRuleTwoPointerDoesNotStealR1(t *testing.T) {
+	src := `package input
+func f(a, b []int) int {
+	i, j, n := 0, 0, 0
+	for i < len(a) && j < len(b) { i++; j++; n++ }
+	return n
+}`
+	if got := Of(innerLoop(t, src)).String(); got != "O(len(a))" {
+		t.Errorf("Of(inner) = %q, want %q — R7 must not claim a both-advance loop", got, "O(len(a))")
+	}
+}
