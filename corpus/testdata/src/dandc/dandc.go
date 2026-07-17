@@ -118,10 +118,20 @@ func PowerDC(x, b int) int {
 
 // MaxMinDC returns the minimum and maximum by divide and conquer.
 //
+// The len(s) == 0 base is load-bearing, and it is a BUG FIX, not engine-tuning:
+// without it this function does not terminate on an empty slice. len 0 fails the
+// == 1 and == 2 bases, mid becomes 0, and MaxMinDC(s[:0]) recurses on an
+// identical empty slice forever. bigo refused to bound it (the F1
+// divisive-fixed-point guard, v1.13.1) and was right to; the ⊤ was a real defect
+// in this code, found by the oracle. Do not "simplify" the base away.
+//
 //oracle:time O(n) where n=len(s)
 //oracle:space O(log n) where n=len(s)
 //oracle:source www.geeksforgeeks.org/maximum-and-minimum-in-an-array/ (tournament method, bound reference)
 func MaxMinDC(s []int) (int, int) {
+	if len(s) == 0 {
+		return 0, 0
+	}
 	if len(s) == 1 {
 		return s[0], s[0]
 	}
@@ -146,10 +156,18 @@ func MaxMinDC(s []int) (int, int) {
 // MajorityDC returns a majority-candidate element by divide and conquer with
 // linear-time counting per level.
 //
+// The len(s) == 0 base is load-bearing, and it is a BUG FIX, not engine-tuning:
+// without it this function does not terminate on an empty slice — len 0 fails
+// the == 1 base, mid becomes 0, and MajorityDC(s[:0]) recurses on an identical
+// empty slice forever. See MaxMinDC for the same defect and the same reasoning.
+//
 //oracle:time O(n log n) where n=len(s)
 //oracle:space O(log n) where n=len(s)
 //oracle:source CLRS-style D&C; en.wikipedia.org/wiki/Boyer%E2%80%93Moore_majority_vote_algorithm (D&C alternative, bound reference)
 func MajorityDC(s []int) int {
+	if len(s) == 0 {
+		return 0
+	}
 	if len(s) == 1 {
 		return s[0]
 	}
