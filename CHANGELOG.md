@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.27.0](https://github.com/RomanAgaltsev/bigo/compare/v1.26.1...v1.27.0) (2026-07-17)
+
+
+### Features
+
+* R7 bounds the two-pointer merge loop ([#85](https://github.com/RomanAgaltsev/bigo/issues/85)) ([fd27c31](https://github.com/RomanAgaltsev/bigo/commit/fd27c31118efc1da993cf216bed7bcdc579de75b))
+
 ## [1.26.1](https://github.com/RomanAgaltsev/bigo/compare/v1.26.0...v1.26.1) (2026-07-17)
 
 
