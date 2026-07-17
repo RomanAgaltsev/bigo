@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.23.0](https://github.com/RomanAgaltsev/bigo/compare/v1.22.0...v1.23.0) (2026-07-17)
+
+
+### Features
+
+* close the dogfooding backlog (smell anchors, mutex costs, callee names, -C, map-growth space) ([#74](https://github.com/RomanAgaltsev/bigo/issues/74)) ([4f63bf5](https://github.com/RomanAgaltsev/bigo/commit/4f63bf59eb7a06fe09d388ea8e545c8c84b7ff58)), closes [#49](https://github.com/RomanAgaltsev/bigo/issues/49)
+
 ## [1.22.0](https://github.com/RomanAgaltsev/bigo/compare/v1.21.0...v1.22.0) (2026-07-16)
 
 
