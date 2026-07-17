@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.24.0](https://github.com/RomanAgaltsev/bigo/compare/v1.23.0...v1.24.0) (2026-07-17)
+
+
+### Features
+
+* canonical corpus oracle harness + seed families ([#77](https://github.com/RomanAgaltsev/bigo/issues/77)) ([b708ccf](https://github.com/RomanAgaltsev/bigo/commit/b708ccf009799d2cc0a175e74e30254dc544b31a))
+
 ## [1.23.0](https://github.com/RomanAgaltsev/bigo/compare/v1.22.0...v1.23.0) (2026-07-17)
 
 
