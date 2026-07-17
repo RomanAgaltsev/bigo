@@ -1,16 +1,18 @@
 {
-  "total": 29,
+  "total": 40,
   "time_by_status": {
-    "exact": 10,
-    "top": 19
+    "exact": 14,
+    "top": 26
   },
   "space_by_status": {
-    "exact": 16,
+    "exact": 20,
     "loose": 1,
-    "top": 12
+    "top": 19
   },
   "per_family": {
     "dandc": 6,
+    "graphs": 6,
+    "matrix": 5,
     "searching": 5,
     "sorting": 10,
     "stringops": 8
@@ -85,6 +87,134 @@
       "space_got": "O(log(b))",
       "space_status": "exact",
       "source": "CLRS §31.6 (repeated squaring); en.wikipedia.org/wiki/Exponentiation_by_squaring"
+    },
+    {
+      "pkg": "graphs",
+      "func": "BFS",
+      "time_pin": "O(len(adj)^2)",
+      "time_got": "unverifiable",
+      "time_status": "top",
+      "space_pin": "O(len(adj))",
+      "space_got": "unverifiable",
+      "space_status": "top",
+      "cause": "loop",
+      "source": "CLRS §22.2 — O(V+E), pinned at the E≤n² worst case"
+    },
+    {
+      "pkg": "graphs",
+      "func": "Components",
+      "time_pin": "O(len(adj)^2)",
+      "time_got": "unverifiable",
+      "time_status": "top",
+      "space_pin": "O(len(adj))",
+      "space_got": "unverifiable",
+      "space_status": "top",
+      "cause": "loop",
+      "source": "CLRS §21 intro — O(V+E) via repeated DFS, pinned at the E≤n² worst case"
+    },
+    {
+      "pkg": "graphs",
+      "func": "DFSIter",
+      "time_pin": "O(len(adj)^2)",
+      "time_got": "unverifiable",
+      "time_status": "top",
+      "space_pin": "O(len(adj))",
+      "space_got": "unverifiable",
+      "space_status": "top",
+      "cause": "loop",
+      "source": "CLRS §22.3 — O(V+E), pinned at the E≤n² worst case"
+    },
+    {
+      "pkg": "graphs",
+      "func": "DFSRec",
+      "time_pin": "O(len(adj)^2)",
+      "time_got": "unverifiable",
+      "time_status": "top",
+      "space_pin": "O(len(adj))",
+      "space_got": "unverifiable",
+      "space_status": "top",
+      "cause": "loop",
+      "source": "CLRS §22.3 (recursive form) — stack depth ≤ n"
+    },
+    {
+      "pkg": "graphs",
+      "func": "FloydWarshall",
+      "time_pin": "O(len(dist)^3)",
+      "time_got": "O(len(dist)^3)",
+      "time_status": "exact",
+      "space_pin": "O(1)",
+      "space_got": "O(1)",
+      "space_status": "exact",
+      "source": "CLRS §25.2; en.wikipedia.org/wiki/Floyd%E2%80%93Warshall_algorithm"
+    },
+    {
+      "pkg": "graphs",
+      "func": "TopoSortKahn",
+      "time_pin": "O(len(adj)^2)",
+      "time_got": "unverifiable",
+      "time_status": "top",
+      "space_pin": "O(len(adj))",
+      "space_got": "unverifiable",
+      "space_status": "top",
+      "cause": "loop",
+      "source": "CLRS §22.4 / Kahn 1962 — O(V+E), pinned at the E≤n² worst case"
+    },
+    {
+      "pkg": "matrix",
+      "func": "Mul",
+      "time_pin": "O(len(a)^3)",
+      "time_got": "O(len(a)^3)",
+      "time_status": "exact",
+      "space_pin": "O(len(a)^2)",
+      "space_got": "unverifiable",
+      "space_status": "top",
+      "source": "CLRS §4.2 (naive); en.wikipedia.org/wiki/Matrix_multiplication_algorithm"
+    },
+    {
+      "pkg": "matrix",
+      "func": "Rotate90",
+      "time_pin": "O(len(m)^2)",
+      "time_got": "O(len(m)^2)",
+      "time_status": "exact",
+      "space_pin": "O(1)",
+      "space_got": "O(1)",
+      "space_status": "exact",
+      "source": "www.geeksforgeeks.org/rotate-a-matrix-by-90-degree-in-clockwise-direction/ (bound reference)"
+    },
+    {
+      "pkg": "matrix",
+      "func": "SearchSorted",
+      "time_pin": "O(len(m))",
+      "time_got": "unverifiable",
+      "time_status": "top",
+      "space_pin": "O(1)",
+      "space_got": "O(1)",
+      "space_status": "exact",
+      "cause": "loop",
+      "source": "www.geeksforgeeks.org/search-in-row-wise-and-column-wise-sorted-matrix/ (bound reference)"
+    },
+    {
+      "pkg": "matrix",
+      "func": "SpiralOrder",
+      "time_pin": "O(len(m)^2)",
+      "time_got": "unverifiable",
+      "time_status": "top",
+      "space_pin": "O(len(m)^2)",
+      "space_got": "unverifiable",
+      "space_status": "top",
+      "cause": "loop",
+      "source": "www.geeksforgeeks.org/print-a-given-matrix-in-spiral-form/ (bound reference)"
+    },
+    {
+      "pkg": "matrix",
+      "func": "TransposeInPlace",
+      "time_pin": "O(len(m)^2)",
+      "time_got": "O(len(m)^2)",
+      "time_status": "exact",
+      "space_pin": "O(1)",
+      "space_got": "O(1)",
+      "space_status": "exact",
+      "source": "en.wikipedia.org/wiki/Transpose"
     },
     {
       "pkg": "searching",

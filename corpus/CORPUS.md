@@ -9,29 +9,31 @@ appears here: it fails the build. Algorithms considered and kept out are in
 [EXCLUSIONS.md](EXCLUSIONS.md). **This is not a coverage metric** — read
 composition, not a percentage.
 
-**Entries: 29**
+**Entries: 40**
 
 ## Time statuses
 
 | Status | Count |
 |---|---|
-| exact | 10 |
+| exact | 14 |
 | loose | 0 |
-| top | 19 |
+| top | 26 |
 
 ## Space statuses (pinned entries only)
 
 | Status | Count |
 |---|---|
-| exact | 16 |
+| exact | 20 |
 | loose | 1 |
-| top | 12 |
+| top | 19 |
 
 ## Per family
 
 | Family | Entries |
 |---|---|
 | dandc | 6 |
+| graphs | 6 |
+| matrix | 5 |
 | searching | 5 |
 | sorting | 10 |
 | stringops | 8 |
@@ -46,6 +48,17 @@ composition, not a percentage.
 | dandc.MaxSubarrayDC | O(len(s) log(len(s))) | unverifiable | top | O(log(len(s))) | unverifiable | top | call | CLRS §4.1; en.wikipedia.org/wiki/Maximum_subarray_problem |
 | dandc.PeakElement | O(log(len(s))) | O(log(len(s))) | exact | O(1) | O(1) | exact |  | jeffe.cs.illinois.edu/teaching/algorithms/ (recursion notes); www.geeksforgeeks.org/find-a-peak-in-a-given-array/ (bound reference) |
 | dandc.PowerDC | O(log(b)) | O(log(b)) | exact | O(log(b)) | O(log(b)) | exact |  | CLRS §31.6 (repeated squaring); en.wikipedia.org/wiki/Exponentiation_by_squaring |
+| graphs.BFS | O(len(adj)^2) | unverifiable | top | O(len(adj)) | unverifiable | top | loop | CLRS §22.2 — O(V+E), pinned at the E≤n² worst case |
+| graphs.Components | O(len(adj)^2) | unverifiable | top | O(len(adj)) | unverifiable | top | loop | CLRS §21 intro — O(V+E) via repeated DFS, pinned at the E≤n² worst case |
+| graphs.DFSIter | O(len(adj)^2) | unverifiable | top | O(len(adj)) | unverifiable | top | loop | CLRS §22.3 — O(V+E), pinned at the E≤n² worst case |
+| graphs.DFSRec | O(len(adj)^2) | unverifiable | top | O(len(adj)) | unverifiable | top | loop | CLRS §22.3 (recursive form) — stack depth ≤ n |
+| graphs.FloydWarshall | O(len(dist)^3) | O(len(dist)^3) | exact | O(1) | O(1) | exact |  | CLRS §25.2; en.wikipedia.org/wiki/Floyd%E2%80%93Warshall_algorithm |
+| graphs.TopoSortKahn | O(len(adj)^2) | unverifiable | top | O(len(adj)) | unverifiable | top | loop | CLRS §22.4 / Kahn 1962 — O(V+E), pinned at the E≤n² worst case |
+| matrix.Mul | O(len(a)^3) | O(len(a)^3) | exact | O(len(a)^2) | unverifiable | top |  | CLRS §4.2 (naive); en.wikipedia.org/wiki/Matrix_multiplication_algorithm |
+| matrix.Rotate90 | O(len(m)^2) | O(len(m)^2) | exact | O(1) | O(1) | exact |  | www.geeksforgeeks.org/rotate-a-matrix-by-90-degree-in-clockwise-direction/ (bound reference) |
+| matrix.SearchSorted | O(len(m)) | unverifiable | top | O(1) | O(1) | exact | loop | www.geeksforgeeks.org/search-in-row-wise-and-column-wise-sorted-matrix/ (bound reference) |
+| matrix.SpiralOrder | O(len(m)^2) | unverifiable | top | O(len(m)^2) | unverifiable | top | loop | www.geeksforgeeks.org/print-a-given-matrix-in-spiral-form/ (bound reference) |
+| matrix.TransposeInPlace | O(len(m)^2) | O(len(m)^2) | exact | O(1) | O(1) | exact |  | en.wikipedia.org/wiki/Transpose |
 | searching.BinarySearch | O(log(len(s))) | unverifiable | top | O(1) | O(1) | exact | loop | CLRS ex. 2.3-5; en.wikipedia.org/wiki/Binary_search_algorithm |
 | searching.BinarySearchRec | O(log(len(s))) | O(log(len(s))) | exact | O(log(len(s))) | O(log(len(s))) | exact |  | CLRS ex. 2.3-5 (recursive form) |
 | searching.FirstOccurrence | O(log(len(s))) | unverifiable | top | O(1) | O(1) | exact | loop | en.wikipedia.org/wiki/Binary_search_algorithm (leftmost variant) |
