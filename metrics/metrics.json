@@ -1,9 +1,9 @@
 {
-  "total": 190,
+  "total": 192,
   "bounded": 111,
-  "coverage_pct": "58.4",
+  "coverage_pct": "57.8",
   "by_cause": {
-    "call": 52,
+    "call": 54,
     "go": 3,
     "irreducible": 1,
     "loop": 15,
@@ -71,7 +71,7 @@
       "bounded": 1
     },
     "space": {
-      "total": 11,
+      "total": 13,
       "bounded": 10
     },
     "structures/array": {
@@ -1030,6 +1030,12 @@
     },
     {
       "pkg": "space",
+      "func": "CallsUnsolvedRecursion",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "space",
       "func": "Constant",
       "verdict": "bounded",
       "bound": "O(1)"
@@ -1091,6 +1097,12 @@
     {
       "pkg": "space",
       "func": "UnknownMake",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "space",
+      "func": "UnsolvedRecursionStack",
       "verdict": "unverifiable",
       "cause": "call"
     },

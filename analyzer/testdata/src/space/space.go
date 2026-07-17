@@ -103,3 +103,35 @@ func MapAssignNoLoop(k string) map[string]bool {
 	out[k] = true
 	return out
 }
+
+// A function proved self-recursive whose depth the solver cannot solve is ⊤
+// stack, not O(1). QuickSort partitions at a data-dependent index, so no
+// constant-fraction or subtractive measure exists. Before issue #76 the stack
+// kept InferSpace's O(1) default — a positive claim of constant stack for a
+// function proved to recurse — and this budget verified silently.
+
+//bigo:space O(1)
+func UnsolvedRecursionStack(s []int) { // want `cannot verify space budget O\(1\): recursion depth is unverifiable`
+	if len(s) <= 1 {
+		return
+	}
+	pivot := s[len(s)-1]
+	i := 0
+	for j := 0; j < len(s)-1; j++ {
+		if s[j] < pivot {
+			s[i], s[j] = s[j], s[i]
+			i++
+		}
+	}
+	s[i], s[len(s)-1] = s[len(s)-1], s[i]
+	UnsolvedRecursionStack(s[:i])
+	UnsolvedRecursionStack(s[i+1:])
+}
+
+// The caller-side twin: a caller of an unsolvable-recursive helper inherits an
+// unbounded transient stack, so it cannot claim a bounded space either.
+
+//bigo:space O(1)
+func CallsUnsolvedRecursion(s []int) { // want `cannot verify space budget O\(1\)`
+	UnsolvedRecursionStack(s)
+}
