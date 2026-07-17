@@ -135,3 +135,31 @@ func CallsFieldBounded(xs []int, s *S) int { // want `cannot verify budget O\(le
 //
 //bigo:cost O(k) where k=len(s.items)
 func opaqueFieldCost(s *S) int // want `//bigo:cost with field-path sizes does not propagate`
+
+// A field-rooted local slice (v1.28.0 review, F2). len(s.items[1:]) == len - 1
+// <= len(s.items). Through v1.28.0 this was top: lenOf resolved the operand's
+// length via Stab.VarFor, which names len/cap calls, never a collection. Now
+// LenVarFor names the collection's length directly.
+//
+//bigo:max O(n) where n=len(s.items)
+func (s *S) SumFieldTail() int {
+	ys := s.items[1:]
+	t := 0
+	for i := 0; i < len(ys); i++ {
+		t += ys[i]
+	}
+	return t
+}
+
+// The append copy idiom over a field-rooted spread: len(append(nil, s.items...))
+// == len(s.items). Exercises LenVarFor through lenExtent's append branch.
+//
+//bigo:max O(n) where n=len(s.items)
+func (s *S) SumFieldCopy() int {
+	ys := append([]int(nil), s.items...)
+	t := 0
+	for i := 0; i < len(ys); i++ {
+		t += ys[i]
+	}
+	return t
+}

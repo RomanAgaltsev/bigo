@@ -374,7 +374,10 @@ func (f *Facts) lenOf(v ssa.Value, depth int) (bound.Var, bool) {
 	if av, cls, ok := size.ValueClass(v); ok && cls == size.Length {
 		return av, true
 	}
-	if s, ok := f.Stab.VarFor(v); ok {
+	// An entry-stable field-rooted COLLECTION: len(s.items) for the slice
+	// s.items[1:]. Stab.VarFor here would never fire — it names len/cap CALLS,
+	// not collections (the v1.28.0 review's F2).
+	if s, ok := f.Stab.LenVarFor(v); ok {
 		return s, true
 	}
 	return f.lenExtent(v, depth)

@@ -37,6 +37,24 @@ func Of(loop *loopnest.Loop, stab *fieldpath.Stability) bound.Bound {
 	if len(ifi.Block().Succs) != 2 || !loop.Blocks[ifi.Block().Succs[0]] {
 		return bound.Top()
 	}
+	// The false branch must LEAVE the loop. Every rule below argues, in some
+	// form, "the guard fails => the loop ends": R1 exits once the comparand
+	// reaches e, R7 once i >= E_a or j >= E_b. That premise holds only if the
+	// guard-false edge is an exit. When it re-enters the loop — the shape
+	// `for { if cond { … } else { … } }`, where this If IS the header and both
+	// its edges are in-loop — the guard failing ends nothing, the loop runs on,
+	// and any bound derived from the guard is unjustified.
+	//
+	// Checking only the true edge (as this did through v1.28.0) produced wrong
+	// bounds under R1, R2, R3, R4 and R7 — including on TERMINATING code, where
+	// some unrelated exit bounds the loop and the guard's variable does not
+	// (`for { if i < len(a) {…} else {…}; i++; if t >= limit { break } }` was
+	// reported O(len(a)) while running limit/2 times). R6 escaped only by
+	// accident: its exactly-one-end rule rejects the stalling path. Both
+	// goldens are blind to this family — the pins live in edge/.
+	if loop.Blocks[ifi.Block().Succs[1]] {
+		return bound.Top()
+	}
 	sh := &shape{loop: loop, ifi: ifi, f: &sizefacts.Facts{Stab: stab}}
 	sh.cmp, _ = ifi.Cond.(*ssa.BinOp)
 
