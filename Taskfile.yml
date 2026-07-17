@@ -6,6 +6,11 @@ tasks:
     cmds:
       - go test ./internal/metrics/ -run TestGolden -update
 
+  corpus:
+    desc: Regenerate the canonical-corpus oracle golden (corpus/corpus.json + corpus/CORPUS.md)
+    cmds:
+      - go test ./internal/oracle/ -run TestGolden -update
+
   report-golden:
     desc: Regenerate the report schema golden (internal/report/testdata/golden/report.json)
     cmds:

@@ -1,0 +1,193 @@
+{
+  "total": 15,
+  "time_by_status": {
+    "exact": 5,
+    "top": 10
+  },
+  "space_by_status": {
+    "exact": 9,
+    "loose": 1,
+    "top": 5
+  },
+  "per_family": {
+    "searching": 5,
+    "sorting": 10
+  },
+  "entries": [
+    {
+      "pkg": "searching",
+      "func": "BinarySearch",
+      "time_pin": "O(log(len(s)))",
+      "time_got": "unverifiable",
+      "time_status": "top",
+      "space_pin": "O(1)",
+      "space_got": "O(1)",
+      "space_status": "exact",
+      "cause": "loop",
+      "source": "CLRS ex. 2.3-5; en.wikipedia.org/wiki/Binary_search_algorithm"
+    },
+    {
+      "pkg": "searching",
+      "func": "BinarySearchRec",
+      "time_pin": "O(log(len(s)))",
+      "time_got": "O(log(len(s)))",
+      "time_status": "exact",
+      "space_pin": "O(log(len(s)))",
+      "space_got": "O(log(len(s)))",
+      "space_status": "exact",
+      "source": "CLRS ex. 2.3-5 (recursive form)"
+    },
+    {
+      "pkg": "searching",
+      "func": "FirstOccurrence",
+      "time_pin": "O(log(len(s)))",
+      "time_got": "unverifiable",
+      "time_status": "top",
+      "space_pin": "O(1)",
+      "space_got": "O(1)",
+      "space_status": "exact",
+      "cause": "loop",
+      "source": "en.wikipedia.org/wiki/Binary_search_algorithm (leftmost variant)"
+    },
+    {
+      "pkg": "searching",
+      "func": "LinearSearch",
+      "time_pin": "O(len(s))",
+      "time_got": "O(len(s))",
+      "time_status": "exact",
+      "space_pin": "O(1)",
+      "space_got": "O(1)",
+      "space_status": "exact",
+      "source": "en.wikipedia.org/wiki/Linear_search"
+    },
+    {
+      "pkg": "searching",
+      "func": "SearchRotated",
+      "time_pin": "O(log(len(s)))",
+      "time_got": "unverifiable",
+      "time_status": "top",
+      "space_pin": "O(1)",
+      "space_got": "O(1)",
+      "space_status": "exact",
+      "cause": "loop",
+      "source": "www.geeksforgeeks.org/search-an-element-in-a-sorted-and-pivoted-array/ (bound reference)"
+    },
+    {
+      "pkg": "sorting",
+      "func": "BubbleSort",
+      "time_pin": "O(len(s)^2)",
+      "time_got": "O(len(s)^2)",
+      "time_status": "exact",
+      "space_pin": "O(1)",
+      "space_got": "O(1)",
+      "space_status": "exact",
+      "source": "CLRS problem 2-2; en.wikipedia.org/wiki/Bubble_sort"
+    },
+    {
+      "pkg": "sorting",
+      "func": "BucketSort",
+      "time_pin": "O(len(s)^2)",
+      "time_got": "unverifiable",
+      "time_status": "top",
+      "space_pin": "O(len(s))",
+      "space_got": "unverifiable",
+      "space_status": "top",
+      "cause": "loop",
+      "source": "CLRS §8.4 (worst case); en.wikipedia.org/wiki/Bucket_sort"
+    },
+    {
+      "pkg": "sorting",
+      "func": "CountingSort",
+      "time_pin": "O(k + len(s))",
+      "time_got": "unverifiable",
+      "time_status": "top",
+      "space_pin": "O(k + len(s))",
+      "space_got": "unverifiable",
+      "space_status": "top",
+      "cause": "loop",
+      "source": "CLRS §8.2; en.wikipedia.org/wiki/Counting_sort"
+    },
+    {
+      "pkg": "sorting",
+      "func": "HeapSort",
+      "time_pin": "O(len(s) log(len(s)))",
+      "time_got": "unverifiable",
+      "time_status": "top",
+      "space_pin": "O(1)",
+      "space_got": "O(len(s))",
+      "space_status": "loose",
+      "cause": "call",
+      "source": "CLRS §6.4; en.wikipedia.org/wiki/Heapsort"
+    },
+    {
+      "pkg": "sorting",
+      "func": "InsertionSort",
+      "time_pin": "O(len(s)^2)",
+      "time_got": "O(len(s)^2)",
+      "time_status": "exact",
+      "space_pin": "O(1)",
+      "space_got": "O(1)",
+      "space_status": "exact",
+      "source": "CLRS §2.1; en.wikipedia.org/wiki/Insertion_sort (worst case)"
+    },
+    {
+      "pkg": "sorting",
+      "func": "MergeSort",
+      "time_pin": "O(len(s) log(len(s)))",
+      "time_got": "unverifiable",
+      "time_status": "top",
+      "space_pin": "O(len(s))",
+      "space_got": "unverifiable",
+      "space_status": "top",
+      "cause": "call",
+      "source": "CLRS §2.3.1; en.wikipedia.org/wiki/Merge_sort"
+    },
+    {
+      "pkg": "sorting",
+      "func": "QuickSort",
+      "time_pin": "O(len(s)^2)",
+      "time_got": "unverifiable",
+      "time_status": "top",
+      "space_pin": "O(len(s))",
+      "space_got": "unverifiable",
+      "space_status": "top",
+      "cause": "call",
+      "source": "CLRS §7; en.wikipedia.org/wiki/Quicksort (worst case)"
+    },
+    {
+      "pkg": "sorting",
+      "func": "RadixSortLSD",
+      "time_pin": "O(len(s))",
+      "time_got": "unverifiable",
+      "time_status": "top",
+      "space_pin": "O(len(s))",
+      "space_got": "unverifiable",
+      "space_status": "top",
+      "cause": "loop",
+      "source": "CLRS §8.3 (fixed d, k); en.wikipedia.org/wiki/Radix_sort"
+    },
+    {
+      "pkg": "sorting",
+      "func": "SelectionSort",
+      "time_pin": "O(len(s)^2)",
+      "time_got": "O(len(s)^2)",
+      "time_status": "exact",
+      "space_pin": "O(1)",
+      "space_got": "O(1)",
+      "space_status": "exact",
+      "source": "CLRS ex. 2.2-2; en.wikipedia.org/wiki/Selection_sort"
+    },
+    {
+      "pkg": "sorting",
+      "func": "ShellSort",
+      "time_pin": "O(len(s)^2)",
+      "time_got": "unverifiable",
+      "time_status": "top",
+      "space_pin": "O(1)",
+      "space_got": "O(1)",
+      "space_status": "exact",
+      "cause": "loop",
+      "source": "en.wikipedia.org/wiki/Shellsort (Shell's sequence, worst case)"
+    }
+  ]
+}
