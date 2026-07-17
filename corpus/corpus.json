@@ -1,19 +1,91 @@
 {
-  "total": 15,
+  "total": 29,
   "time_by_status": {
-    "exact": 5,
-    "top": 10
+    "exact": 10,
+    "top": 19
   },
   "space_by_status": {
-    "exact": 9,
+    "exact": 16,
     "loose": 1,
-    "top": 5
+    "top": 12
   },
   "per_family": {
+    "dandc": 6,
     "searching": 5,
-    "sorting": 10
+    "sorting": 10,
+    "stringops": 8
   },
   "entries": [
+    {
+      "pkg": "dandc",
+      "func": "CountInversions",
+      "time_pin": "O(len(s) log(len(s)))",
+      "time_got": "unverifiable",
+      "time_status": "top",
+      "space_pin": "O(len(s))",
+      "space_got": "unverifiable",
+      "space_status": "top",
+      "cause": "call",
+      "source": "CLRS problem 2-4; en.wikipedia.org/wiki/Counting_inversions"
+    },
+    {
+      "pkg": "dandc",
+      "func": "MajorityDC",
+      "time_pin": "O(len(s) log(len(s)))",
+      "time_got": "unverifiable",
+      "time_status": "top",
+      "space_pin": "O(log(len(s)))",
+      "space_got": "unverifiable",
+      "space_status": "top",
+      "cause": "call",
+      "source": "CLRS-style D\u0026C; en.wikipedia.org/wiki/Boyer%E2%80%93Moore_majority_vote_algorithm (D\u0026C alternative, bound reference)"
+    },
+    {
+      "pkg": "dandc",
+      "func": "MaxMinDC",
+      "time_pin": "O(len(s))",
+      "time_got": "unverifiable",
+      "time_status": "top",
+      "space_pin": "O(log(len(s)))",
+      "space_got": "unverifiable",
+      "space_status": "top",
+      "cause": "call",
+      "source": "www.geeksforgeeks.org/maximum-and-minimum-in-an-array/ (tournament method, bound reference)"
+    },
+    {
+      "pkg": "dandc",
+      "func": "MaxSubarrayDC",
+      "time_pin": "O(len(s) log(len(s)))",
+      "time_got": "unverifiable",
+      "time_status": "top",
+      "space_pin": "O(log(len(s)))",
+      "space_got": "unverifiable",
+      "space_status": "top",
+      "cause": "call",
+      "source": "CLRS §4.1; en.wikipedia.org/wiki/Maximum_subarray_problem"
+    },
+    {
+      "pkg": "dandc",
+      "func": "PeakElement",
+      "time_pin": "O(log(len(s)))",
+      "time_got": "O(log(len(s)))",
+      "time_status": "exact",
+      "space_pin": "O(1)",
+      "space_got": "O(1)",
+      "space_status": "exact",
+      "source": "jeffe.cs.illinois.edu/teaching/algorithms/ (recursion notes); www.geeksforgeeks.org/find-a-peak-in-a-given-array/ (bound reference)"
+    },
+    {
+      "pkg": "dandc",
+      "func": "PowerDC",
+      "time_pin": "O(log(b))",
+      "time_got": "O(log(b))",
+      "time_status": "exact",
+      "space_pin": "O(log(b))",
+      "space_got": "O(log(b))",
+      "space_status": "exact",
+      "source": "CLRS §31.6 (repeated squaring); en.wikipedia.org/wiki/Exponentiation_by_squaring"
+    },
     {
       "pkg": "searching",
       "func": "BinarySearch",
@@ -188,6 +260,99 @@
       "space_status": "exact",
       "cause": "loop",
       "source": "en.wikipedia.org/wiki/Shellsort (Shell's sequence, worst case)"
+    },
+    {
+      "pkg": "stringops",
+      "func": "AreAnagrams",
+      "time_pin": "O(len(a) + len(b))",
+      "time_got": "unverifiable",
+      "time_status": "top",
+      "space_pin": "O(1)",
+      "space_got": "O(1)",
+      "space_status": "exact",
+      "cause": "loop",
+      "source": "www.geeksforgeeks.org/check-whether-two-strings-are-anagram-of-each-other/ (bound reference)"
+    },
+    {
+      "pkg": "stringops",
+      "func": "CommonPrefix",
+      "time_pin": "O(len(a))",
+      "time_got": "O(len(a))",
+      "time_status": "exact",
+      "space_pin": "O(1)",
+      "space_got": "O(1)",
+      "space_status": "exact",
+      "source": "en.wikipedia.org/wiki/LCP_array (pairwise base case, bound reference)"
+    },
+    {
+      "pkg": "stringops",
+      "func": "IsPalindrome",
+      "time_pin": "O(len(s))",
+      "time_got": "O(len(s))",
+      "time_status": "exact",
+      "space_pin": "O(1)",
+      "space_got": "O(1)",
+      "space_status": "exact",
+      "source": "ru.algorithmica.org (strings, bound reference); en.wikipedia.org/wiki/Palindrome"
+    },
+    {
+      "pkg": "stringops",
+      "func": "KMPSearch",
+      "time_pin": "O(len(pat) + len(text))",
+      "time_got": "unverifiable",
+      "time_status": "top",
+      "space_pin": "O(len(pat))",
+      "space_got": "unverifiable",
+      "space_status": "top",
+      "cause": "loop",
+      "source": "CLRS §32.4; en.wikipedia.org/wiki/Knuth%E2%80%93Morris%E2%80%93Pratt_algorithm"
+    },
+    {
+      "pkg": "stringops",
+      "func": "NaiveSearch",
+      "time_pin": "O(len(pat) len(text))",
+      "time_got": "unverifiable",
+      "time_status": "top",
+      "space_pin": "O(1)",
+      "space_got": "O(1)",
+      "space_status": "exact",
+      "cause": "loop",
+      "source": "CLRS §32.1; en.wikipedia.org/wiki/String-searching_algorithm"
+    },
+    {
+      "pkg": "stringops",
+      "func": "RabinKarp",
+      "time_pin": "O(len(pat) len(text))",
+      "time_got": "unverifiable",
+      "time_status": "top",
+      "space_pin": "O(1)",
+      "space_got": "O(1)",
+      "space_status": "exact",
+      "cause": "loop",
+      "source": "CLRS §32.2 (worst case); en.wikipedia.org/wiki/Rabin%E2%80%93Karp_algorithm"
+    },
+    {
+      "pkg": "stringops",
+      "func": "Reverse",
+      "time_pin": "O(len(s))",
+      "time_got": "O(len(s))",
+      "time_status": "exact",
+      "space_pin": "O(len(s))",
+      "space_got": "unverifiable",
+      "space_status": "top",
+      "source": "ru.wikibooks.org/wiki/Реализации_алгоритмов (strings, bound reference)"
+    },
+    {
+      "pkg": "stringops",
+      "func": "RunLengthEncode",
+      "time_pin": "O(len(s))",
+      "time_got": "unverifiable",
+      "time_status": "top",
+      "space_pin": "O(len(s))",
+      "space_got": "unverifiable",
+      "space_status": "top",
+      "cause": "loop",
+      "source": "en.wikipedia.org/wiki/Run-length_encoding"
     }
   ]
 }
