@@ -6,15 +6,15 @@ import "github.com/RomanAgaltsev/bigo/internal/bound"
 type Status int
 
 const (
-	// Wrong: the emitted bound does not dominate the pin — strictly below OR
-	// incomparable. A prime-directive break; fails the build unconditionally
+	// Wrong means the emitted bound does not dominate the pin — strictly below
+	// OR incomparable. A prime-directive break; fails the build unconditionally
 	// and never appears in a golden (spec §4.2).
 	Wrong Status = iota
-	// Exact: emitted equals the pin.
+	// Exact means emitted equals the pin.
 	Exact
-	// Loose: emitted strictly dominates the pin — sound; a graduation target.
+	// Loose means emitted strictly dominates the pin — sound; a graduation target.
 	Loose
-	// Top: emitted is ⊤ — safe; the annotate-or-trust evidence rows.
+	// Top means emitted is ⊤ — safe; the annotate-or-trust evidence rows.
 	Top
 )
 
