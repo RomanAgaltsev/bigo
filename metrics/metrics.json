@@ -1,12 +1,12 @@
 {
-  "total": 196,
-  "bounded": 113,
-  "coverage_pct": "57.7",
+  "total": 198,
+  "bounded": 114,
+  "coverage_pct": "57.6",
   "by_cause": {
     "call": 54,
     "go": 3,
     "irreducible": 1,
-    "loop": 17,
+    "loop": 18,
     "nobody": 8
   },
   "per_package": {
@@ -23,8 +23,8 @@
       "bounded": 4
     },
     "edge": {
-      "total": 15,
-      "bounded": 7
+      "total": 17,
+      "bounded": 8
     },
     "fieldsize": {
       "total": 13,
@@ -307,6 +307,18 @@
       "func": "LabeledBreak",
       "verdict": "bounded",
       "bound": "O(len(xs)^2)"
+    },
+    {
+      "pkg": "edge",
+      "func": "MakeFullLen",
+      "verdict": "bounded",
+      "bound": "O(len(s))"
+    },
+    {
+      "pkg": "edge",
+      "func": "MakeZeroLenCap",
+      "verdict": "unverifiable",
+      "cause": "loop"
     },
     {
       "pkg": "edge",

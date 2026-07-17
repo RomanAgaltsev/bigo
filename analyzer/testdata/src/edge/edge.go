@@ -216,3 +216,31 @@ func TwoPointerMerges(a, b []int) int {
 	}
 	return n
 }
+
+// make([]T, 0, cap) has LENGTH 0 — its capacity is not its length. A size rule
+// reading Cap here would claim O(len(s)) iterations for a loop that never runs:
+// a wrong bound, not an imprecise one. Pins the direction. (⊤ is the honest
+// answer today: len is the constant 0 and a constant-trip loop is a separate
+// documented gap. What must never happen is O(len(s)).)
+
+//bigo:max O(1)
+func MakeZeroLenCap(s []int) int { // want `cannot verify budget O\(1\)`
+	m := make([]int, 0, len(s))
+	n := 0
+	for i := 0; i < len(m); i++ {
+		n++
+	}
+	return n
+}
+
+// The sibling: make([]T, len(s)) DOES have length len(s), so this is O(n).
+
+//bigo:max O(n) where n = len(s)
+func MakeFullLen(s []int) int {
+	m := make([]int, len(s))
+	n := 0
+	for i := 0; i < len(m); i++ {
+		n++
+	}
+	return n
+}
