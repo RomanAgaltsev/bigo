@@ -136,3 +136,41 @@ func OffsetCondition(n, j int) int { // want `cannot verify budget O\(n\)`
 	}
 	return s
 }
+
+// A closed-guard bisection whose hi update is `hi = mid` does NOT terminate:
+// when lo == hi, mid == lo == hi, so hi never moves. R6 accepts the closed
+// guard `lo <= hi` only when both ends move strictly past mid, which is why
+// this must stay unverifiable. Deleting the c >= 1 condition in isHiUpdate
+// makes this loop claim O(log n) — a wrong bound on a non-terminating loop.
+
+//bigo:max O(log n) where n = len(s)
+func ClosedBisectionHiEqMid(s []int, x int) int { // want `cannot verify budget O\(log\(len\(s\)\)\)`
+	lo, hi := 0, len(s)-1
+	for lo <= hi {
+		mid := lo + (hi-lo)/2
+		if s[mid] < x {
+			lo = mid + 1
+		} else {
+			hi = mid
+		}
+	}
+	return -1
+}
+
+// The terminating sibling, same guard: both ends move strictly past mid, so R6
+// bounds it. Pins that the pin above fails for its stated reason (the hi
+// update), not because the closed guard is rejected wholesale.
+
+//bigo:max O(log n) where n = len(s)
+func ClosedBisectionTerminates(s []int, x int) int {
+	lo, hi := 0, len(s)-1
+	for lo <= hi {
+		mid := lo + (hi-lo)/2
+		if s[mid] < x {
+			lo = mid + 1
+		} else {
+			hi = mid - 1
+		}
+	}
+	return -1
+}
