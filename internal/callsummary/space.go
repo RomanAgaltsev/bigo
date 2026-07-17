@@ -37,9 +37,22 @@ func (r *SpaceResolver) SpaceOf(fn *ssa.Function, timeModel engine.CostModel) (e
 	r.timeModel = timeModel
 	sp, causes := engine.InferSpace(fn, r.heapModel(fn))
 	if recurrence.IsSelfRecursive(fn) {
-		if _, depth, ok := recurrence.Solve(fn, timeModel); ok {
-			sp.Stack = depth
+		_, depth, ok := recurrence.Solve(fn, timeModel)
+		if !ok {
+			// Proved recursive, depth unproven ⇒ ⊤. InferSpace's default Stack is
+			// O(1), which for a function we have proved recurses is a *positive
+			// claim* of constant stack, not the absence of one: every unsolvable
+			// recursion (data-dependent partition, pointer structures, 3+ SCCs)
+			// silently verified any space budget, O(1) included (issue #76).
+			sp.Stack = bound.Top()
+			causes = append(causes, engine.Cause{
+				Pos:  fn.Pos(),
+				Kind: engine.CauseCall,
+				What: "recursion depth is unverifiable (no proven size measure)",
+			})
+			return sp, causes
 		}
+		sp.Stack = depth
 	}
 	return sp, causes
 }
@@ -64,9 +77,15 @@ func (r *SpaceResolver) CallSpace(c *ssa.CallCommon) bound.Bound {
 	// resolver uses (shared kind-for-kind logic — see Resolver.callUser).
 	heap := substArgs(summary, names, c.Args)
 	if r.timeModel != nil && recurrence.IsSelfRecursive(callee) {
-		if _, depth, ok := recurrence.Solve(callee, r.timeModel); ok {
-			heap = heap.Join(substArgs(depth, names, c.Args))
+		_, depth, ok := recurrence.Solve(callee, r.timeModel)
+		if !ok {
+			// The callee provably recurses to an unproven depth, and that depth is
+			// live space while it runs. Inheriting nothing would under-count the
+			// caller's space and hand it a false Within — the caller-side half of
+			// issue #76.
+			return bound.Top()
 		}
+		heap = heap.Join(substArgs(depth, names, c.Args))
 	}
 	return heap
 }
