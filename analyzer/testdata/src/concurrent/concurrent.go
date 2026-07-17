@@ -1,5 +1,7 @@
 package concurrent
 
+import "sync"
+
 func scan(ys []int) int {
 	s := 0
 	for i := 0; i < len(ys); i++ {
@@ -43,4 +45,31 @@ func ChannelFill(xs []int, ch chan int) {
 	for i := 0; i < len(xs); i++ {
 		ch <- xs[i]
 	}
+}
+
+// Mutex operations are O(1) work on the same argument as the channel ops above:
+// blocking under contention is wall-clock, not work. A mutex-guarded scan
+// verifies (issue #46 — this shape caused 42 ⊤ verdicts in chaotic alone).
+
+//bigo:max O(n) where n = len(xs)
+func MutexGuarded(mu *sync.Mutex, xs []int) int {
+	mu.Lock()
+	defer mu.Unlock()
+	return scan(xs)
+}
+
+//bigo:max O(n) where n = len(xs)
+func RWMutexGuarded(mu *sync.RWMutex, xs []int) int {
+	mu.RLock()
+	defer mu.RUnlock()
+	return scan(xs)
+}
+
+// sync.Once.Do(f) costs cost(f), not O(1). It is deliberately out of the cost
+// table: an O(1) entry would under-approximate the call into a false Within.
+// This pins that it stays honestly unverifiable.
+
+//bigo:max O(n) where n = len(xs)
+func OnceDo(once *sync.Once, xs []int) { // want `cannot verify budget O\(len\(xs\)\)`
+	once.Do(func() { scan(xs) })
 }

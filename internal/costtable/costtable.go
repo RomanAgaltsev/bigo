@@ -2,6 +2,8 @@
 package costtable
 
 import (
+	"go/types"
+
 	"github.com/RomanAgaltsev/bigo/internal/bound"
 	"github.com/RomanAgaltsev/bigo/internal/size"
 	"golang.org/x/tools/go/ssa"
@@ -26,6 +28,16 @@ func Lookup(c *ssa.CallCommon) (bound.Bound, bool) {
 		return bound.Bound{}, false
 	}
 	key := callee.Pkg.Pkg.Path() + "." + callee.Name()
+	// A method keys on its receiver-qualified name ("(*sync.Mutex).Lock"), so
+	// that same-named methods on different types in one package — Mutex.Lock and
+	// RWMutex.Lock — cannot collide on a bare "sync.Lock".
+	if callee.Signature.Recv() != nil {
+		obj, ok := callee.Object().(*types.Func)
+		if !ok {
+			return bound.Bound{}, false
+		}
+		key = obj.FullName()
+	}
 	fn, ok := stdlib[key]
 	if !ok {
 		return bound.Bound{}, false
@@ -139,4 +151,28 @@ var stdlib = map[string]func(args []ssa.Value) bound.Bound{
 	"slices.Values":   constCost,
 	"slices.All":      constCost,
 	"slices.Backward": constCost,
+	// sync: each operation is O(1) work.
+	//
+	// Soundness: blocking under contention is wall-clock, not work. bigo models
+	// total work and never wall-clock (a `go f()` contributes cost(f), a channel
+	// receive does not contribute its wait), so a contended Lock is O(1) work in
+	// this model exactly as an uncontended one is. Costing these O(1) does not
+	// under-approximate any *work* the program performs.
+	//
+	// Deliberately absent: sync.Once.Do(f) and sync.Map.Range(f) take a function
+	// argument and cost cost(f), not O(1) — an O(1) entry would under-approximate
+	// a call into a false Within, i.e. a wrong bound. They stay ⊤ until the
+	// parametric path (paramsummary) models them.
+	"(*sync.Mutex).Lock":       constCost,
+	"(*sync.Mutex).Unlock":     constCost,
+	"(*sync.Mutex).TryLock":    constCost,
+	"(*sync.RWMutex).Lock":     constCost,
+	"(*sync.RWMutex).Unlock":   constCost,
+	"(*sync.RWMutex).RLock":    constCost,
+	"(*sync.RWMutex).RUnlock":  constCost,
+	"(*sync.RWMutex).TryLock":  constCost,
+	"(*sync.RWMutex).TryRLock": constCost,
+	"(*sync.WaitGroup).Add":    constCost,
+	"(*sync.WaitGroup).Done":   constCost,
+	"(*sync.WaitGroup).Wait":   constCost,
 }

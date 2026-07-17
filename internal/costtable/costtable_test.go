@@ -65,6 +65,29 @@ func f(s string) string { return strings.ToLower(s) }`, "O(len(s))", true},
 		{"maps iterator construction is O(1)", `package input
 import "maps"
 func f(m map[string]int) { _ = maps.Keys(m) }`, "O(1)", true},
+		// sync: O(1) work per operation. Blocking under contention is
+		// wall-clock, not work, and bigo models work (issue #46).
+		{"sync.Mutex.Lock is O(1)", `package input
+import "sync"
+func f(mu *sync.Mutex) { mu.Lock() }`, "O(1)", true},
+		{"sync.Mutex.Unlock is O(1)", `package input
+import "sync"
+func f(mu *sync.Mutex) { mu.Unlock() }`, "O(1)", true},
+		{"sync.RWMutex.RLock is O(1)", `package input
+import "sync"
+func f(mu *sync.RWMutex) { mu.RLock() }`, "O(1)", true},
+		{"sync.RWMutex.RUnlock is O(1)", `package input
+import "sync"
+func f(mu *sync.RWMutex) { mu.RUnlock() }`, "O(1)", true},
+		{"sync.WaitGroup.Wait is O(1) work", `package input
+import "sync"
+func f(wg *sync.WaitGroup) { wg.Wait() }`, "O(1)", true},
+		// sync.Once.Do(f) costs cost(f), NOT O(1). Costing it O(1) would
+		// under-approximate a call into a false Within — a wrong bound. It
+		// stays out of the table (⊤) until the parametric path models it.
+		{"sync.Once.Do is not in the table", `package input
+import "sync"
+func f(once *sync.Once, g func()) { once.Do(g) }`, "O(1)", false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
