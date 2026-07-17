@@ -69,3 +69,37 @@ func RecSum(xs []int) int {
 	}
 	return xs[0] + RecSum(xs[1:])
 }
+
+// Map growth is charged per assign and scaled by the enclosing loop, so a map
+// built to the size of its input is O(len) heap. Before issue #49 this inferred
+// O(1) and passed an O(1) budget silently — the space-axis blind spot.
+
+//bigo:space O(1)
+func MapGrowth(modules []string) map[string]bool { // want `cannot verify space budget O\(1\): inferred space O\(len\(modules\)\) is a total-allocation upper bound`
+	out := map[string]bool{} // want `smell\(SM6\): map built without a size hint in a loop bounded by`
+	for _, m := range modules {
+		out[m] = true
+	}
+	return out
+}
+
+// The honest budget verifies — the shape is bounded, not ⊤.
+
+//bigo:space O(n) where n = len(modules)
+func MapGrowthBudgeted(modules []string) map[string]bool {
+	out := map[string]bool{} // want `smell\(SM6\): map built without a size hint in a loop bounded by`
+	for _, m := range modules {
+		out[m] = true
+	}
+	return out
+}
+
+// A map assign outside any loop stays O(1): the per-assign charge is scaled by
+// enclosing loop trips, so a bounded number of assigns must not inflate.
+
+//bigo:space O(1)
+func MapAssignNoLoop(k string) map[string]bool {
+	out := map[string]bool{}
+	out[k] = true
+	return out
+}

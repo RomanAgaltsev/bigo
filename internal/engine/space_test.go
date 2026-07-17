@@ -34,6 +34,15 @@ func f() int { x := 0; return x }`, "O(1)"},
 func f(xs []int) []int { out := []int{}; for i := 0; i < len(xs); i++ { out = append(out, i) }; return out }`, "O(len(xs))"},
 		{"unknown make len", `package input
 func f(g func() int) []int { return make([]int, g()) }`, "unverifiable"},
+		// Issue #49: map growth was uncounted, so a map sized to its input
+		// inferred O(1) heap and passed an O(1) space budget silently — the
+		// space-axis twin of the append-in-loop case above.
+		{"map assign in loop", `package input
+func f(xs []string) map[string]bool { m := map[string]bool{}; for _, x := range xs { m[x] = true }; return m }`, "O(len(xs))"},
+		{"map assign outside a loop is O(1)", `package input
+func f(k string) map[string]bool { m := map[string]bool{}; m[k] = true; return m }`, "O(1)"},
+		{"nested map assign is the product", `package input
+func f(xs, ys []string) map[string]bool { m := map[string]bool{}; for _, x := range xs { for _, y := range ys { m[x+y] = true } }; return m }`, "O(len(xs) len(ys))"},
 	}
 	for _, c := range cases {
 		if got := heapOf(t, c.src); got != c.want {

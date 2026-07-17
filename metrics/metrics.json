@@ -1,7 +1,7 @@
 {
-  "total": 187,
-  "bounded": 108,
-  "coverage_pct": "57.8",
+  "total": 190,
+  "bounded": 111,
+  "coverage_pct": "58.4",
   "by_cause": {
     "call": 52,
     "go": 3,
@@ -71,8 +71,8 @@
       "bounded": 1
     },
     "space": {
-      "total": 8,
-      "bounded": 7
+      "total": 11,
+      "bounded": 10
     },
     "structures/array": {
       "total": 7,
@@ -1060,6 +1060,24 @@
     },
     {
       "pkg": "space",
+      "func": "MapAssignNoLoop",
+      "verdict": "bounded",
+      "bound": "O(1)"
+    },
+    {
+      "pkg": "space",
+      "func": "MapGrowth",
+      "verdict": "bounded",
+      "bound": "O(len(modules))"
+    },
+    {
+      "pkg": "space",
+      "func": "MapGrowthBudgeted",
+      "verdict": "bounded",
+      "bound": "O(len(modules))"
+    },
+    {
+      "pkg": "space",
       "func": "NoAllocLoop",
       "verdict": "bounded",
       "bound": "O(n)"
@@ -1233,7 +1251,7 @@
     "SM3": 1,
     "SM4": 1,
     "SM5": 2,
-    "SM6": 1,
+    "SM6": 3,
     "SM7": 1,
     "SM8": 2
   }

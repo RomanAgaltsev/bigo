@@ -2,7 +2,7 @@
 
 GENERATED — do not edit; regenerate with `task metrics`.
 
-**Coverage: 57.8%** — 108 of 187 corpus functions bounded.
+**Coverage: 58.4%** — 111 of 190 corpus functions bounded.
 
 ## Per package
 
@@ -23,7 +23,7 @@ GENERATED — do not edit; regenerate with `task metrics`.
 | recursion | 16 | 9 | 7 |
 | smells | 24 | 13 | 11 |
 | smoke | 2 | 1 | 1 |
-| space | 8 | 7 | 1 |
+| space | 11 | 10 | 1 |
 | structures/array | 7 | 7 | 0 |
 | structures/graph | 3 | 1 | 2 |
 | structures/hashmap | 3 | 3 | 0 |
@@ -56,6 +56,6 @@ Not coverage. A change in a rule's corpus fire count is a behavior change and mu
 | SM3 | 1 |
 | SM4 | 1 |
 | SM5 | 2 |
-| SM6 | 1 |
+| SM6 | 3 |
 | SM7 | 1 |
 | SM8 | 2 |
