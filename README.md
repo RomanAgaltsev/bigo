@@ -446,6 +446,33 @@ The fire counts per rule are tracked as a drift alarm in `metrics/METRICS.md`
 ("Smell fires") — not coverage, but a change in a rule's corpus count is a
 behavior change that must be deliberate.
 
+## Canonical algorithm corpus (the oracle)
+
+`corpus/testdata/src/` holds ~55 textbook algorithms whose worst-case bounds
+are known from the literature, pinned in-source:
+
+```go
+//oracle:time O(n^2) where n=len(s)
+//oracle:space O(1) where n=len(s)
+//oracle:source CLRS §2.1
+func InsertionSort(s []int) { … }
+```
+
+`internal/oracle` runs bigo's inference over them **unaided** (no `//bigo:`
+directives) and compares by bound domination: an emitted bound that does not
+dominate its pin is a wrong bound and **fails the build** — the prime
+directive, mechanically enforced. Sound results land in the committed golden
+([corpus/CORPUS.md](corpus/CORPUS.md), regenerate with `task corpus`):
+`exact` (matches the literature), `loose` (sound, imprecise — a graduation
+target), or `top` (unverifiable — these rows are the evidence base for the
+annotate-or-trust recipes below). Algorithms that cannot be soundly pinned
+are listed in [corpus/EXCLUSIONS.md](corpus/EXCLUSIONS.md) with reasons —
+notably pointer-backed structures (BST/list/trie), whose sizes are not
+parameter sizes: annotate those with `//bigo:cost` at the call boundary or
+budget the caller.
+
+The corpus is **not** a coverage metric. Read composition, not a percentage.
+
 ## Status & versioning
 
 Complete: intraprocedural engine, cost tables, acyclic interprocedural

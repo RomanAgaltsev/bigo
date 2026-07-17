@@ -1,0 +1,15 @@
+Canonical algorithm corpus — provenance notice
+
+All implementations under corpus/testdata/src/ are original code written for
+this repository against cited literature references (see each entry's
+//oracle:source line). Algorithms and their complexity bounds are facts and
+are not subject to copyright; no code was copied from the cited references.
+
+Cited bound references include: CLRS (Cormen, Leiserson, Rivest, Stein,
+"Introduction to Algorithms"), Wikipedia, GeeksforGeeks, ru.algorithmica.org,
+ru.wikibooks.org, and Jeff Erickson's "Algorithms" — used as bound and shape
+authorities only.
+
+If a future entry imports code verbatim (e.g. from Go's BSD-3 stdlib or the
+MIT-licensed TheAlgorithms/Go), its file carries the source license header
+and this file gains the corresponding license text.
