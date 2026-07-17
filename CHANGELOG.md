@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.28.0](https://github.com/RomanAgaltsev/bigo/compare/v1.27.0...v1.28.0) (2026-07-17)
+
+
+### Features
+
+* **sizefacts:** name len() for locally-derived slices ([#89](https://github.com/RomanAgaltsev/bigo/issues/89)) ([7abc284](https://github.com/RomanAgaltsev/bigo/commit/7abc284f2558aa680cc055d11e70d90606c6f051))
+
 ## [1.27.0](https://github.com/RomanAgaltsev/bigo/compare/v1.26.1...v1.27.0) (2026-07-17)
 
 
