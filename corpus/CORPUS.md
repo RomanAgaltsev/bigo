@@ -15,9 +15,9 @@ composition, not a percentage.
 
 | Status | Count |
 |---|---|
-| exact | 17 |
+| exact | 20 |
 | loose | 0 |
-| top | 38 |
+| top | 35 |
 
 ## Space statuses (pinned entries only)
 
@@ -68,11 +68,11 @@ composition, not a percentage.
 | numeric.GCD | O(log(a)) | unverifiable | top | O(1) | O(1) | exact | loop | CLRS §31.2 (Lamé); en.wikipedia.org/wiki/Euclidean_algorithm |
 | numeric.Sieve | O(n log(n)) | unverifiable | top | O(n) | unverifiable | top | loop | CLRS ex. 31-3; en.wikipedia.org/wiki/Sieve_of_Eratosthenes (conservative pin) |
 | numeric.TrialDivision | O(n) | unverifiable | top | O(1) | O(1) | exact | loop | en.wikipedia.org/wiki/Trial_division (conservative pin) |
-| searching.BinarySearch | O(log(len(s))) | unverifiable | top | O(1) | O(1) | exact | loop | CLRS ex. 2.3-5; en.wikipedia.org/wiki/Binary_search_algorithm |
+| searching.BinarySearch | O(log(len(s))) | O(log(len(s))) | exact | O(1) | O(1) | exact |  | CLRS ex. 2.3-5; en.wikipedia.org/wiki/Binary_search_algorithm |
 | searching.BinarySearchRec | O(log(len(s))) | O(log(len(s))) | exact | O(log(len(s))) | O(log(len(s))) | exact |  | CLRS ex. 2.3-5 (recursive form) |
-| searching.FirstOccurrence | O(log(len(s))) | unverifiable | top | O(1) | O(1) | exact | loop | en.wikipedia.org/wiki/Binary_search_algorithm (leftmost variant) |
+| searching.FirstOccurrence | O(log(len(s))) | O(log(len(s))) | exact | O(1) | O(1) | exact |  | en.wikipedia.org/wiki/Binary_search_algorithm (leftmost variant) |
 | searching.LinearSearch | O(len(s)) | O(len(s)) | exact | O(1) | O(1) | exact |  | en.wikipedia.org/wiki/Linear_search |
-| searching.SearchRotated | O(log(len(s))) | unverifiable | top | O(1) | O(1) | exact | loop | www.geeksforgeeks.org/search-an-element-in-a-sorted-and-pivoted-array/ (bound reference) |
+| searching.SearchRotated | O(log(len(s))) | O(log(len(s))) | exact | O(1) | O(1) | exact |  | www.geeksforgeeks.org/search-an-element-in-a-sorted-and-pivoted-array/ (bound reference) |
 | sorting.BubbleSort | O(len(s)^2) | O(len(s)^2) | exact | O(1) | O(1) | exact |  | CLRS problem 2-2; en.wikipedia.org/wiki/Bubble_sort |
 | sorting.BucketSort | O(len(s)^2) | unverifiable | top | O(len(s)) | unverifiable | top | loop | CLRS §8.4 (worst case); en.wikipedia.org/wiki/Bucket_sort |
 | sorting.CountingSort | O(k + len(s)) | unverifiable | top | O(k + len(s)) | unverifiable | top | loop | CLRS §8.2; en.wikipedia.org/wiki/Counting_sort |

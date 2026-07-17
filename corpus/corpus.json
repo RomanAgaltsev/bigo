@@ -1,8 +1,8 @@
 {
   "total": 55,
   "time_by_status": {
-    "exact": 17,
-    "top": 38
+    "exact": 20,
+    "top": 35
   },
   "space_by_status": {
     "exact": 32,
@@ -304,12 +304,11 @@
       "pkg": "searching",
       "func": "BinarySearch",
       "time_pin": "O(log(len(s)))",
-      "time_got": "unverifiable",
-      "time_status": "top",
+      "time_got": "O(log(len(s)))",
+      "time_status": "exact",
       "space_pin": "O(1)",
       "space_got": "O(1)",
       "space_status": "exact",
-      "cause": "loop",
       "source": "CLRS ex. 2.3-5; en.wikipedia.org/wiki/Binary_search_algorithm"
     },
     {
@@ -327,12 +326,11 @@
       "pkg": "searching",
       "func": "FirstOccurrence",
       "time_pin": "O(log(len(s)))",
-      "time_got": "unverifiable",
-      "time_status": "top",
+      "time_got": "O(log(len(s)))",
+      "time_status": "exact",
       "space_pin": "O(1)",
       "space_got": "O(1)",
       "space_status": "exact",
-      "cause": "loop",
       "source": "en.wikipedia.org/wiki/Binary_search_algorithm (leftmost variant)"
     },
     {
@@ -350,12 +348,11 @@
       "pkg": "searching",
       "func": "SearchRotated",
       "time_pin": "O(log(len(s)))",
-      "time_got": "unverifiable",
-      "time_status": "top",
+      "time_got": "O(log(len(s)))",
+      "time_status": "exact",
       "space_pin": "O(1)",
       "space_got": "O(1)",
       "space_status": "exact",
-      "cause": "loop",
       "source": "www.geeksforgeeks.org/search-an-element-in-a-sorted-and-pivoted-array/ (bound reference)"
     },
     {

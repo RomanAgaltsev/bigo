@@ -1,12 +1,12 @@
 {
-  "total": 192,
-  "bounded": 111,
-  "coverage_pct": "57.8",
+  "total": 194,
+  "bounded": 112,
+  "coverage_pct": "57.7",
   "by_cause": {
     "call": 54,
     "go": 3,
     "irreducible": 1,
-    "loop": 15,
+    "loop": 16,
     "nobody": 8
   },
   "per_package": {
@@ -23,8 +23,8 @@
       "bounded": 4
     },
     "edge": {
-      "total": 11,
-      "bounded": 5
+      "total": 13,
+      "bounded": 6
     },
     "fieldsize": {
       "total": 13,
@@ -271,6 +271,18 @@
       "func": "BreakOut",
       "verdict": "bounded",
       "bound": "O(len(xs))"
+    },
+    {
+      "pkg": "edge",
+      "func": "ClosedBisectionHiEqMid",
+      "verdict": "unverifiable",
+      "cause": "loop"
+    },
+    {
+      "pkg": "edge",
+      "func": "ClosedBisectionTerminates",
+      "verdict": "bounded",
+      "bound": "O(log(len(s)))"
     },
     {
       "pkg": "edge",
