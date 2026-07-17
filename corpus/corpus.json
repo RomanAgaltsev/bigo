@@ -1,13 +1,13 @@
 {
   "total": 55,
   "time_by_status": {
-    "exact": 20,
-    "top": 35
+    "exact": 22,
+    "top": 33
   },
   "space_by_status": {
-    "exact": 32,
+    "exact": 34,
     "loose": 2,
-    "top": 21
+    "top": 19
   },
   "per_family": {
     "dandc": 6,
@@ -36,24 +36,22 @@
       "pkg": "dandc",
       "func": "MajorityDC",
       "time_pin": "O(len(s) log(len(s)))",
-      "time_got": "unverifiable",
-      "time_status": "top",
+      "time_got": "O(len(s) log(len(s)))",
+      "time_status": "exact",
       "space_pin": "O(log(len(s)))",
-      "space_got": "unverifiable",
-      "space_status": "top",
-      "cause": "call",
+      "space_got": "O(log(len(s)))",
+      "space_status": "exact",
       "source": "CLRS-style D\u0026C; en.wikipedia.org/wiki/Boyer%E2%80%93Moore_majority_vote_algorithm (D\u0026C alternative, bound reference)"
     },
     {
       "pkg": "dandc",
       "func": "MaxMinDC",
       "time_pin": "O(len(s))",
-      "time_got": "unverifiable",
-      "time_status": "top",
+      "time_got": "O(len(s))",
+      "time_status": "exact",
       "space_pin": "O(log(len(s)))",
-      "space_got": "unverifiable",
-      "space_status": "top",
-      "cause": "call",
+      "space_got": "O(log(len(s)))",
+      "space_status": "exact",
       "source": "www.geeksforgeeks.org/maximum-and-minimum-in-an-array/ (tournament method, bound reference)"
     },
     {
