@@ -539,6 +539,60 @@ func f(xs []int, target int) int {
 }`,
 			"O(log(len(xs)))",
 		},
+		{
+			"closed form: lo <= hi, hi = mid - 1 (CLRS binary search)",
+			`package input
+func f(s []int, x int) int {
+	lo, hi := 0, len(s)-1
+	for lo <= hi {
+		mid := lo + (hi-lo)/2
+		switch {
+		case s[mid] == x:
+			return mid
+		case s[mid] < x:
+			lo = mid + 1
+		default:
+			hi = mid - 1
+		}
+	}
+	return -1
+}`,
+			"O(log(len(s)))",
+		},
+		{
+			"closed form, swapped guard: hi >= lo",
+			`package input
+func f(s []int, x int) int {
+	lo, hi := 0, len(s)-1
+	for hi >= lo {
+		mid := lo + (hi-lo)/2
+		if s[mid] < x {
+			lo = mid + 1
+		} else {
+			hi = mid - 1
+		}
+	}
+	return -1
+}`,
+			"O(log(len(s)))",
+		},
+		{
+			"strict guard still accepts hi = mid - 1",
+			`package input
+func f(s []int, x int) int {
+	lo, hi := 0, len(s)
+	for lo < hi {
+		mid := lo + (hi-lo)/2
+		if s[mid] < x {
+			lo = mid + 1
+		} else {
+			hi = mid - 1
+		}
+	}
+	return -1
+}`,
+			"O(log(len(s)))",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -593,6 +647,38 @@ func f(xs []int) int {
 		lo, hi = mid+1, mid
 	}
 	return lo
+}`,
+		},
+		{
+			"closed form with hi = mid does not terminate (lo == hi ⇒ mid == hi)",
+			`package input
+func f(s []int, x int) int {
+	lo, hi := 0, len(s)-1
+	for lo <= hi {
+		mid := lo + (hi-lo)/2
+		if s[mid] < x {
+			lo = mid + 1
+		} else {
+			hi = mid
+		}
+	}
+	return -1
+}`,
+		},
+		{
+			"closed form with lo = mid does not terminate",
+			`package input
+func f(s []int, x int) int {
+	lo, hi := 0, len(s)-1
+	for lo <= hi {
+		mid := lo + (hi-lo)/2
+		if s[mid] < x {
+			lo = mid
+		} else {
+			hi = mid - 1
+		}
+	}
+	return -1
 }`,
 		},
 	}

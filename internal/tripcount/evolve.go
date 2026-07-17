@@ -486,25 +486,44 @@ func mapRangeDirty(loop *loopnest.Loop) bool {
 
 // ruleBisection — R6, the two-phi shrinking interval (binary search).
 //
-// Shape: guard `lo < hi` (strict; or `hi > lo`), both header phis; every
-// in-loop edge pair updates EXACTLY one of them — lo' = mid + c (c >= 1) or
-// hi' = mid - c (c >= 0, including hi' = mid) — where mid is (lo+hi)/2 or
+// Shape: guard `lo < hi` / `hi > lo` (half-open) or `lo <= hi` / `hi >= lo`
+// (closed), both header phis; every in-loop edge pair updates EXACTLY one of
+// them — lo' = mid + c (c >= 1) or hi' = mid - c — where mid is (lo+hi)/2 or
 // lo + (hi-lo)/2 computed in this loop; lowerBoundConst(lo0) >= 0;
-// upperExtent(hi0) resolves.
+// upperExtent(hi0) resolves. The minimum c on the hi update is guard-dependent
+// (see isHiUpdate).
 //
-// Claim: logarithmic, O(log(upper(hi0))). Argument: with lo >= 0 throughout
-// (lo0 >= 0, lo only moves up to mid+c) and floor division, lo <= mid < hi
-// whenever lo < hi — for (lo+hi)/2 under the documented no-overflow
-// assumption (a length above 2^62), for lo+(hi-lo)/2 unconditionally. Both
-// updates shrink hi-lo to <= ceil((hi-lo)/2), strictly, so the guard fails
-// within log2(upper(hi0)) + 2 iterations. `lo' = mid` is rejected: when
-// hi == lo+1, mid == lo and the loop need not terminate.
+// Claim: logarithmic, O(log(upper(hi0))). Argument, in two halves:
+//
+// Halving (guard-independent): with lo >= 0 throughout (lo0 >= 0, lo only moves
+// up to mid+c) and floor division, lo <= mid <= hi whenever the guard holds —
+// for (lo+hi)/2 under the documented no-overflow assumption (a length above
+// 2^62), for lo+(hi-lo)/2 unconditionally. Both updates shrink hi-lo to
+// <= ceil((hi-lo)/2), so the interval reaches one element within
+// log2(upper(hi0)) + 2 iterations.
+//
+// Termination (guard-dependent): halving alone does not terminate; the interval
+// must provably reach a guard-failing state. The tight case is the one-element
+// interval and it differs per guard — hi == lo+1 under `<`, lo == hi under `<=`.
+// isHiUpdate carries that argument; `lo' = mid` is rejected under both guards
+// (mid == lo in either tight case, so lo would not move).
 func ruleBisection(sh *shape) (bound.Bound, bool) {
-	if sh.cmp == nil || (sh.cmp.Op != token.LSS && sh.cmp.Op != token.GTR) {
+	if sh.cmp == nil {
+		return bound.Bound{}, false
+	}
+	// strict = half-open interval [lo, hi); !strict = closed [lo, hi]. The guard
+	// decides which updates terminate — see isHiUpdate.
+	var strict bool
+	switch sh.cmp.Op {
+	case token.LSS, token.GTR:
+		strict = true
+	case token.LEQ, token.GEQ:
+		strict = false
+	default:
 		return bound.Bound{}, false
 	}
 	loV, hiV := sh.cmp.X, sh.cmp.Y
-	if sh.cmp.Op == token.GTR {
+	if sh.cmp.Op == token.GTR || sh.cmp.Op == token.GEQ {
 		loV, hiV = hiV, loV
 	}
 	lo, ok := loV.(*ssa.Phi)
@@ -537,7 +556,7 @@ func ruleBisection(sh *shape) (bound.Bound, bool) {
 		hasBack = true
 		switch { // exactly one end moves
 		case he == hi && isLoUpdate(sh, le, lo, hi):
-		case le == lo && isHiUpdate(sh, he, lo, hi):
+		case le == lo && isHiUpdate(sh, he, lo, hi, strict):
 		default:
 			return bound.Bound{}, false
 		}
@@ -563,17 +582,32 @@ func isLoUpdate(sh *shape, v ssa.Value, lo, hi *ssa.Phi) bool {
 	return false
 }
 
-// isHiUpdate matches hi' = mid or hi' = mid - c for const c >= 0.
-func isHiUpdate(sh *shape, v ssa.Value, lo, hi *ssa.Phi) bool {
-	if isMid(sh, v, lo, hi) {
+// isHiUpdate matches hi' = mid - c. The minimum c depends on the guard, because
+// the guard decides the tight case:
+//
+//   - strict `lo < hi`: the tight case is hi == lo+1, where mid == lo. hi' = mid
+//     sets hi = lo, so the guard fails — c >= 0 is sound, hi' = mid included.
+//     The half-open interval already excludes hi.
+//   - closed `lo <= hi`: the tight case is lo == hi, where mid == lo == hi.
+//     hi' = mid leaves hi UNCHANGED and the loop need not terminate, so the
+//     update must move strictly past mid: c >= 1.
+//
+// The general form of both: every update must move strictly past mid, except
+// hi' = mid under a strict guard.
+func isHiUpdate(sh *shape, v ssa.Value, lo, hi *ssa.Phi, strict bool) bool {
+	if strict && isMid(sh, v, lo, hi) {
 		return true
 	}
 	bo, ok := v.(*ssa.BinOp)
 	if !ok || bo.Op != token.SUB {
 		return false
 	}
+	minC := int64(1)
+	if strict {
+		minC = 0
+	}
 	c, okC := sizefacts.ConstIntV(bo.Y)
-	return okC && c >= 0 && isMid(sh, bo.X, lo, hi)
+	return okC && c >= minC && isMid(sh, bo.X, lo, hi)
 }
 
 // isMid matches (lo+hi)/2 and lo + (hi-lo)/2, computed inside this loop.
