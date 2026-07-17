@@ -26,9 +26,9 @@ func CountByte(s string, b byte) int {
 //
 //bigo:max O(n)
 func ConcatAll(parts []string) string {
-	s := "" // want `smell\(SM1\): string built by repeated concatenation in a loop`
+	s := ""
 	for i := 0; i < len(parts); i++ {
-		s += parts[i]
+		s += parts[i] // want `smell\(SM1\): string built by repeated concatenation in a loop`
 	}
 	return s
 }

@@ -191,7 +191,13 @@ go install github.com/RomanAgaltsev/bigo/cmd/bigo@latest
 
 bigo ./...            # check budgets (CI-friendly exit code)
 bigo -report ./...    # print the inferred bound of every analyzable function
+
+bigo -C path/to/module ./...    # resolve ./... against another module
 ```
+
+`-C dir` runs as if bigo had started in `dir`, so a CI job can analyze a module
+without a `cd` shim. As with `go -C`, it must be the first flag. (`bigo json` and
+`bigo badge` take their own `-C`.)
 
 ## Use with golangci-lint
 
@@ -357,7 +363,9 @@ Each can only *miss* a violation, never invent one:
 
 - `append` is amortized O(1) (including `append(a, b...)`), `make` is O(1).
 - String concatenation and comparison are O(1) per operation.
-- Map index/assign/delete are O(1).
+- Map index/assign/delete are O(1) *time*. On the **space** axis an assign is
+  charged its amortized O(1) allocation, so a map grown in a loop is O(trips)
+  heap — a map sized to its input no longer looks allocation-free.
 - Self-recursion over a size measure is solved (see [Recursion](#recursion));
   the statically resolvable function-value shapes are priced (see
   [Function values](#function-values)). Interface calls without `//bigo:cost`,

@@ -46,7 +46,7 @@ func CostWithSize(xs []int, m int) int {
 func unannotated(x int) int
 
 //bigo:max O(n)
-func StillBlocked(xs []int) int { // want `cannot verify budget O\(len\(xs\)\): unresolved cost at call to unannotated`
+func StillBlocked(xs []int) int { // want `cannot verify budget O\(len\(xs\)\): unresolved cost at call to costignore.unannotated`
 	s := 0
 	for i := 0; i < len(xs); i++ {
 		s += unannotated(xs[i])

@@ -1,9 +1,9 @@
 {
-  "total": 184,
-  "bounded": 106,
-  "coverage_pct": "57.6",
+  "total": 190,
+  "bounded": 111,
+  "coverage_pct": "58.4",
   "by_cause": {
-    "call": 51,
+    "call": 52,
     "go": 3,
     "irreducible": 1,
     "loop": 15,
@@ -15,8 +15,8 @@
       "bounded": 7
     },
     "concurrent": {
-      "total": 5,
-      "bounded": 4
+      "total": 8,
+      "bounded": 6
     },
     "costignore": {
       "total": 10,
@@ -71,8 +71,8 @@
       "bounded": 1
     },
     "space": {
-      "total": 8,
-      "bounded": 7
+      "total": 11,
+      "bounded": 10
     },
     "structures/array": {
       "total": 7,
@@ -169,6 +169,24 @@
       "func": "DeferInLoop",
       "verdict": "bounded",
       "bound": "O(len(xs)^2)"
+    },
+    {
+      "pkg": "concurrent",
+      "func": "MutexGuarded",
+      "verdict": "bounded",
+      "bound": "O(len(xs))"
+    },
+    {
+      "pkg": "concurrent",
+      "func": "OnceDo",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "concurrent",
+      "func": "RWMutexGuarded",
+      "verdict": "bounded",
+      "bound": "O(len(xs))"
     },
     {
       "pkg": "concurrent",
@@ -1042,6 +1060,24 @@
     },
     {
       "pkg": "space",
+      "func": "MapAssignNoLoop",
+      "verdict": "bounded",
+      "bound": "O(1)"
+    },
+    {
+      "pkg": "space",
+      "func": "MapGrowth",
+      "verdict": "bounded",
+      "bound": "O(len(modules))"
+    },
+    {
+      "pkg": "space",
+      "func": "MapGrowthBudgeted",
+      "verdict": "bounded",
+      "bound": "O(len(modules))"
+    },
+    {
+      "pkg": "space",
       "func": "NoAllocLoop",
       "verdict": "bounded",
       "bound": "O(n)"
@@ -1215,7 +1251,7 @@
     "SM3": 1,
     "SM4": 1,
     "SM5": 2,
-    "SM6": 1,
+    "SM6": 3,
     "SM7": 1,
     "SM8": 2
   }

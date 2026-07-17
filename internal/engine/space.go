@@ -111,6 +111,21 @@ func blockAlloc(b *ssa.BasicBlock, model SpaceModel, stab *fieldpath.Stability) 
 		case *ssa.MakeMap, *ssa.MakeChan:
 			allocated = true
 			cost = cost.Join(bound.Constant())
+		case *ssa.MapUpdate:
+			// A map assign is amortized O(1) allocation: inserting k distinct
+			// keys grows the table to O(k) total, so charging O(1) per assign and
+			// letting InferSpace scale it by the enclosing loop trips upper-bounds
+			// the growth — exactly how append is costed. Without this, a map built
+			// to the size of its input inferred O(1) heap and passed an O(1) space
+			// budget silently (issue #49).
+			//
+			// Sound in the over-approximating direction: an assign to an existing
+			// key allocates nothing, so this can over-charge. Heap is an upper
+			// bound on peak and drives Within only (SpaceVerdict takes Exceeds
+			// from Stack alone), so over-charging can only turn a Within into
+			// "cannot verify" — a false negative, never a false Exceeds.
+			allocated = true
+			cost = cost.Join(bound.Constant())
 		case *ssa.Call:
 			c, alloc := callSpaceOf(v, model, stab, &causes)
 			allocated = allocated || alloc
