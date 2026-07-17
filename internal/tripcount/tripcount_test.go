@@ -822,3 +822,76 @@ func f(a, b []int) int {
 		t.Errorf("Of(inner) = %q, want %q — R7 must not claim a both-advance loop", got, "O(len(a))")
 	}
 }
+
+// Local derived sizes: len(v) is nameable for values whose length is locally
+// derivable, not only for parameters.
+func TestLocalDerivedSizes(t *testing.T) {
+	tests := []struct{ name, src, want string }{
+		{
+			"len(make([]T, len(s)))",
+			`package input
+func f(s []int) int { m := make([]int, len(s)); n := 0; for i := 0; i < len(m); i++ { n++ }; return n }`,
+			"O(len(s))",
+		},
+		{
+			"len(s[:mid]) is bounded by the high index",
+			`package input
+func f(s []int) int { m := s[:len(s)/2]; n := 0; for i := 0; i < len(m); i++ { n++ }; return n }`,
+			"O(len(s))",
+		},
+		{
+			"len(append(nil, s...)) — the copy idiom",
+			`package input
+func f(s []int) int { m := append([]int(nil), s...); n := 0; for i := 0; i < len(m); i++ { n++ }; return n }`,
+			"O(len(s))",
+		},
+		{
+			"len(s[i:]) is bounded by the operand's length",
+			`package input
+func f(s []int) int { m := s[len(s)/2:]; n := 0; for i := 0; i < len(m); i++ { n++ }; return n }`,
+			"O(len(s))",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := Of(innerLoop(t, tt.src)).String(); got != tt.want {
+				t.Errorf("Of(inner) = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+// TestLocalDerivedSizesRejects pins the two directions that would be WRONG
+// bounds, not merely imprecise ones.
+func TestLocalDerivedSizesRejects(t *testing.T) {
+	tests := []struct{ name, src, want string }{
+		{
+			// make([]T, 0, cap) has LENGTH 0. Reading Cap here would claim
+			// O(len(s)) for a loop that never runs — a wrong bound.
+			//
+			// The pin is `unverifiable`, not `O(1)`: len is the constant 0, and
+			// a constant-trip loop is ⊤ by a separate, documented gap (tripcount
+			// returns ⊤ for `i < 10` — see the smell package's discovery notes).
+			// ⊤ is safe. What must never happen here is O(len(s)).
+			"make([]T, 0, len(s)) has length 0, not len(s)",
+			`package input
+func f(s []int) int { m := make([]int, 0, len(s)); n := 0; for i := 0; i < len(m); i++ { n++ }; return n }`,
+			"unverifiable",
+		},
+		{
+			// len(a) is not constant, so len(append(a, s...)) needs a
+			// two-variable extent the API cannot express ⇒ ⊤.
+			"append onto a non-constant-length slice is unverifiable",
+			`package input
+func f(a, s []int) int { m := append(a, s...); n := 0; for i := 0; i < len(m); i++ { n++ }; return n }`,
+			"unverifiable",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := Of(innerLoop(t, tt.src)).String(); got != tt.want {
+				t.Errorf("Of(inner) = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}

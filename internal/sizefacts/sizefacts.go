@@ -170,6 +170,14 @@ func (f *Facts) UpperExtent(v ssa.Value, depth int) (bound.Var, bool) {
 	if s, ok := f.Stab.VarFor(v); ok {
 		return s, true
 	}
+	// len(x) for a locally-derived x — a make, a slice expression, or the
+	// append(nil, y...) copy idiom. SizeVar above names len(param) only, so
+	// without this every local slice is ⊤.
+	if c, ok := v.(*ssa.Call); ok {
+		if b, isBuiltin := c.Call.Value.(*ssa.Builtin); isBuiltin && b.Name() == "len" && len(c.Call.Args) == 1 {
+			return f.lenExtent(c.Call.Args[0], depth+1)
+		}
+	}
 	switch t := v.(type) {
 	case *ssa.BinOp:
 		switch t.Op {
@@ -316,6 +324,72 @@ func reachesBlock(start, target *ssa.BasicBlock) bool {
 		}
 		seen[b] = true
 		stack = append(stack, b.Succs...)
+	}
+	return false
+}
+
+// lenExtent resolves len(v) for a value whose length is locally derivable:
+// a make, a slice expression, or the append(const-length, x...) copy idiom.
+// Parameters are already named by SizeVar; this is everything else.
+//
+// Every rule is an UPPER bound on len(v), matching UpperExtent's contract.
+// Over-approximating is safe (a Within becomes Unknown); under-approximating is
+// a wrong bound, which is why make reads Len and never Cap.
+func (f *Facts) lenExtent(v ssa.Value, depth int) (bound.Var, bool) {
+	if depth > maxFactsDepth {
+		return "", false
+	}
+	switch t := v.(type) {
+	case *ssa.MakeSlice:
+		// len(make([]T, n, c)) == n. NOT c: make([]T, 0, len(s)) has length 0,
+		// and reading Cap would claim len(s) for an empty slice.
+		return f.UpperExtent(t.Len, depth+1)
+	case *ssa.Slice:
+		// len(s[i:j]) == j-i <= j. Bounding by the operand's length instead
+		// would be unsound: s[0:cap(s)] can exceed len(s).
+		if t.High != nil {
+			return f.UpperExtent(t.High, depth+1)
+		}
+		// s[i:] — the high bound IS the operand's length, so that is sound here.
+		return f.lenOf(t.X, depth+1)
+	case *ssa.Call:
+		if b, ok := t.Call.Value.(*ssa.Builtin); ok && b.Name() == "append" && len(t.Call.Args) == 2 {
+			// len(append(a, b...)) == len(a) + len(b). Only expressible as a
+			// single extent when len(a) is constant; UpperExtent returns one
+			// variable, so the general case is ⊤.
+			if !constLen(t.Call.Args[0]) {
+				return "", false
+			}
+			return f.lenOf(t.Call.Args[1], depth+1)
+		}
+	}
+	return "", false
+}
+
+// lenOf resolves len(v) whether v is a length-classed parameter, a field path,
+// or a locally-derived value.
+func (f *Facts) lenOf(v ssa.Value, depth int) (bound.Var, bool) {
+	// A parameter, but only one whose size IS a length: size.Len on an integer
+	// parameter would fabricate "len(n)".
+	if av, cls, ok := size.ValueClass(v); ok && cls == size.Length {
+		return av, true
+	}
+	if s, ok := f.Stab.VarFor(v); ok {
+		return s, true
+	}
+	return f.lenExtent(v, depth)
+}
+
+// constLen reports whether len(v) is provably a compile-time constant — the
+// gate for the append copy idiom. A nil slice and make([]T, 0) qualify;
+// everything else is not proven and therefore does not.
+func constLen(v ssa.Value) bool {
+	switch t := v.(type) {
+	case *ssa.Const:
+		return t.Value == nil // nil slice literal: len 0
+	case *ssa.MakeSlice:
+		c, ok := ConstIntV(t.Len)
+		return ok && c == 0
 	}
 	return false
 }
