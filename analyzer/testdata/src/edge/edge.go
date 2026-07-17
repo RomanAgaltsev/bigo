@@ -244,3 +244,137 @@ func MakeFullLen(s []int) int {
 	}
 	return n
 }
+
+// --- Guard-false edges that stay INSIDE the loop (v1.28.0 review, F1) ---
+//
+// In each shape below the `if` block IS the loop header, and BOTH of its edges
+// are in-loop: the guard failing does not exit, it just takes the else branch
+// and loops again. Every trip-count rule argues "the guard fails => the loop
+// ends", so none of them may bound these. Through v1.28.0 all of them did —
+// tripcount.Of checked that the guard's TRUE edge stays in the loop but never
+// that its FALSE edge leaves it, which is a wrong bound (the fifth
+// prime-directive break, live since v1.6.0).
+//
+// Neither the metrics golden nor the canonical corpus can see this family:
+// corpus entries are well-formed textbook algorithms and a well-formed
+// `for cond {}` always exits at its header. These pins are the only guard.
+// Any NEW trip-count rule must add its own member here.
+
+// R1 — increasing. Never terminates: i grows forever past len(a).
+
+//bigo:max O(1)
+func GuardFalseInLoopR1(a []int) int { // want `cannot verify budget O\(1\)`
+	i, t := 0, 0
+	for {
+		if i < len(a) {
+			t++
+		} else {
+			t += 2
+		}
+		i++
+	}
+}
+
+// R1, TERMINATING — the case that matters. The real exit is `t >= limit`, so
+// the trip count is limit/2 and has nothing to do with len(a). Reported
+// O(len(a)) through v1.28.0: with a empty, a constant claimed for a loop that
+// runs as long as limit says.
+
+//bigo:max O(1)
+func GuardFalseInLoopR1Terminating(a []int, limit int) int { // want `cannot verify budget O\(1\)`
+	i, t := 0, 0
+	for {
+		if i < len(a) {
+			t++
+		} else {
+			t += 2
+		}
+		i++
+		if t >= limit {
+			break
+		}
+	}
+	return t
+}
+
+// R2 — decreasing.
+
+//bigo:max O(1)
+func GuardFalseInLoopR2(n int) int { // want `cannot verify budget O\(1\)`
+	t := 0
+	for {
+		if n > 0 {
+			t++
+		} else {
+			t += 2
+		}
+		n--
+	}
+}
+
+// R3 — geometric up.
+
+//bigo:max O(1)
+func GuardFalseInLoopR3(n int) int { // want `cannot verify budget O\(1\)`
+	i, t := 1, 0
+	for {
+		if i < n {
+			t++
+		} else {
+			t += 2
+		}
+		i *= 2
+	}
+}
+
+// R4 — geometric down.
+
+//bigo:max O(1)
+func GuardFalseInLoopR4(n int) int { // want `cannot verify budget O\(1\)`
+	t := 0
+	for {
+		if n > 0 {
+			t++
+		} else {
+			t += 2
+		}
+		n /= 2
+	}
+}
+
+// R7 — two-pointer. Go lowers `if A && B { X } else { Y }` with BOTH failure
+// paths jumping to the single else block, so R7's "same exit" conjunction check
+// is satisfied by a block that is not an exit. Alternation passes too: the else
+// advances i, the then advances j — exactly one per path. Never terminates.
+
+//bigo:max O(1)
+func GuardFalseInLoopR7(a, b []int) int { // want `cannot verify budget O\(1\)`
+	i, j, t := 0, 0, 0
+	for {
+		if i < len(a) && j < len(b) {
+			j++
+		} else {
+			i++
+		}
+		t++
+	}
+}
+
+// The sibling that must still bound: same `for { if cond … else … }` shape as
+// GuardFalseInLoopR1, but the else EXITS. R1 keeps its graduation. Pins that
+// the six above fail for the stated reason — the in-loop false edge — and not
+// because the header-if shape is rejected wholesale.
+
+//bigo:max O(n) where n = len(a)
+func GuardFalseExits(a []int) int {
+	i, t := 0, 0
+	for {
+		if i < len(a) {
+			t++
+		} else {
+			break
+		}
+		i++
+	}
+	return t
+}
