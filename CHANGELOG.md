@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.26.1](https://github.com/RomanAgaltsev/bigo/compare/v1.26.0...v1.26.1) (2026-07-17)
+
+
+### Bug Fixes
+
+* **corpus:** MaxMinDC and MajorityDC did not terminate on an empty slice ([#83](https://github.com/RomanAgaltsev/bigo/issues/83)) ([574950c](https://github.com/RomanAgaltsev/bigo/commit/574950c8ac4ccfee7983f3ca36b849105f0d7597))
+
 ## [1.26.0](https://github.com/RomanAgaltsev/bigo/compare/v1.25.0...v1.26.0) (2026-07-17)
 
 
