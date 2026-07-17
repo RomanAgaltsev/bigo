@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.25.0](https://github.com/RomanAgaltsev/bigo/compare/v1.24.0...v1.25.0) (2026-07-17)
+
+
+### Features
+
+* canonical corpus — six families, exclusion register, README ([#79](https://github.com/RomanAgaltsev/bigo/issues/79)) ([ca3cd90](https://github.com/RomanAgaltsev/bigo/commit/ca3cd9024432c696b46dec8d729d94b1a032e884))
+
 ## [1.24.0](https://github.com/RomanAgaltsev/bigo/compare/v1.23.0...v1.24.0) (2026-07-17)
 
 
