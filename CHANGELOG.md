@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.26.0](https://github.com/RomanAgaltsev/bigo/compare/v1.25.0...v1.26.0) (2026-07-17)
+
+
+### Features
+
+* R6 accepts the closed-form bisection guard ([#81](https://github.com/RomanAgaltsev/bigo/issues/81)) ([305f5bf](https://github.com/RomanAgaltsev/bigo/commit/305f5bf4a2737bf0e1ef85fbe0934b787138e405))
+
 ## [1.25.0](https://github.com/RomanAgaltsev/bigo/compare/v1.24.0...v1.25.0) (2026-07-17)
 
 
