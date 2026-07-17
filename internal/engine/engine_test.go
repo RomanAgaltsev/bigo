@@ -154,7 +154,7 @@ func f(xs []int) int {
 	if len(causes) == 0 {
 		t.Fatal("expected at least one cause for a Top bound")
 	}
-	if want := "unresolved cost at call to g"; causes[0].What != want {
+	if want := "unresolved cost at call to input.g"; causes[0].What != want {
 		t.Errorf("cause = %q, want %q", causes[0].What, want)
 	}
 	if !causes[0].Pos.IsValid() {

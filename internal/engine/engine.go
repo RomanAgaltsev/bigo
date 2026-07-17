@@ -147,12 +147,23 @@ func blockCost(b *ssa.BasicBlock, model CostModel) (bound.Bound, []Cause) {
 }
 
 // calleeName is a best-effort human-readable name for a call target.
+//
+// Names are qualified: a function carries its package ("time.Now"), a method its
+// receiver type ("(*sync.Mutex).Lock"), and an interface dispatch its interface
+// ("(io.Writer).Write"). A bare name is ambiguous in the one place this text is
+// read — "call to Close" could be self-recursion, a stdlib call, or delegation —
+// and made delegation to a same-named callee look like recursion (issue #47).
+//
+// A dynamically-called function value has no static target to qualify, so it
+// keeps its SSA value name.
 func calleeName(c *ssa.CallCommon) string {
 	if c.Method != nil {
-		return c.Method.Name()
+		// Interface dispatch: FullName renders "(pkg.Iface).Method".
+		return c.Method.FullName()
 	}
 	if f := c.StaticCallee(); f != nil {
-		return f.Name()
+		// RelString(nil) renders "pkg/path.Func" and "(*pkg.T).Method".
+		return f.RelString(nil)
 	}
 	if c.Value != nil {
 		if n := c.Value.Name(); n != "" {

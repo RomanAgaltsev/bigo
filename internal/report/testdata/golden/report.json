@@ -91,7 +91,7 @@
       "causes": [
         {
           "kind": "call",
-          "detail": "unresolved cost at call to Get",
+          "detail": "unresolved cost at call to (example.com/reportfix.Store).Get",
           "file": "fix.go",
           "line": 53
         }
