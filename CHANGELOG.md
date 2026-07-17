@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.28.1](https://github.com/RomanAgaltsev/bigo/compare/v1.28.0...v1.28.1) (2026-07-17)
+
+
+### Bug Fixes
+
+* v1.28.0 review findings — F1 P0 wrong bound (guard-false edge) + F2 dead lenOf branch ([#91](https://github.com/RomanAgaltsev/bigo/issues/91)) ([5bb16d6](https://github.com/RomanAgaltsev/bigo/commit/5bb16d6b5fa3c810879c715c55860854a54a28a5))
+
 ## [1.28.0](https://github.com/RomanAgaltsev/bigo/compare/v1.27.0...v1.28.0) (2026-07-17)
 
 
