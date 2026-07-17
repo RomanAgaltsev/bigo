@@ -191,7 +191,13 @@ go install github.com/RomanAgaltsev/bigo/cmd/bigo@latest
 
 bigo ./...            # check budgets (CI-friendly exit code)
 bigo -report ./...    # print the inferred bound of every analyzable function
+
+bigo -C path/to/module ./...    # resolve ./... against another module
 ```
+
+`-C dir` runs as if bigo had started in `dir`, so a CI job can analyze a module
+without a `cd` shim. As with `go -C`, it must be the first flag. (`bigo json` and
+`bigo badge` take their own `-C`.)
 
 ## Use with golangci-lint
 
