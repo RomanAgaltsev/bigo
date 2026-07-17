@@ -650,3 +650,208 @@ func isMid(sh *shape, v ssa.Value, lo, hi *ssa.Phi) bool {
 	}
 	return false
 }
+
+// ruleTwoPointer — R7, the two-pointer merge loop.
+//
+// Shape: a conjunction guard `i < E_a && j < E_b`, which SSA lowers to the
+// header testing i < E_a and its in-loop successor testing j < E_b, BOTH
+// exiting to the same block; i and j are header phis; every back-edge path
+// advances exactly one of them by a constant >= 1 and leaves the other
+// unchanged; lowerBoundConst(i0) >= 0 and lowerBoundConst(j0) >= 0;
+// upperExtent(E_a) and upperExtent(E_b) resolve.
+//
+// Claim: O(E_a + E_b) — a Join, not a Mul: the pointers advance in alternation,
+// they do not nest.
+//
+// Argument: let k = i + j. Every back-edge path increases exactly one of i/j by
+// >= 1 and leaves the other unchanged, so k strictly increases by >= 1 each
+// iteration. The guard holds only while i < E_a AND j < E_b, so k < E_a + E_b
+// at every iteration entry; with i, j >= 0 at entry the loop runs at most
+// E_a + E_b times. A path advancing NEITHER pointer stalls k and the loop need
+// not terminate — hence the exactly-one requirement, which is a termination
+// obligation, not a convenience.
+//
+// Requiring the other pointer to be *unchanged* (rather than merely
+// non-decreasing) is stricter than the measure needs. It is a matching
+// decision: a both-advance loop is R1's, which bounds it tighter at O(E_a).
+// R7 therefore also requires genuine alternation — each pointer advances on at
+// least one path — so the degenerate both-advance shape falls through to R1.
+func ruleTwoPointer(sh *shape) (bound.Bound, bool) {
+	if sh.cmp == nil {
+		return bound.Bound{}, false
+	}
+	i, extA, ok := guardPair(sh, sh.cmp)
+	if !ok {
+		return bound.Bound{}, false
+	}
+	// The second conjunct: the header's in-loop successor must end in an If
+	// whose false edge is the SAME exit the header's false edge targets.
+	cond2 := sh.ifi.Block().Succs[0]
+	if len(cond2.Instrs) == 0 {
+		return bound.Bound{}, false
+	}
+	if2, ok := cond2.Instrs[len(cond2.Instrs)-1].(*ssa.If)
+	if !ok || len(cond2.Succs) != 2 {
+		return bound.Bound{}, false
+	}
+	if cond2.Succs[1] != sh.ifi.Block().Succs[1] {
+		return bound.Bound{}, false // guards different exits: not one conjunction
+	}
+	cmp2, ok := if2.Cond.(*ssa.BinOp)
+	if !ok {
+		return bound.Bound{}, false
+	}
+	j, extB, ok := guardPair(sh, cmp2)
+	if !ok || i == j {
+		return bound.Bound{}, false
+	}
+	// Every back-edge path advances exactly one pointer; each advances on some path.
+	movedI, movedJ := false, false
+	for idx, pred := range sh.loop.Header.Preds {
+		if !sh.loop.Blocks[pred] {
+			continue // entry edge
+		}
+		paths, ok := pathDeltas(sh, i, j, idx)
+		if !ok {
+			return bound.Bound{}, false
+		}
+		for _, d := range paths {
+			switch {
+			case d.di >= 1 && d.dj == 0:
+				movedI = true
+			case d.dj >= 1 && d.di == 0:
+				movedJ = true
+			default:
+				return bound.Bound{}, false // neither, both, or a retreat
+			}
+		}
+	}
+	if !movedI || !movedJ {
+		return bound.Bound{}, false // no alternation: R1's shape, tighter there
+	}
+	return bound.Of(bound.Term(extA)).Join(bound.Of(bound.Term(extB))), true
+}
+
+// guardPair matches `p < E` or `E > p` for a header phi p with a resolvable,
+// non-negative-starting extent, returning the phi and E's extent.
+func guardPair(sh *shape, cmp *ssa.BinOp) (*ssa.Phi, bound.Var, bool) {
+	pv, ev := cmp.X, cmp.Y
+	switch cmp.Op {
+	case token.LSS:
+	case token.GTR:
+		pv, ev = ev, pv
+	default:
+		return nil, "", false
+	}
+	p, ok := pv.(*ssa.Phi)
+	if !ok || p.Block() != sh.loop.Header {
+		return nil, "", false
+	}
+	for idx, pred := range sh.loop.Header.Preds {
+		if sh.loop.Blocks[pred] {
+			continue
+		}
+		if c, ok := sh.f.LowerBoundConst(p.Edges[idx], 0); !ok || c < 0 {
+			return nil, "", false
+		}
+	}
+	e, ok := sh.f.UpperExtent(ev, 0)
+	if !ok {
+		return nil, "", false
+	}
+	return p, e, true
+}
+
+// delta is one back-edge path's movement of the two pointers.
+type delta struct{ di, dj int64 }
+
+// pathDeltas enumerates the movements of i and j along every path reaching the
+// header's back edge at index idx. The back-edge values may be latch phis
+// merging the body's paths; both pointers' phis are walked in lockstep by
+// predecessor index, which is what pairs Δi with Δj on the SAME path. Any
+// unrecognized update yields ok=false (⊤), never an assumption.
+func pathDeltas(sh *shape, i, j *ssa.Phi, idx int) ([]delta, bool) {
+	vi, vj := i.Edges[idx], j.Edges[idx]
+	pi, iIsPhi := vi.(*ssa.Phi)
+	pj, jIsPhi := vj.(*ssa.Phi)
+	// Both merge in the same latch: pair their edges by predecessor index.
+	if iIsPhi && jIsPhi && pi.Block() == pj.Block() && sh.loop.Blocks[pi.Block()] {
+		out := make([]delta, 0, len(pi.Edges))
+		for k := range pi.Edges {
+			di, ok := advanceOf(pi.Edges[k], i)
+			if !ok {
+				return nil, false
+			}
+			dj, ok := advanceOf(pj.Edges[k], j)
+			if !ok {
+				return nil, false
+			}
+			out = append(out, delta{di, dj})
+		}
+		return out, true
+	}
+	// Only one merges (the other is unchanged on every path), or neither.
+	if iIsPhi && sh.loop.Blocks[pi.Block()] {
+		dj, ok := advanceOf(vj, j)
+		if !ok {
+			return nil, false
+		}
+		out := make([]delta, 0, len(pi.Edges))
+		for k := range pi.Edges {
+			di, ok := advanceOf(pi.Edges[k], i)
+			if !ok {
+				return nil, false
+			}
+			out = append(out, delta{di, dj})
+		}
+		return out, true
+	}
+	if jIsPhi && sh.loop.Blocks[pj.Block()] {
+		di, ok := advanceOf(vi, i)
+		if !ok {
+			return nil, false
+		}
+		out := make([]delta, 0, len(pj.Edges))
+		for k := range pj.Edges {
+			dj, ok := advanceOf(pj.Edges[k], j)
+			if !ok {
+				return nil, false
+			}
+			out = append(out, delta{di, dj})
+		}
+		return out, true
+	}
+	di, ok := advanceOf(vi, i)
+	if !ok {
+		return nil, false
+	}
+	dj, ok := advanceOf(vj, j)
+	if !ok {
+		return nil, false
+	}
+	return []delta{{di, dj}}, true
+}
+
+// advanceOf returns how far v moves target: 0 when v IS target (unchanged), or
+// c for `target + c` with a const c >= 1. Anything else — a decrement, a
+// non-constant step, an unrelated value — is unrecognized (ok=false ⇒ ⊤).
+func advanceOf(v ssa.Value, target *ssa.Phi) (int64, bool) {
+	if v == target {
+		return 0, true
+	}
+	bo, ok := v.(*ssa.BinOp)
+	if !ok || bo.Op != token.ADD {
+		return 0, false
+	}
+	if bo.X == target {
+		if c, ok := sizefacts.ConstIntV(bo.Y); ok && c >= 1 {
+			return c, true
+		}
+	}
+	if bo.Y == target {
+		if c, ok := sizefacts.ConstIntV(bo.X); ok && c >= 1 {
+			return c, true
+		}
+	}
+	return 0, false
+}
