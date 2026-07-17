@@ -32,7 +32,8 @@ const prefix = "//oracle:"
 // pins are errors, never skips: a skipped pin would be a silently missing
 // oracle entry, and the reconciliation count could not catch it.
 func ExtractPins(file *ast.File) (map[*ast.FuncDecl]Pin, error) {
-	out := map[*ast.FuncDecl]Pin{}
+	// Size-hinted: bigo's own SM6 flags a map grown in a loop without one.
+	out := make(map[*ast.FuncDecl]Pin, len(file.Decls))
 	for _, decl := range file.Decls {
 		fd, ok := decl.(*ast.FuncDecl)
 		if !ok || fd.Doc == nil {
