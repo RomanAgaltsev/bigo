@@ -174,3 +174,45 @@ func ClosedBisectionTerminates(s []int, x int) int {
 	}
 	return -1
 }
+
+// A two-pointer loop with a path that advances NEITHER pointer does not
+// terminate: the measure i+j stalls. R7 bounds this shape only when every
+// back-edge path advances exactly one pointer, which is why this stays
+// unverifiable. Deleting that condition makes this loop claim
+// O(len(a) + len(b)) — a wrong bound on a non-terminating loop.
+
+//bigo:max O(n + m) where n = len(a), m = len(b)
+func TwoPointerStalls(a, b []int) int { // want `cannot verify budget`
+	i, j, n := 0, 0, 0
+	for i < len(a) && j < len(b) {
+		if a[i] < 0 {
+			n++
+			continue
+		}
+		if a[i] <= b[j] {
+			i++
+		} else {
+			j++
+		}
+		n++
+	}
+	return n
+}
+
+// The terminating sibling: exactly one pointer advances per path, so R7 bounds
+// it. Pins that the pin above fails for its stated reason (the stalling path),
+// not because the two-pointer shape is rejected wholesale.
+
+//bigo:max O(n + m) where n = len(a), m = len(b)
+func TwoPointerMerges(a, b []int) int {
+	i, j, n := 0, 0, 0
+	for i < len(a) && j < len(b) {
+		if a[i] <= b[j] {
+			i++
+		} else {
+			j++
+		}
+		n++
+	}
+	return n
+}

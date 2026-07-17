@@ -1,12 +1,12 @@
 {
-  "total": 194,
-  "bounded": 112,
+  "total": 196,
+  "bounded": 113,
   "coverage_pct": "57.7",
   "by_cause": {
     "call": 54,
     "go": 3,
     "irreducible": 1,
-    "loop": 16,
+    "loop": 17,
     "nobody": 8
   },
   "per_package": {
@@ -23,8 +23,8 @@
       "bounded": 4
     },
     "edge": {
-      "total": 13,
-      "bounded": 6
+      "total": 15,
+      "bounded": 7
     },
     "fieldsize": {
       "total": 13,
@@ -337,6 +337,18 @@
       "func": "Triangular",
       "verdict": "bounded",
       "bound": "O(len(xs)^2)"
+    },
+    {
+      "pkg": "edge",
+      "func": "TwoPointerMerges",
+      "verdict": "bounded",
+      "bound": "O(len(a) + len(b))"
+    },
+    {
+      "pkg": "edge",
+      "func": "TwoPointerStalls",
+      "verdict": "unverifiable",
+      "cause": "loop"
     },
     {
       "pkg": "edge",
