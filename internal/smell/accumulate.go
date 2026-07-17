@@ -37,9 +37,12 @@ func smConcatInLoop(fn *ssa.Function, ctx *fnContext) []Finding {
 				if i == 0 {
 					continue // entry edge
 				}
-				if lp.Blocks[phi.Block().Preds[i]] && stringAccumulates(edge, phi, map[ssa.Value]bool{}) {
+				if !lp.Blocks[phi.Block().Preds[i]] {
+					continue
+				}
+				if pos, ok := stringAccumulates(edge, phi, map[ssa.Value]bool{}); ok {
 					out = append(out, Finding{
-						Pos:     phi.Pos(),
+						Pos:     pos,
 						Rule:    "SM1",
 						Message: "string built by repeated concatenation in a loop (quadratic); use strings.Builder",
 					})
@@ -56,42 +59,51 @@ func smConcatInLoop(fn *ssa.Function, ctx *fnContext) []Finding {
 // a fmt.Sprintf with the phi among its varargs. Control-flow merge phis (a
 // continue path leaving the phi unchanged) are walked, but a bare pass-through
 // of the phi is NOT accumulation.
-func stringAccumulates(v ssa.Value, target *ssa.Phi, visited map[ssa.Value]bool) bool {
+//
+// It returns the position of the accumulating instruction — the `+` operator or
+// the Sprintf call — NOT the phi's. A loop-header phi for a named local carries
+// the variable's *declaration* position, so anchoring there collapses findings
+// from two loops over one accumulator into a single (rule, file, line) and points
+// away from where the fix goes (issue #73).
+func stringAccumulates(v ssa.Value, target *ssa.Phi, visited map[ssa.Value]bool) (token.Pos, bool) {
 	if visited[v] {
-		return false
+		return token.NoPos, false
 	}
 	visited[v] = true
 	switch v := v.(type) {
 	case *ssa.BinOp:
 		if v.Op != token.ADD || !isString(v.Type()) {
-			return false
+			return token.NoPos, false
 		}
 		// The accumulation: is target a direct operand, or nested in a + chain?
-		return addOperandHas(v.X, target) || addOperandHas(v.Y, target)
+		if addOperandHas(v.X, target) || addOperandHas(v.Y, target) {
+			return v.Pos(), true
+		}
+		return token.NoPos, false
 	case *ssa.Call:
 		// fmt.Sprintf("%s", s, ...) builds a new string from its varargs; the
 		// phi is boxed in a MakeInterface and stored in the varargs aggregate.
 		if name, ok := calleeOrigin(&v.Call); ok && name == "fmt.Sprintf" {
 			for _, arg := range v.Call.Args {
 				if sprintfArgHas(arg, target) {
-					return true
+					return v.Pos(), true
 				}
 			}
 		}
-		return false
+		return token.NoPos, false
 	case *ssa.Phi:
 		if v == target {
-			return false // unchanged pass-through, not accumulation
+			return token.NoPos, false // unchanged pass-through, not accumulation
 		}
 		// Control-flow merge (e.g. a continue path): chase both edges.
 		for _, e := range v.Edges {
-			if stringAccumulates(e, target, visited) {
-				return true
+			if pos, ok := stringAccumulates(e, target, visited); ok {
+				return pos, true
 			}
 		}
-		return false
+		return token.NoPos, false
 	}
-	return false
+	return token.NoPos, false
 }
 
 // addOperandHas reports whether v's subtree contains target, chasing only

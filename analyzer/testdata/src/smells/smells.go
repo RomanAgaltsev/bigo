@@ -25,27 +25,27 @@ func Clean(xs []int) int {
 
 // SM1Concat fires: string built by += in a data-dependent loop.
 func SM1Concat(xs []string) string {
-	s := "" // want `smell\(SM1\): string built by repeated concatenation in a loop`
+	s := ""
 	for _, x := range xs {
-		s += x
+		s += x // want `smell\(SM1\): string built by repeated concatenation in a loop`
 	}
 	return s
 }
 
 // SM1ConcatChained fires: chained + still accumulates the phi.
 func SM1ConcatChained(xs []string, sep string) string {
-	s := "" // want `smell\(SM1\): string built by repeated concatenation in a loop`
+	s := ""
 	for _, x := range xs {
-		s = s + x + sep
+		s = s + x + sep // want `smell\(SM1\): string built by repeated concatenation in a loop`
 	}
 	return s
 }
 
 // SM1Sprintf fires: Sprintf self-accumulation.
 func SM1Sprintf(xs []string) string {
-	s := "" // want `smell\(SM1\): string built by repeated concatenation in a loop`
+	s := ""
 	for i, x := range xs {
-		s = fmt.Sprintf("%s%d%s", s, i, x)
+		s = fmt.Sprintf("%s%d%s", s, i, x) // want `smell\(SM1\): string built by repeated concatenation in a loop`
 	}
 	return s
 }
@@ -122,9 +122,9 @@ func SM5NoFireOutside(g []int) {
 
 // SM3Append fires: zero-capacity slice grown by append in a resolvable loop.
 func SM3Append(xs []int) []int {
-	var out []int // want `smell\(SM3\): append in a loop bounded by`
+	var out []int
 	for _, x := range xs {
-		out = append(out, x)
+		out = append(out, x) // want `smell\(SM3\): append in a loop bounded by`
 	}
 	return out
 }

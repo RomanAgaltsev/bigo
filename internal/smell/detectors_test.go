@@ -23,6 +23,24 @@ func detectOne(t *testing.T, src, fnName string, enabled map[string]bool) []Find
 	return Detect(ssasupport.Func(pkg, fnName), enabled)
 }
 
+// detectLines returns the 1-based source lines of every finding for rule, in
+// finding order. It is the anchoring counterpart to detectOne: where a finding
+// points matters as much as whether it fires.
+func detectLines(t *testing.T, src, fnName, rule string) []int {
+	t.Helper()
+	pkg, fset, err := ssasupport.BuildGeneric(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var out []int
+	for _, f := range Detect(ssasupport.Func(pkg, fnName), ruleset(rule)) {
+		if f.Rule == rule {
+			out = append(out, fset.Position(f.Pos).Line)
+		}
+	}
+	return out
+}
+
 func ruleCount(findings []Finding, rule string) int {
 	n := 0
 	for _, f := range findings {

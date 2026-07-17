@@ -35,11 +35,12 @@ func smAppendNoPrealloc(_ *ssa.Function, ctx *fnContext) []Finding {
 				continue
 			}
 			// A back-edge must be an append call with the phi as the first arg.
-			if !appendsSelf(phi, lp) {
+			pos, ok := appendsSelf(phi, lp)
+			if !ok {
 				continue
 			}
 			out = append(out, Finding{
-				Pos:     phi.Pos(),
+				Pos:     pos,
 				Rule:    "SM3",
 				Message: "append in a loop bounded by " + tc.String() + " on a zero-capacity slice; preallocate with make(…, 0, " + tc.String() + ")",
 			})
@@ -98,8 +99,11 @@ func zeroCapOrigin(v ssa.Value) bool {
 	return false
 }
 
-// appendsSelf reports whether any back-edge of phi is an append(phi, ...) call.
-func appendsSelf(phi *ssa.Phi, lp *loopnest.Loop) bool {
+// appendsSelf reports whether any back-edge of phi is an append(phi, ...) call,
+// returning that call's position. The call site — not phi.Pos(), which for a
+// named local is the variable's declaration — is where the finding anchors, so
+// that two accumulators declared on one line stay distinct (issue #73).
+func appendsSelf(phi *ssa.Phi, lp *loopnest.Loop) (token.Pos, bool) {
 	for i, edge := range phi.Edges {
 		if i == 0 {
 			continue
@@ -116,10 +120,10 @@ func appendsSelf(phi *ssa.Phi, lp *loopnest.Loop) bool {
 			continue
 		}
 		if len(call.Call.Args) > 0 && call.Call.Args[0] == phi {
-			return true
+			return call.Pos(), true
 		}
 	}
-	return false
+	return token.NoPos, false
 }
 
 // hasReserve reports whether a MakeMap has a non-zero reserve (size hint).

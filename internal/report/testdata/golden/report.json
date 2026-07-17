@@ -306,7 +306,7 @@
       "rule": "SM1",
       "message": "string built by repeated concatenation in a loop (quadratic); use strings.Builder",
       "file": "fix.go",
-      "line": 122
+      "line": 124
     }
   ]
 }
