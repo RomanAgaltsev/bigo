@@ -1,7 +1,7 @@
 {
-  "total": 205,
-  "bounded": 115,
-  "coverage_pct": "56.1",
+  "total": 207,
+  "bounded": 117,
+  "coverage_pct": "56.5",
   "by_cause": {
     "call": 54,
     "go": 3,
@@ -27,8 +27,8 @@
       "bounded": 9
     },
     "fieldsize": {
-      "total": 13,
-      "bounded": 8
+      "total": 15,
+      "bounded": 10
     },
     "funcvalue": {
       "total": 20,
@@ -439,6 +439,18 @@
       "func": "SumCalls",
       "verdict": "unverifiable",
       "cause": "loop"
+    },
+    {
+      "pkg": "fieldsize",
+      "func": "SumFieldCopy",
+      "verdict": "bounded",
+      "bound": "O(len(s.items))"
+    },
+    {
+      "pkg": "fieldsize",
+      "func": "SumFieldTail",
+      "verdict": "bounded",
+      "bound": "O(len(s.items))"
     },
     {
       "pkg": "fieldsize",

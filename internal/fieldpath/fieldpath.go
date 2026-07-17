@@ -134,6 +134,33 @@ func (s *Stability) VarFor(v ssa.Value) (bound.Var, bool) {
 	return "", false
 }
 
+// LenVarFor maps a COLLECTION to the canonical variable naming its length:
+// len(s.items) for the value s.items itself, rather than for a call to len on
+// it. It is VarFor's len case with the call already peeled off.
+//
+// Callers that hold a collection rather than a length need this — a slice
+// expression's operand, append's spread argument. VarFor rejects them all: it
+// resolves only len/cap CALLS and integer field paths, and a collection is
+// neither, so calling it in that position silently never fires (the v1.28.0
+// review's F2).
+//
+// Soundness is exactly VarFor's: the path must be a provably entry-stable
+// field read rooted at a parameter or receiver, so len(path) names one value
+// for the whole frame. Nil-receiver safe: rejects everything.
+func (s *Stability) LenVarFor(v ssa.Value) (bound.Var, bool) {
+	if s == nil {
+		return "", false
+	}
+	if !lenEligible(v.Type()) {
+		return "", false
+	}
+	path, ok := s.fieldPath(v)
+	if !ok {
+		return "", false
+	}
+	return size.Len(path), true
+}
+
 // fieldPath returns the dotted path (e.g. "s.items") when v is a stable
 // field read of depth <= 2 rooted at a parameter.
 func (s *Stability) fieldPath(v ssa.Value) (string, bool) {
