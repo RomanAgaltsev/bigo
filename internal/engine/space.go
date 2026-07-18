@@ -7,6 +7,7 @@ import (
 	"github.com/RomanAgaltsev/bigo/internal/fieldpath"
 	"github.com/RomanAgaltsev/bigo/internal/loopnest"
 	"github.com/RomanAgaltsev/bigo/internal/size"
+	"github.com/RomanAgaltsev/bigo/internal/sizefacts"
 	"github.com/RomanAgaltsev/bigo/internal/tripcount"
 )
 
@@ -101,6 +102,9 @@ func blockAlloc(b *ssa.BasicBlock, model SpaceModel, stab *fieldpath.Stability) 
 				cost = cost.Join(bound.Of(bound.Term(sv)))
 			} else if fv, ok := stab.VarFor(v.Len); ok {
 				cost = cost.Join(bound.Of(bound.Term(fv)))
+			} else if lv, ok := (&sizefacts.Facts{Stab: stab}).ArgSize(v.Len); ok {
+				// make([]T, len(s)/2): a derived length is still a length.
+				cost = cost.Join(bound.Of(bound.Term(lv)))
 			} else if !isConstLen(v.Len) {
 				causes = append(causes, Cause{Pos: v.Pos(), Kind: CauseCall, What: "make with unknown length"})
 				return bound.Top(), true, causes
@@ -177,6 +181,14 @@ func appendSpace(c *ssa.Call, stab *fieldpath.Stability) bound.Bound {
 	}
 	if fv, ok := stab.VarFor(last); ok {
 		return bound.Of(bound.Term(fv))
+	}
+	// A locally-derived spread (append(nil, s[:mid]...), a make, a slice
+	// expression) adds its length in elements. Without this the per-level
+	// copies of a solved divisive recursion charged O(1) heap — an
+	// oracle-confirmed wrong space bound (#87 probe, B3).
+	f := &sizefacts.Facts{Stab: stab}
+	if lv, ok := f.ArgSize(last); ok {
+		return bound.Of(bound.Term(lv))
 	}
 	return bound.Constant()
 }
