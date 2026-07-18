@@ -7,10 +7,25 @@ import (
 	"golang.org/x/tools/go/ssa"
 
 	"github.com/RomanAgaltsev/bigo/internal/bound"
+	"github.com/RomanAgaltsev/bigo/internal/costtable"
 	"github.com/RomanAgaltsev/bigo/internal/fieldpath"
 	"github.com/RomanAgaltsev/bigo/internal/loopnest"
 	"github.com/RomanAgaltsev/bigo/internal/tripcount"
 )
+
+// causeText distinguishes a priced callee whose argument size is unresolved
+// from a callee with no cost at all. Read-only use of costtable for
+// diagnostics; resolution still flows exclusively through CostModel.
+func causeText(c *ssa.CallCommon, deferred bool) string {
+	site := "call"
+	if deferred {
+		site = "deferred call"
+	}
+	if costtable.Priced(c) {
+		return "unresolved argument size at " + site + " to " + calleeName(c)
+	}
+	return "unresolved cost at " + site + " to " + calleeName(c)
+}
 
 // CostModel resolves the cost of a call in canonical size variables.
 type CostModel interface {
@@ -129,13 +144,13 @@ func blockCost(b *ssa.BasicBlock, model CostModel) (bound.Bound, []Cause) {
 		case *ssa.Call:
 			c := model.CallCost(&v.Call)
 			if c.IsTop() {
-				causes = append(causes, Cause{Pos: v.Pos(), Kind: CauseCall, What: "unresolved cost at call to " + calleeName(&v.Call)})
+				causes = append(causes, Cause{Pos: v.Pos(), Kind: CauseCall, What: causeText(&v.Call, false)})
 			}
 			cost = cost.Join(c)
 		case *ssa.Defer:
 			c := model.CallCost(&v.Call)
 			if c.IsTop() {
-				causes = append(causes, Cause{Pos: v.Pos(), Kind: CauseDefer, What: "unresolved cost at deferred call to " + calleeName(&v.Call)})
+				causes = append(causes, Cause{Pos: v.Pos(), Kind: CauseDefer, What: causeText(&v.Call, true)})
 			}
 			cost = cost.Join(c)
 		case *ssa.Go:

@@ -71,6 +71,28 @@ func f(s []int) { copy(g(), s) }`)
 	}
 }
 
+func TestPriced(t *testing.T) {
+	pkg, _, err := ssasupport.Build(`package input
+func g() {}
+func f(d, s []int) { copy(d, s); g() }`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fn := ssasupport.Func(pkg, "f")
+	var got []bool
+	for _, b := range fn.Blocks {
+		for _, instr := range b.Instrs {
+			if c, ok := instr.(*ssa.Call); ok {
+				got = append(got, Priced(&c.Call))
+			}
+		}
+	}
+	// copy is priced; g is not.
+	if len(got) != 2 || !got[0] || got[1] {
+		t.Errorf("Priced over [copy, g] = %v, want [true false]", got)
+	}
+}
+
 func TestArgExtentConcurrent(t *testing.T) {
 	// The Stability memo is shared package state: hammer one call from many
 	// goroutines. Run under CI's -race to be meaningful; locally it still
