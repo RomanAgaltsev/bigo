@@ -366,6 +366,26 @@ func (f *Facts) lenExtent(v ssa.Value, depth int) (bound.Var, bool) {
 	return "", false
 }
 
+// ArgSize resolves the canonical size of an argument value: collections and
+// strings by length, integers by magnitude. The result is an UPPER bound on
+// the size at every evaluation — the sound direction for cost and heap
+// bounds, where over-approximation degrades Within to Unknown and never
+// fabricates a tighter-than-true bound.
+func (f *Facts) ArgSize(v ssa.Value) (bound.Var, bool) {
+	switch t := v.Type().Underlying().(type) {
+	case *types.Slice, *types.Map, *types.Array:
+		return f.lenOf(v, 0)
+	case *types.Basic:
+		switch {
+		case t.Info()&types.IsString != 0:
+			return f.lenOf(v, 0)
+		case t.Info()&types.IsInteger != 0:
+			return f.UpperExtent(v, 0)
+		}
+	}
+	return "", false
+}
+
 // lenOf resolves len(v) whether v is a length-classed parameter, a field path,
 // or a locally-derived value.
 func (f *Facts) lenOf(v ssa.Value, depth int) (bound.Var, bool) {

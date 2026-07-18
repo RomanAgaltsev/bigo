@@ -2,6 +2,22 @@
 // worst-case bounds; no //bigo: directives — the engine infers unaided.
 package sorting
 
+import "slices"
+
+// SortedCopy returns a sorted copy of s, leaving s untouched — the smallest
+// real shape whose bound rides a priced stdlib callee with a locally-derived
+// argument. Exists as a pin: the 2026-07-18 probes proved the prior corpus
+// could not catch a resolver bug in this family.
+//
+//oracle:time O(n log n) where n=len(s)
+//oracle:space O(n) where n=len(s)
+//oracle:source CLRS §2.3 (comparison-sort bound); pkg.go.dev/slices#Sort (O(n log n) documented)
+func SortedCopy(s []int) []int {
+	out := append([]int(nil), s...)
+	slices.Sort(out)
+	return out
+}
+
 // InsertionSort sorts in place by insertion.
 //
 //oracle:time O(n^2) where n=len(s)

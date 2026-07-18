@@ -9,13 +9,13 @@ appears here: it fails the build. Algorithms considered and kept out are in
 [EXCLUSIONS.md](EXCLUSIONS.md). **This is not a coverage metric** — read
 composition, not a percentage.
 
-**Entries: 55**
+**Entries: 56**
 
 ## Time statuses
 
 | Status | Count |
 |---|---|
-| exact | 22 |
+| exact | 23 |
 | loose | 0 |
 | top | 33 |
 
@@ -23,9 +23,9 @@ composition, not a percentage.
 
 | Status | Count |
 |---|---|
-| exact | 34 |
+| exact | 39 |
 | loose | 2 |
-| top | 19 |
+| top | 15 |
 
 ## Per family
 
@@ -36,7 +36,7 @@ composition, not a percentage.
 | matrix | 5 |
 | numeric | 7 |
 | searching | 5 |
-| sorting | 10 |
+| sorting | 11 |
 | stringops | 8 |
 | structures | 8 |
 
@@ -56,7 +56,7 @@ composition, not a percentage.
 | graphs.DFSRec | O(len(adj)^2) | unverifiable | top | O(len(adj)) | unverifiable | top | loop | CLRS §22.3 (recursive form) — stack depth ≤ n |
 | graphs.FloydWarshall | O(len(dist)^3) | O(len(dist)^3) | exact | O(1) | O(1) | exact |  | CLRS §25.2; en.wikipedia.org/wiki/Floyd%E2%80%93Warshall_algorithm |
 | graphs.TopoSortKahn | O(len(adj)^2) | unverifiable | top | O(len(adj)) | unverifiable | top | loop | CLRS §22.4 / Kahn 1962 — O(V+E), pinned at the E≤n² worst case |
-| matrix.Mul | O(len(a)^3) | O(len(a)^3) | exact | O(len(a)^2) | unverifiable | top |  | CLRS §4.2 (naive); en.wikipedia.org/wiki/Matrix_multiplication_algorithm |
+| matrix.Mul | O(len(a)^3) | O(len(a)^3) | exact | O(len(a)^2) | O(len(a)^2) | exact |  | CLRS §4.2 (naive); en.wikipedia.org/wiki/Matrix_multiplication_algorithm |
 | matrix.Rotate90 | O(len(m)^2) | O(len(m)^2) | exact | O(1) | O(1) | exact |  | www.geeksforgeeks.org/rotate-a-matrix-by-90-degree-in-clockwise-direction/ (bound reference) |
 | matrix.SearchSorted | O(len(m)) | unverifiable | top | O(1) | O(1) | exact | loop | www.geeksforgeeks.org/search-in-row-wise-and-column-wise-sorted-matrix/ (bound reference) |
 | matrix.SpiralOrder | O(len(m)^2) | unverifiable | top | O(len(m)^2) | unverifiable | top | loop | www.geeksforgeeks.org/print-a-given-matrix-in-spiral-form/ (bound reference) |
@@ -66,7 +66,7 @@ composition, not a percentage.
 | numeric.FibIter | O(n) | O(n) | exact | O(1) | O(1) | exact |  | en.wikipedia.org/wiki/Fibonacci_sequence (iterative) |
 | numeric.FibMemo | O(n) | unverifiable | top | O(n) | unverifiable | top | call | CLRS §15.1 (memoization); en.wikipedia.org/wiki/Memoization |
 | numeric.GCD | O(log(a)) | unverifiable | top | O(1) | O(1) | exact | loop | CLRS §31.2 (Lamé); en.wikipedia.org/wiki/Euclidean_algorithm |
-| numeric.Sieve | O(n log(n)) | unverifiable | top | O(n) | unverifiable | top | loop | CLRS ex. 31-3; en.wikipedia.org/wiki/Sieve_of_Eratosthenes (conservative pin) |
+| numeric.Sieve | O(n log(n)) | unverifiable | top | O(n) | O(n) | exact | loop | CLRS ex. 31-3; en.wikipedia.org/wiki/Sieve_of_Eratosthenes (conservative pin) |
 | numeric.TrialDivision | O(n) | unverifiable | top | O(1) | O(1) | exact | loop | en.wikipedia.org/wiki/Trial_division (conservative pin) |
 | searching.BinarySearch | O(log(len(s))) | O(log(len(s))) | exact | O(1) | O(1) | exact |  | CLRS ex. 2.3-5; en.wikipedia.org/wiki/Binary_search_algorithm |
 | searching.BinarySearchRec | O(log(len(s))) | O(log(len(s))) | exact | O(log(len(s))) | O(log(len(s))) | exact |  | CLRS ex. 2.3-5 (recursive form) |
@@ -74,7 +74,7 @@ composition, not a percentage.
 | searching.LinearSearch | O(len(s)) | O(len(s)) | exact | O(1) | O(1) | exact |  | en.wikipedia.org/wiki/Linear_search |
 | searching.SearchRotated | O(log(len(s))) | O(log(len(s))) | exact | O(1) | O(1) | exact |  | www.geeksforgeeks.org/search-an-element-in-a-sorted-and-pivoted-array/ (bound reference) |
 | sorting.BubbleSort | O(len(s)^2) | O(len(s)^2) | exact | O(1) | O(1) | exact |  | CLRS problem 2-2; en.wikipedia.org/wiki/Bubble_sort |
-| sorting.BucketSort | O(len(s)^2) | unverifiable | top | O(len(s)) | unverifiable | top | loop | CLRS §8.4 (worst case); en.wikipedia.org/wiki/Bucket_sort |
+| sorting.BucketSort | O(len(s)^2) | unverifiable | top | O(len(s)) | O(len(s)) | exact | loop | CLRS §8.4 (worst case); en.wikipedia.org/wiki/Bucket_sort |
 | sorting.CountingSort | O(k + len(s)) | unverifiable | top | O(k + len(s)) | unverifiable | top | loop | CLRS §8.2; en.wikipedia.org/wiki/Counting_sort |
 | sorting.HeapSort | O(len(s) log(len(s))) | unverifiable | top | O(1) | O(len(s)) | loose | call | CLRS §6.4; en.wikipedia.org/wiki/Heapsort |
 | sorting.InsertionSort | O(len(s)^2) | O(len(s)^2) | exact | O(1) | O(1) | exact |  | CLRS §2.1; en.wikipedia.org/wiki/Insertion_sort (worst case) |
@@ -83,13 +83,14 @@ composition, not a percentage.
 | sorting.RadixSortLSD | O(len(s)) | unverifiable | top | O(len(s)) | unverifiable | top | loop | CLRS §8.3 (fixed d, k); en.wikipedia.org/wiki/Radix_sort |
 | sorting.SelectionSort | O(len(s)^2) | O(len(s)^2) | exact | O(1) | O(1) | exact |  | CLRS ex. 2.2-2; en.wikipedia.org/wiki/Selection_sort |
 | sorting.ShellSort | O(len(s)^2) | unverifiable | top | O(1) | O(1) | exact | loop | en.wikipedia.org/wiki/Shellsort (Shell's sequence, worst case) |
+| sorting.SortedCopy | O(len(s) log(len(s))) | O(len(s) log(len(s))) | exact | O(len(s)) | unverifiable | top |  | CLRS §2.3 (comparison-sort bound); pkg.go.dev/slices#Sort (O(n log n) documented) |
 | stringops.AreAnagrams | O(len(a) + len(b)) | unverifiable | top | O(1) | O(1) | exact | loop | www.geeksforgeeks.org/check-whether-two-strings-are-anagram-of-each-other/ (bound reference) |
 | stringops.CommonPrefix | O(len(a)) | O(len(a)) | exact | O(1) | O(1) | exact |  | en.wikipedia.org/wiki/LCP_array (pairwise base case, bound reference) |
 | stringops.IsPalindrome | O(len(s)) | O(len(s)) | exact | O(1) | O(1) | exact |  | ru.algorithmica.org (strings, bound reference); en.wikipedia.org/wiki/Palindrome |
-| stringops.KMPSearch | O(len(pat) + len(text)) | unverifiable | top | O(len(pat)) | unverifiable | top | loop | CLRS §32.4; en.wikipedia.org/wiki/Knuth%E2%80%93Morris%E2%80%93Pratt_algorithm |
+| stringops.KMPSearch | O(len(pat) + len(text)) | unverifiable | top | O(len(pat)) | O(len(pat)) | exact | loop | CLRS §32.4; en.wikipedia.org/wiki/Knuth%E2%80%93Morris%E2%80%93Pratt_algorithm |
 | stringops.NaiveSearch | O(len(pat) len(text)) | unverifiable | top | O(1) | O(1) | exact | loop | CLRS §32.1; en.wikipedia.org/wiki/String-searching_algorithm |
 | stringops.RabinKarp | O(len(pat) len(text)) | unverifiable | top | O(1) | O(1) | exact | loop | CLRS §32.2 (worst case); en.wikipedia.org/wiki/Rabin%E2%80%93Karp_algorithm |
-| stringops.Reverse | O(len(s)) | O(len(s)) | exact | O(len(s)) | unverifiable | top |  | ru.wikibooks.org/wiki/Реализации_алгоритмов (strings, bound reference) |
+| stringops.Reverse | O(len(s)) | O(len(s)) | exact | O(len(s)) | O(len(s)) | exact |  | ru.wikibooks.org/wiki/Реализации_алгоритмов (strings, bound reference) |
 | stringops.RunLengthEncode | O(len(s)) | unverifiable | top | O(len(s)) | unverifiable | top | loop | en.wikipedia.org/wiki/Run-length_encoding |
 | structures.BuildHeap | O(len(h)) | unverifiable | top | O(1) | O(len(h)) | loose | call | CLRS §6.3 (BUILD-MAX-HEAP is Θ(n)) |
 | structures.DSUFind | O(len(parent)) | unverifiable | top | O(1) | O(1) | exact | loop | CLRS §21.2 (linked-list forests, un-amortized worst case) |

@@ -3,11 +3,43 @@ package costtable
 
 import (
 	"go/types"
+	"sync"
 
 	"github.com/RomanAgaltsev/bigo/internal/bound"
+	"github.com/RomanAgaltsev/bigo/internal/fieldpath"
 	"github.com/RomanAgaltsev/bigo/internal/size"
+	"github.com/RomanAgaltsev/bigo/internal/sizefacts"
 	"golang.org/x/tools/go/ssa"
 )
+
+// stabMemo caches fieldpath.Stability per function. Entries are immutable and
+// live for the process — acceptable for a batch CLI/analyzer run; a daemon-mode
+// consumer must revisit (spec §5).
+var stabMemo sync.Map // *ssa.Function -> *fieldpath.Stability
+
+func stabilityOf(fn *ssa.Function) *fieldpath.Stability {
+	if s, ok := stabMemo.Load(fn); ok {
+		return s.(*fieldpath.Stability)
+	}
+	s, _ := stabMemo.LoadOrStore(fn, fieldpath.Analyze(fn))
+	return s.(*fieldpath.Stability)
+}
+
+// argExtent resolves an argument's size: parameters first (size.Value,
+// unchanged behavior), then locally-derived values through sizefacts.ArgSize
+// in the argument's enclosing function. Constants, globals, and builtins have
+// no Parent and stay unresolved.
+func argExtent(v ssa.Value) (bound.Var, bool) {
+	if av, ok := size.Value(v); ok {
+		return av, true
+	}
+	fn := v.Parent()
+	if fn == nil {
+		return "", false
+	}
+	f := &sizefacts.Facts{Stab: stabilityOf(fn)}
+	return f.ArgSize(v)
+}
 
 // Lookup returns the cost of a builtin or curated stdlib call.
 // ok=false means the callee is not in the table.
@@ -15,34 +47,63 @@ func Lookup(c *ssa.CallCommon) (bound.Bound, bool) {
 	if b, ok := c.Value.(*ssa.Builtin); ok {
 		return builtinCost(b.Name(), c.Args)
 	}
-	callee := c.StaticCallee()
-	if callee == nil {
+	key, ok := calleeKey(c)
+	if !ok {
 		return bound.Bound{}, false
-	}
-	// An instantiation of a generic function has a nil Pkg and a name like
-	// "Contains[[]int, int]"; its origin carries the package and plain name.
-	if orig := callee.Origin(); orig != nil {
-		callee = orig
-	}
-	if callee.Pkg == nil || callee.Pkg.Pkg == nil {
-		return bound.Bound{}, false
-	}
-	key := callee.Pkg.Pkg.Path() + "." + callee.Name()
-	// A method keys on its receiver-qualified name ("(*sync.Mutex).Lock"), so
-	// that same-named methods on different types in one package — Mutex.Lock and
-	// RWMutex.Lock — cannot collide on a bare "sync.Lock".
-	if callee.Signature.Recv() != nil {
-		obj, ok := callee.Object().(*types.Func)
-		if !ok {
-			return bound.Bound{}, false
-		}
-		key = obj.FullName()
 	}
 	fn, ok := stdlib[key]
 	if !ok {
 		return bound.Bound{}, false
 	}
 	return fn(c.Args), true
+}
+
+// calleeKey resolves the cost-table key of a non-builtin call: the package-
+// qualified callee name, or the receiver-qualified name for methods (so
+// Mutex.Lock and RWMutex.Lock cannot collide on a bare "sync.Lock"). An
+// instantiation of a generic function has a nil Pkg and a name like
+// "Contains[[]int, int]"; its origin carries the package and plain name.
+func calleeKey(c *ssa.CallCommon) (string, bool) {
+	callee := c.StaticCallee()
+	if callee == nil {
+		return "", false
+	}
+	if orig := callee.Origin(); orig != nil {
+		callee = orig
+	}
+	if callee.Pkg == nil || callee.Pkg.Pkg == nil {
+		return "", false
+	}
+	key := callee.Pkg.Pkg.Path() + "." + callee.Name()
+	if callee.Signature.Recv() != nil {
+		obj, ok := callee.Object().(*types.Func)
+		if !ok {
+			return "", false
+		}
+		key = obj.FullName()
+	}
+	return key, true
+}
+
+// Priced reports whether the callee is in the cost table — a pure membership
+// test for diagnostics, computing no argument sizes. The engine uses it to
+// distinguish "the callee has no cost" from "the callee is priced but the
+// ARGUMENT SIZE is unresolved" — misreported as the former through v1.28.1
+// (the cause text lied on MergeSort's copy and chaotic's specSignature).
+func Priced(c *ssa.CallCommon) bool {
+	if b, ok := c.Value.(*ssa.Builtin); ok {
+		switch b.Name() {
+		case "len", "cap", "append", "delete", "close", "panic", "recover", "print", "println", "new", "copy":
+			return true
+		}
+		return false
+	}
+	key, ok := calleeKey(c)
+	if !ok {
+		return false
+	}
+	_, ok = stdlib[key]
+	return ok
 }
 
 func builtinCost(name string, args []ssa.Value) (bound.Bound, bool) {
@@ -62,7 +123,7 @@ func linear(args []ssa.Value, i int) bound.Bound {
 	if i >= len(args) {
 		return bound.Top()
 	}
-	if v, ok := size.Value(args[i]); ok {
+	if v, ok := argExtent(args[i]); ok {
 		return bound.Of(bound.Term(v))
 	}
 	return bound.Top()
@@ -73,7 +134,7 @@ func nLogN(args []ssa.Value, i int) bound.Bound {
 	if i >= len(args) {
 		return bound.Top()
 	}
-	if v, ok := size.Value(args[i]); ok {
+	if v, ok := argExtent(args[i]); ok {
 		return bound.Of(bound.Term(v).Mul(bound.LogOf(v)))
 	}
 	return bound.Top()
@@ -84,7 +145,7 @@ func logN(args []ssa.Value, i int) bound.Bound {
 	if i >= len(args) {
 		return bound.Top()
 	}
-	if v, ok := size.Value(args[i]); ok {
+	if v, ok := argExtent(args[i]); ok {
 		return bound.Of(bound.LogOf(v))
 	}
 	return bound.Top()
@@ -95,11 +156,11 @@ func prodOf(args []ssa.Value, i, j int) bound.Bound {
 	if i >= len(args) || j >= len(args) {
 		return bound.Top()
 	}
-	vi, ok := size.Value(args[i])
+	vi, ok := argExtent(args[i])
 	if !ok {
 		return bound.Top()
 	}
-	vj, ok := size.Value(args[j])
+	vj, ok := argExtent(args[j])
 	if !ok {
 		return bound.Top()
 	}

@@ -1,9 +1,9 @@
 {
-  "total": 207,
-  "bounded": 117,
-  "coverage_pct": "56.5",
+  "total": 211,
+  "bounded": 119,
+  "coverage_pct": "56.4",
   "by_cause": {
-    "call": 54,
+    "call": 56,
     "go": 3,
     "irreducible": 1,
     "loop": 24,
@@ -23,8 +23,8 @@
       "bounded": 4
     },
     "edge": {
-      "total": 24,
-      "bounded": 9
+      "total": 28,
+      "bounded": 11
     },
     "fieldsize": {
       "total": 15,
@@ -379,6 +379,30 @@
       "func": "ParamStart",
       "verdict": "unverifiable",
       "cause": "loop"
+    },
+    {
+      "pkg": "edge",
+      "func": "SortAppendTwo",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "edge",
+      "func": "SortCapSlice",
+      "verdict": "bounded",
+      "bound": "O(cap(s) log(cap(s)))"
+    },
+    {
+      "pkg": "edge",
+      "func": "SortEmptyMake",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "edge",
+      "func": "SortLocalCopy",
+      "verdict": "bounded",
+      "bound": "O(len(s) log(len(s)))"
     },
     {
       "pkg": "edge",
