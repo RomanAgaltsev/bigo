@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.29.0](https://github.com/RomanAgaltsev/bigo/compare/v1.28.1...v1.29.0) (2026-07-18)
+
+
+### Features
+
+* shared size resolver — cost table + space walk resolve locally-derived argument sizes ([#93](https://github.com/RomanAgaltsev/bigo/issues/93)) ([fef7f31](https://github.com/RomanAgaltsev/bigo/commit/fef7f31e2efe187c1ca054bb04111d3d4225e71c))
+
 ## [1.28.1](https://github.com/RomanAgaltsev/bigo/compare/v1.28.0...v1.28.1) (2026-07-17)
 
 
