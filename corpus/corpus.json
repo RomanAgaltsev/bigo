@@ -1,13 +1,13 @@
 {
-  "total": 55,
+  "total": 56,
   "time_by_status": {
-    "exact": 22,
+    "exact": 23,
     "top": 33
   },
   "space_by_status": {
-    "exact": 34,
+    "exact": 39,
     "loose": 2,
-    "top": 19
+    "top": 15
   },
   "per_family": {
     "dandc": 6,
@@ -15,7 +15,7 @@
     "matrix": 5,
     "numeric": 7,
     "searching": 5,
-    "sorting": 10,
+    "sorting": 11,
     "stringops": 8,
     "structures": 8
   },
@@ -166,8 +166,8 @@
       "time_got": "O(len(a)^3)",
       "time_status": "exact",
       "space_pin": "O(len(a)^2)",
-      "space_got": "unverifiable",
-      "space_status": "top",
+      "space_got": "O(len(a)^2)",
+      "space_status": "exact",
       "source": "CLRS §4.2 (naive); en.wikipedia.org/wiki/Matrix_multiplication_algorithm"
     },
     {
@@ -281,8 +281,8 @@
       "time_got": "unverifiable",
       "time_status": "top",
       "space_pin": "O(n)",
-      "space_got": "unverifiable",
-      "space_status": "top",
+      "space_got": "O(n)",
+      "space_status": "exact",
       "cause": "loop",
       "source": "CLRS ex. 31-3; en.wikipedia.org/wiki/Sieve_of_Eratosthenes (conservative pin)"
     },
@@ -371,8 +371,8 @@
       "time_got": "unverifiable",
       "time_status": "top",
       "space_pin": "O(len(s))",
-      "space_got": "unverifiable",
-      "space_status": "top",
+      "space_got": "O(len(s))",
+      "space_status": "exact",
       "cause": "loop",
       "source": "CLRS §8.4 (worst case); en.wikipedia.org/wiki/Bucket_sort"
     },
@@ -471,6 +471,17 @@
       "source": "en.wikipedia.org/wiki/Shellsort (Shell's sequence, worst case)"
     },
     {
+      "pkg": "sorting",
+      "func": "SortedCopy",
+      "time_pin": "O(len(s) log(len(s)))",
+      "time_got": "O(len(s) log(len(s)))",
+      "time_status": "exact",
+      "space_pin": "O(len(s))",
+      "space_got": "unverifiable",
+      "space_status": "top",
+      "source": "CLRS §2.3 (comparison-sort bound); pkg.go.dev/slices#Sort (O(n log n) documented)"
+    },
+    {
       "pkg": "stringops",
       "func": "AreAnagrams",
       "time_pin": "O(len(a) + len(b))",
@@ -511,8 +522,8 @@
       "time_got": "unverifiable",
       "time_status": "top",
       "space_pin": "O(len(pat))",
-      "space_got": "unverifiable",
-      "space_status": "top",
+      "space_got": "O(len(pat))",
+      "space_status": "exact",
       "cause": "loop",
       "source": "CLRS §32.4; en.wikipedia.org/wiki/Knuth%E2%80%93Morris%E2%80%93Pratt_algorithm"
     },
@@ -547,8 +558,8 @@
       "time_got": "O(len(s))",
       "time_status": "exact",
       "space_pin": "O(len(s))",
-      "space_got": "unverifiable",
-      "space_status": "top",
+      "space_got": "O(len(s))",
+      "space_status": "exact",
       "source": "ru.wikibooks.org/wiki/Реализации_алгоритмов (strings, bound reference)"
     },
     {
