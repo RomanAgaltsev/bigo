@@ -27,11 +27,3 @@ func topLoop(n, j int) int {
 	}
 	return s
 }
-
-func copyToLocal(s []int) []int {
-	// Priced builtin with a locally-derived argument: ⊤ through v1.28.1,
-	// bounded by the shared-resolver slice.
-	out := make([]int, len(s))
-	copy(out, s)
-	return out
-}
