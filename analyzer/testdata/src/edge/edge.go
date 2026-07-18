@@ -1,5 +1,7 @@
 package edge
 
+import "slices"
+
 // Shapes that must verify (Within is silent — any diagnostic fails the test).
 
 //bigo:max O(n)
@@ -377,4 +379,51 @@ func GuardFalseExits(a []int) int {
 		i++
 	}
 	return t
+}
+
+// ---- Sized cost-table arguments (shared-resolver slice, spec §8) ----
+//
+// The cost table now sizes locally-derived arguments via sizefacts. These pins
+// hold the UPPER-bound direction at the call-cost layer: a Within on any of
+// the three unverifiable shapes below is a wrong-direction resolution.
+
+// Positive control: the append-copy idiom resolves and verifies silently.
+//
+//bigo:max O(n log n) where n=len(s)
+func SortLocalCopy(s []int) []int {
+	out := append([]int(nil), s...)
+	slices.Sort(out)
+	return out
+}
+
+// make([]T, 0, cap) has LENGTH zero; resolving the sort by the CAP would be
+// the wrong direction. The engine cannot yet prove the O(1) truth (constant
+// extents are unsupported), so the pin holds "not Within" — unverifiable.
+//
+//bigo:max O(1)
+func SortEmptyMake(s []int) []int { // want `cannot verify budget O\(1\)`
+	out := make([]int, 0, len(s))
+	slices.Sort(out)
+	return out
+}
+
+// s[0:cap(s)] can exceed len(s): costing the sort by len(s) would be a wrong
+// bound. The sound resolution is the cap-derived extent, which cannot verify
+// a len-based budget.
+//
+//bigo:max O(n log n) where n=len(s)
+func SortCapSlice(s []int) []int { // want `cannot verify budget`
+	out := s[0:cap(s)]
+	slices.Sort(out)
+	return out
+}
+
+// len(append(a, b...)) is len(a)+len(b) — inexpressible as one extent, so it
+// must stay unresolved. Costing by len(b) alone would under-approximate.
+//
+//bigo:max O(n log n) where n=len(b)
+func SortAppendTwo(a, b []int) []int { // want `cannot verify budget`
+	out := append(a, b...)
+	slices.Sort(out)
+	return out
 }
