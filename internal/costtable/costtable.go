@@ -3,11 +3,43 @@ package costtable
 
 import (
 	"go/types"
+	"sync"
 
 	"github.com/RomanAgaltsev/bigo/internal/bound"
+	"github.com/RomanAgaltsev/bigo/internal/fieldpath"
 	"github.com/RomanAgaltsev/bigo/internal/size"
+	"github.com/RomanAgaltsev/bigo/internal/sizefacts"
 	"golang.org/x/tools/go/ssa"
 )
+
+// stabMemo caches fieldpath.Stability per function. Entries are immutable and
+// live for the process — acceptable for a batch CLI/analyzer run; a daemon-mode
+// consumer must revisit (spec §5).
+var stabMemo sync.Map // *ssa.Function -> *fieldpath.Stability
+
+func stabilityOf(fn *ssa.Function) *fieldpath.Stability {
+	if s, ok := stabMemo.Load(fn); ok {
+		return s.(*fieldpath.Stability)
+	}
+	s, _ := stabMemo.LoadOrStore(fn, fieldpath.Analyze(fn))
+	return s.(*fieldpath.Stability)
+}
+
+// argExtent resolves an argument's size: parameters first (size.Value,
+// unchanged behavior), then locally-derived values through sizefacts.ArgSize
+// in the argument's enclosing function. Constants, globals, and builtins have
+// no Parent and stay unresolved.
+func argExtent(v ssa.Value) (bound.Var, bool) {
+	if av, ok := size.Value(v); ok {
+		return av, true
+	}
+	fn := v.Parent()
+	if fn == nil {
+		return "", false
+	}
+	f := &sizefacts.Facts{Stab: stabilityOf(fn)}
+	return f.ArgSize(v)
+}
 
 // Lookup returns the cost of a builtin or curated stdlib call.
 // ok=false means the callee is not in the table.
@@ -62,7 +94,7 @@ func linear(args []ssa.Value, i int) bound.Bound {
 	if i >= len(args) {
 		return bound.Top()
 	}
-	if v, ok := size.Value(args[i]); ok {
+	if v, ok := argExtent(args[i]); ok {
 		return bound.Of(bound.Term(v))
 	}
 	return bound.Top()
@@ -73,7 +105,7 @@ func nLogN(args []ssa.Value, i int) bound.Bound {
 	if i >= len(args) {
 		return bound.Top()
 	}
-	if v, ok := size.Value(args[i]); ok {
+	if v, ok := argExtent(args[i]); ok {
 		return bound.Of(bound.Term(v).Mul(bound.LogOf(v)))
 	}
 	return bound.Top()
@@ -84,7 +116,7 @@ func logN(args []ssa.Value, i int) bound.Bound {
 	if i >= len(args) {
 		return bound.Top()
 	}
-	if v, ok := size.Value(args[i]); ok {
+	if v, ok := argExtent(args[i]); ok {
 		return bound.Of(bound.LogOf(v))
 	}
 	return bound.Top()
@@ -95,11 +127,11 @@ func prodOf(args []ssa.Value, i, j int) bound.Bound {
 	if i >= len(args) || j >= len(args) {
 		return bound.Top()
 	}
-	vi, ok := size.Value(args[i])
+	vi, ok := argExtent(args[i])
 	if !ok {
 		return bound.Top()
 	}
-	vj, ok := size.Value(args[j])
+	vj, ok := argExtent(args[j])
 	if !ok {
 		return bound.Top()
 	}
