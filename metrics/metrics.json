@@ -1,12 +1,12 @@
 {
-  "total": 211,
-  "bounded": 119,
-  "coverage_pct": "56.4",
+  "total": 213,
+  "bounded": 120,
+  "coverage_pct": "56.3",
   "by_cause": {
     "call": 56,
     "go": 3,
     "irreducible": 1,
-    "loop": 24,
+    "loop": 25,
     "nobody": 8
   },
   "per_package": {
@@ -23,8 +23,8 @@
       "bounded": 4
     },
     "edge": {
-      "total": 28,
-      "bounded": 11
+      "total": 30,
+      "bounded": 12
     },
     "fieldsize": {
       "total": 15,
@@ -274,6 +274,12 @@
     },
     {
       "pkg": "edge",
+      "func": "CarriedEdgeNotInit",
+      "verdict": "unverifiable",
+      "cause": "loop"
+    },
+    {
+      "pkg": "edge",
       "func": "ClosedBisectionHiEqMid",
       "verdict": "unverifiable",
       "cause": "loop"
@@ -379,6 +385,12 @@
       "func": "ParamStart",
       "verdict": "unverifiable",
       "cause": "loop"
+    },
+    {
+      "pkg": "edge",
+      "func": "SequentialSharedIndex",
+      "verdict": "bounded",
+      "bound": "O(len(s))"
     },
     {
       "pkg": "edge",

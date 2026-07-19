@@ -15,17 +15,17 @@ composition, not a percentage.
 
 | Status | Count |
 |---|---|
-| exact | 23 |
+| exact | 24 |
 | loose | 0 |
-| top | 33 |
+| top | 32 |
 
 ## Space statuses (pinned entries only)
 
 | Status | Count |
 |---|---|
-| exact | 39 |
+| exact | 40 |
 | loose | 2 |
-| top | 15 |
+| top | 14 |
 
 ## Per family
 
@@ -44,7 +44,7 @@ composition, not a percentage.
 
 | Function | Time pin | Time got | Status | Space pin | Space got | Status | Cause | Source |
 |---|---|---|---|---|---|---|---|---|
-| dandc.CountInversions | O(len(s) log(len(s))) | unverifiable | top | O(len(s)) | unverifiable | top | call | CLRS problem 2-4; en.wikipedia.org/wiki/Counting_inversions |
+| dandc.CountInversions | O(len(s) log(len(s))) | O(len(s) log(len(s))) | exact | O(len(s)) | O(len(s)) | exact |  | CLRS problem 2-4; en.wikipedia.org/wiki/Counting_inversions |
 | dandc.MajorityDC | O(len(s) log(len(s))) | O(len(s) log(len(s))) | exact | O(log(len(s))) | O(log(len(s))) | exact |  | CLRS-style D&C; en.wikipedia.org/wiki/Boyer%E2%80%93Moore_majority_vote_algorithm (D&C alternative, bound reference) |
 | dandc.MaxMinDC | O(len(s)) | O(len(s)) | exact | O(log(len(s))) | O(log(len(s))) | exact |  | www.geeksforgeeks.org/maximum-and-minimum-in-an-array/ (tournament method, bound reference) |
 | dandc.MaxSubarrayDC | O(len(s) log(len(s))) | unverifiable | top | O(log(len(s))) | unverifiable | top | call | CLRS §4.1; en.wikipedia.org/wiki/Maximum_subarray_problem |

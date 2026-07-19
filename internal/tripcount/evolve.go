@@ -92,15 +92,28 @@ func mulOfPhi(v ssa.Value) (*ssa.Phi, bool) {
 	return nil, false
 }
 
-// isIncreasingInductionPhi: every edge is a positive-constant step or has a
-// provable constant lower bound; at least one of each. A parameter init has
-// no constant lower bound, so B1's `for i := m; i < n` stays rejected.
+// isIncreasingInductionPhi: every edge is a positive-constant step or a
+// genuine init — an edge entering from OUTSIDE the loop with a provable
+// constant lower bound; at least one of each. Two guards are load-bearing:
+//
+//   - Edge SOURCE: a loop-carried edge that happens to be lower-boundable
+//     (the &&-lowered latch phi, where the pointer can stall) is NOT an init —
+//     R1's "strictly increases every iteration" would be false. Init-ness is a
+//     structural fact about the CFG edge, not a resolvability fact about the
+//     value. Without this the two-pointer no-fire pins bound a loop neither
+//     pointer terminates.
+//   - Lower bound: a parameter init still rejects (no provable sign, B1's
+//     `for i := m; i < n`); a derived init >= 0 passes, giving
+//     trips <= upper(bound) - init <= upper(bound).
 func isIncreasingInductionPhi(sh *shape, phi *ssa.Phi) bool {
 	hasStep, hasInit := false, false
-	for _, e := range phi.Edges {
+	for k, e := range phi.Edges {
 		if sizefacts.IsPositiveStep(phi, e) {
 			hasStep = true
 			continue
+		}
+		if sh.loop.Blocks[phi.Block().Preds[k]] {
+			return false
 		}
 		if _, ok := sh.f.LowerBoundConst(e, 0); !ok {
 			return false

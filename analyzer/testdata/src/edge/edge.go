@@ -427,3 +427,49 @@ func SortAppendTwo(a, b []int) []int { // want `cannot verify budget`
 	slices.Sort(out)
 	return out
 }
+
+// ---- Non-constant loop inits (recurrence slice, spec §5) ----
+//
+// R1 now accepts an init that is non-constant but provably >= 0 AND enters
+// from outside the loop. The two pins hold the two halves of that condition.
+
+// Positive control: two sequential loops sharing an index — the second loop's
+// init is the first's exit value, >= 0 by the coinductive invariant. Total
+// O(len(s)); verifies silently.
+//
+//bigo:max O(n) where n=len(s)
+func SequentialSharedIndex(s []int) int {
+	i, t := 0, 0
+	for i < len(s) {
+		i++
+		t++
+	}
+	for i < len(s) {
+		i++
+		t++
+	}
+	return t
+}
+
+// A loop-carried latch phi that is lower-boundable must NOT be read as an
+// init: on the stalling path neither pointer advances, so len(a) alone does
+// not bound the loop. The probe's first B2 attempt read the carried edge as an
+// init and emitted exactly O(len(a)) — caught by R7's unit no-fire pin; this
+// is the analyzer-level twin, budgeted at precisely that wrong bound.
+//
+//bigo:max O(n) where n=len(a)
+func CarriedEdgeNotInit(a, b []int) int { // want `cannot verify budget`
+	i, j, t := 0, 0, 0
+	for i < len(a) && j < len(b) {
+		if a[i] < 0 {
+			t++
+			continue
+		}
+		if a[i] <= b[j] {
+			i++
+		} else {
+			j++
+		}
+	}
+	return t
+}
