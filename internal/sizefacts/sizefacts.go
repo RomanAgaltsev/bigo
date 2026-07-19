@@ -91,7 +91,57 @@ type Facts struct {
 // LowerBoundConst returns a provable constant lower bound on v's value at
 // every evaluation. ANY constant suffices: asymptotically a constant offset
 // vanishes (the engine already accepts `for i := -5; i < n`).
+//
+// The strict path runs FIRST and is the only source of exact values; the
+// geometric rules' floor checks depend on that ordering (a fabricated 0 makes
+// `i *= 2` look like a fixed point). The fallback proves only >= 0.
 func (f *Facts) LowerBoundConst(v ssa.Value, depth int) (int64, bool) {
+	if lo, ok := f.lowerBoundConstStrict(v, depth); ok {
+		return lo, true
+	}
+	if nonNegInvariant(v, map[ssa.Value]bool{}) {
+		return 0, true
+	}
+	return 0, false
+}
+
+// nonNegInvariant reports whether v is provably >= 0 by coinduction: every
+// producer in the phi/ADD network is a constant >= 0 or adds a non-negative
+// constant to a value of the same network. A cycle member is assumed
+// non-negative while its producers are checked; if every entry into the cycle
+// is >= 0 and every in-cycle step adds >= 0, the invariant holds at every
+// execution step. Termination is the seen set, not a depth cap — the
+// &&-lowered loop's two-phi cycle is exactly what a depth cap kills.
+func nonNegInvariant(v ssa.Value, seen map[ssa.Value]bool) bool {
+	if seen[v] {
+		return true
+	}
+	seen[v] = true
+	switch t := v.(type) {
+	case *ssa.Const:
+		k, ok := ConstIntV(t)
+		return ok && k >= 0
+	case *ssa.Phi:
+		for _, e := range t.Edges {
+			if !nonNegInvariant(e, seen) {
+				return false
+			}
+		}
+		return true
+	case *ssa.BinOp:
+		if t.Op == token.ADD {
+			if c, ok := ConstIntV(t.Y); ok && c >= 0 {
+				return nonNegInvariant(t.X, seen)
+			}
+			if c, ok := ConstIntV(t.X); ok && c >= 0 {
+				return nonNegInvariant(t.Y, seen)
+			}
+		}
+	}
+	return false
+}
+
+func (f *Facts) lowerBoundConstStrict(v ssa.Value, depth int) (int64, bool) {
 	if depth > maxFactsDepth {
 		return 0, false
 	}
@@ -357,7 +407,7 @@ func (f *Facts) lenExtent(v ssa.Value, depth int) (bound.Var, bool) {
 			// len(append(a, b...)) == len(a) + len(b). Only expressible as a
 			// single extent when len(a) is constant; UpperExtent returns one
 			// variable, so the general case is ⊤.
-			if !constLen(t.Call.Args[0]) {
+			if !ZeroLen(t.Call.Args[0]) {
 				return "", false
 			}
 			return f.lenOf(t.Call.Args[1], depth+1)
@@ -403,10 +453,12 @@ func (f *Facts) lenOf(v ssa.Value, depth int) (bound.Var, bool) {
 	return f.lenExtent(v, depth)
 }
 
-// constLen reports whether len(v) is provably a compile-time constant — the
-// gate for the append copy idiom. A nil slice and make([]T, 0) qualify;
-// everything else is not proven and therefore does not.
-func constLen(v ssa.Value) bool {
+// ZeroLen reports whether len(v) is provably ZERO — the gate for the append
+// copy idiom, exported for the recurrence classifier's unwrap (which needs
+// len(append(dst, x...)) == len(x) exactly, an equality only a zero-length
+// dst provides). A nil slice constant and make([]T, 0, …) qualify; everything
+// else is not proven and therefore does not.
+func ZeroLen(v ssa.Value) bool {
 	switch t := v.(type) {
 	case *ssa.Const:
 		return t.Value == nil // nil slice literal: len 0
