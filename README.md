@@ -477,10 +477,15 @@ The corpus is **not** a coverage metric. Read composition, not a percentage.
 
 Complete: intraprocedural engine, cost tables, acyclic interprocedural
 summaries, generics at instantiation, golangci-lint plugin, size-measure
-recurrence solving (subtractive / Master / Akra–Bazzi).
-The **analysis surface is pre-stable**: verdicts may
-change between minor versions as inference improves. Design-complete but not yet
-built: interface resolution, space complexity.
+recurrence solving (subtractive / Master / Akra–Bazzi), space complexity
+(`//bigo:space`), mutual recursion, function-value costs, code-smell rules,
+and the ecosystem commands (`bigo json`, `bigo badge`, `bigo diff`).
+The **analysis surface is pre-stable**: verdicts may change between minor
+versions as inference improves.
+
+Permanently unverifiable by design (annotate with `//bigo:cost` or
+`//bigo:ignore`): unannotated interface dispatch, worklist loops, pointer-chasing
+recursion, concurrency, and `reflect`/`unsafe`.
 
 ## License
 
