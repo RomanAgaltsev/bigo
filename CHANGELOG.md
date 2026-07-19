@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.30.0](https://github.com/RomanAgaltsev/bigo/compare/v1.29.0...v1.30.0) (2026-07-19)
+
+
+### Features
+
+* recurrence slice — append-copy classification and non-constant loop inits ([#95](https://github.com/RomanAgaltsev/bigo/issues/95)) ([866c68b](https://github.com/RomanAgaltsev/bigo/commit/866c68b0eb30cccd55c132bb5ab86817ce83f001))
+
 ## [1.29.0](https://github.com/RomanAgaltsev/bigo/compare/v1.28.1...v1.29.0) (2026-07-18)
 
 
