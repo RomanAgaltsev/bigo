@@ -207,6 +207,17 @@ func sliceStep(arg ssa.Value, p *ssa.Parameter) sizeStep {
 	if arg == ssa.Value(p) {
 		return sizeStep{kind: stepSame}
 	}
+	// The append-copy idiom: len(append(zero, x...)) == len(x) EXACTLY, so the
+	// copy's step relation to p is x's. The zero-length gate is load-bearing —
+	// a decrease claim needs that equality, and a non-zero dst (or the growth
+	// append(a, b...)) must stay stepBad.
+	if c, ok := arg.(*ssa.Call); ok {
+		if b, isBuiltin := c.Call.Value.(*ssa.Builtin); isBuiltin && b.Name() == "append" && len(c.Call.Args) == 2 {
+			if sizefacts.ZeroLen(c.Call.Args[0]) {
+				return sliceStep(c.Call.Args[1], p)
+			}
+		}
+	}
 	sl, ok := arg.(*ssa.Slice)
 	if !ok || sl.X != ssa.Value(p) {
 		return sizeStep{kind: stepBad}
