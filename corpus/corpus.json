@@ -1,13 +1,13 @@
 {
   "total": 56,
   "time_by_status": {
-    "exact": 23,
-    "top": 33
+    "exact": 24,
+    "top": 32
   },
   "space_by_status": {
-    "exact": 39,
+    "exact": 40,
     "loose": 2,
-    "top": 15
+    "top": 14
   },
   "per_family": {
     "dandc": 6,
@@ -24,12 +24,11 @@
       "pkg": "dandc",
       "func": "CountInversions",
       "time_pin": "O(len(s) log(len(s)))",
-      "time_got": "unverifiable",
-      "time_status": "top",
+      "time_got": "O(len(s) log(len(s)))",
+      "time_status": "exact",
       "space_pin": "O(len(s))",
-      "space_got": "unverifiable",
-      "space_status": "top",
-      "cause": "call",
+      "space_got": "O(len(s))",
+      "space_status": "exact",
       "source": "CLRS problem 2-4; en.wikipedia.org/wiki/Counting_inversions"
     },
     {
