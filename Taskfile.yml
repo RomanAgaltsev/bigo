@@ -6,6 +6,11 @@ tasks:
     cmds:
       - go test ./internal/metrics/ -run TestGolden -update
 
+  survey:
+    desc: Run the real-world survey over survey/targets.json (MANUAL — not a CI gate)
+    cmds:
+      - go test ./internal/survey/ -run TestSurvey -update -timeout 60m -v
+
   corpus:
     desc: Regenerate the canonical-corpus oracle golden (corpus/corpus.json + corpus/CORPUS.md)
     cmds:
@@ -37,6 +42,11 @@ tasks:
     desc: Tidy modules
     cmds:
       - go mod tidy
+  security:
+    desc: Run gosec with the same arguments as the security workflow
+    cmds:
+      - gosec -exclude-dir=testdata ./...
+
   ci:
-    desc: Full local CI
-    deps: [tidy, lint, test]
+    desc: Full local CI (tidy, lint, security, test)
+    deps: [tidy, lint, security, test]
