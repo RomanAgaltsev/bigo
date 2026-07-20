@@ -299,4 +299,113 @@ var stdlib = map[string]func(args []ssa.Value) bound.Bound{
 	"(*sync.WaitGroup).Add":    constCost,
 	"(*sync.WaitGroup).Done":   constCost,
 	"(*sync.WaitGroup).Wait":   constCost,
+
+	// --- Survey-ranked entries (v1.35.0) ---
+	//
+	// Added because the v1.34.0 real-world survey measured them blocking real
+	// Go across 12 repositories. Each carries its bound below. What is NOT here
+	// matters as much as what is: the fmt family (8,367 sites), encoding/json,
+	// and errors.Is are deliberately absent because they have no sound bound —
+	// see the block after this map, and the no-fire pins in
+	// stdlib_survey_test.go.
+
+	// errors.New allocates a struct holding the string; it does not copy it.
+	"errors.New": constCost,
+
+	// One clock read; Since is Now() minus its argument.
+	"time.Now":   constCost,
+	"time.Since": constCost,
+	"time.Until": constCost,
+
+	// Both return a package-level singleton.
+	"context.Background": constCost,
+	"context.TODO":       constCost,
+
+	// Integer formatting is CONSTANT-bounded, not linear in the value: at most
+	// 20 digits for an int64 in base 10, and at most 64 in base 2.
+	"strconv.Itoa":       constCost,
+	"strconv.FormatInt":  constCost,
+	"strconv.FormatUint": constCost,
+	"strconv.FormatBool": constCost,
+
+	// Parsing scans the string.
+	"strconv.Atoi":      func(a []ssa.Value) bound.Bound { return linear(a, 0) },
+	"strconv.ParseInt":  func(a []ssa.Value) bound.Bound { return linear(a, 0) },
+	"strconv.ParseUint": func(a []ssa.Value) bound.Bound { return linear(a, 0) },
+	"strconv.ParseBool": func(a []ssa.Value) bound.Bound { return linear(a, 0) },
+
+	// Bit reinterpretation.
+	"math.Float64bits":     constCost,
+	"math.Float64frombits": constCost,
+	"math.Float32bits":     constCost,
+	"math.Float32frombits": constCost,
+
+	// One atomic instruction each. Same argument as the sync block above:
+	// contention is wall-clock, not work.
+	"sync/atomic.LoadInt32":             constCost,
+	"sync/atomic.LoadInt64":             constCost,
+	"sync/atomic.LoadUint32":            constCost,
+	"sync/atomic.LoadUint64":            constCost,
+	"sync/atomic.LoadPointer":           constCost,
+	"sync/atomic.StoreInt32":            constCost,
+	"sync/atomic.StoreInt64":            constCost,
+	"sync/atomic.StoreUint32":           constCost,
+	"sync/atomic.StoreUint64":           constCost,
+	"sync/atomic.AddInt32":              constCost,
+	"sync/atomic.AddInt64":              constCost,
+	"sync/atomic.AddUint32":             constCost,
+	"sync/atomic.AddUint64":             constCost,
+	"sync/atomic.SwapInt32":             constCost,
+	"sync/atomic.SwapInt64":             constCost,
+	"sync/atomic.SwapUint32":            constCost,
+	"sync/atomic.SwapUint64":            constCost,
+	"sync/atomic.CompareAndSwapInt32":   constCost,
+	"sync/atomic.CompareAndSwapInt64":   constCost,
+	"sync/atomic.CompareAndSwapUint32":  constCost,
+	"sync/atomic.CompareAndSwapUint64":  constCost,
+	"sync/atomic.CompareAndSwapPointer": constCost,
+
+	// Does not return.
+	"os.Exit": constCost,
+
+	// reflect: constant work on the interface header.
+	//
+	// ROADMAP §2 lists reflect as permanent annotate-or-trust. That is about
+	// inferring THROUGH reflection — bigo cannot know what a reflected call
+	// does — and it does NOT mean these operations perform unbounded work.
+	// Pricing them claims nothing about the program's use of reflection.
+	//
+	// Deliberately absent: (reflect.Value).Call invokes arbitrary code, and
+	// .Interface copies a value of size unknown at this level. Both are pinned
+	// ⊤ in stdlib_survey_test.go.
+	"reflect.TypeOf":           constCost,
+	"reflect.ValueOf":          constCost,
+	"(reflect.Value).Kind":     constCost,
+	"(reflect.Value).Type":     constCost,
+	"(reflect.Value).IsValid":  constCost,
+	"(reflect.Value).IsNil":    constCost,
+	"(reflect.Value).Len":      constCost,
+	"(reflect.Type).Kind":      constCost,
+	"(reflect.Type).Name":      constCost,
+	"(reflect.Type).String":    constCost,
+	"(reflect.Value).NumField": constCost,
+	"(reflect.Type).NumField":  constCost,
+	"(reflect.Value).CanSet":   constCost,
+	"(reflect.Value).CanAddr":  constCost,
+	"(reflect.Value).IsZero":   constCost,
+
+	// O(len(arg 0)) — the strings.HasPrefix / slices.Equal precedents.
+	"strings.HasSuffix":  func(a []ssa.Value) bound.Bound { return linear(a, 0) },
+	"strings.TrimPrefix": func(a []ssa.Value) bound.Bound { return linear(a, 0) },
+	"strings.TrimSuffix": func(a []ssa.Value) bound.Bound { return linear(a, 0) },
+	"strings.Trim":       func(a []ssa.Value) bound.Bound { return linear(a, 0) },
+	"strings.TrimLeft":   func(a []ssa.Value) bound.Bound { return linear(a, 0) },
+	"strings.TrimRight":  func(a []ssa.Value) bound.Bound { return linear(a, 0) },
+	"strings.LastIndex":  func(a []ssa.Value) bound.Bound { return linear(a, 0) },
+	"strings.IndexByte":  func(a []ssa.Value) bound.Bound { return linear(a, 0) },
+	"strings.SplitN":     func(a []ssa.Value) bound.Bound { return linear(a, 0) },
+	"strings.Title":      func(a []ssa.Value) bound.Bound { return linear(a, 0) },
+	"bytes.Equal":        func(a []ssa.Value) bound.Bound { return linear(a, 0) },
+	"bytes.HasPrefix":    func(a []ssa.Value) bound.Bound { return linear(a, 0) },
+	"bytes.HasSuffix":    func(a []ssa.Value) bound.Bound { return linear(a, 0) },
 }
