@@ -473,3 +473,130 @@ func CarriedEdgeNotInit(a, b []int) int { // want `cannot verify budget`
 	}
 	return t
 }
+
+// --- Resetting back edges: a carried edge is NOT an init (review F1, #97) ---
+//
+// Each shape below has TWO back edges to the header: one that steps the
+// induction variable and one that RESETS it. The reset edge is not a step, and
+// through v1.30.0 R2/R3/R4 classified it as an "init" — so they bounded loops
+// that never terminate. R1 was fixed in v1.30.0; its siblings were not, because
+// that slice scoped the guard by what its corpus row needed rather than by
+// which rules shared the hole.
+//
+// These use `continue`, NOT `goto`: two continues in an ordinary `for cond {}`
+// body produce two back edges, which is the whole point — a reader who sees
+// only a goto form will conclude the class is exotic and relax the guard.
+//
+// Neither golden can see this family: the corpus is well-formed textbook
+// algorithms, and the guard-false (v1.28.1) and two-pointer-stall (v1.30.0)
+// pins are single-back-edge shapes. Any NEW rule that splits phi edges into
+// step/init must add its own member here.
+
+// R2 — decreasing. Never terminates when a is false and b is true.
+//
+//bigo:max O(n) where n=len(s)
+func ResetBackEdgeR2(s []int, a, b bool) int { // want `cannot verify budget`
+	i, t := len(s), 0
+	for i > 0 {
+		t++
+		if a {
+			i--
+			continue
+		}
+		if b {
+			i = len(s)
+			continue
+		}
+		i--
+	}
+	return t
+}
+
+// R2's terminating sibling: two continues, but EVERY back edge steps. Pins
+// that the shape above fails for the reset, not for having two back edges.
+//
+//bigo:max O(n) where n=len(s)
+func TwoContinuesBothStepR2(s []int, a bool) int {
+	i, t := len(s), 0
+	for i > 0 {
+		t++
+		if a {
+			i -= 2
+			continue
+		}
+		i--
+	}
+	return t
+}
+
+// R3 — geometric up. Never terminates when a is false and b is true.
+//
+//bigo:max O(log n) where n=n
+func ResetBackEdgeR3(n int, a, b bool) int { // want `cannot verify budget`
+	i, t := 1, 0
+	for i < n {
+		t++
+		if a {
+			i *= 2
+			continue
+		}
+		if b {
+			i = 1
+			continue
+		}
+		i *= 3
+	}
+	return t
+}
+
+// R3's terminating sibling: both back edges multiply.
+//
+//bigo:max O(log n) where n=n
+func TwoContinuesBothStepR3(n int, a bool) int {
+	i, t := 1, 0
+	for i < n {
+		t++
+		if a {
+			i *= 2
+			continue
+		}
+		i *= 3
+	}
+	return t
+}
+
+// R4 — geometric down. Never terminates when a is false and b is true.
+//
+//bigo:max O(log n) where n=n
+func ResetBackEdgeR4(n int, a, b bool) int { // want `cannot verify budget`
+	i, t := n, 0
+	for i > 1 {
+		t++
+		if a {
+			i /= 2
+			continue
+		}
+		if b {
+			i = n
+			continue
+		}
+		i /= 3
+	}
+	return t
+}
+
+// R4's terminating sibling: both back edges divide.
+//
+//bigo:max O(log n) where n=n
+func TwoContinuesBothStepR4(n int, a bool) int {
+	i, t := n, 0
+	for i > 1 {
+		t++
+		if a {
+			i /= 2
+			continue
+		}
+		i /= 3
+	}
+	return t
+}
