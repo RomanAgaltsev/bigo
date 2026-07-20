@@ -15,9 +15,9 @@ composition, not a percentage.
 
 | Status | Count |
 |---|---|
-| exact | 27 |
+| exact | 28 |
 | loose | 0 |
-| top | 29 |
+| top | 28 |
 
 ## Space statuses (pinned entries only)
 
@@ -88,7 +88,7 @@ composition, not a percentage.
 | stringops.CommonPrefix | O(len(a)) | O(len(a)) | exact | O(1) | O(1) | exact |  | en.wikipedia.org/wiki/LCP_array (pairwise base case, bound reference) |
 | stringops.IsPalindrome | O(len(s)) | O(len(s)) | exact | O(1) | O(1) | exact |  | ru.algorithmica.org (strings, bound reference); en.wikipedia.org/wiki/Palindrome |
 | stringops.KMPSearch | O(len(pat) + len(text)) | unverifiable | top | O(len(pat)) | O(len(pat)) | exact | loop | CLRS §32.4; en.wikipedia.org/wiki/Knuth%E2%80%93Morris%E2%80%93Pratt_algorithm |
-| stringops.NaiveSearch | O(len(pat) len(text)) | unverifiable | top | O(1) | O(1) | exact | loop | CLRS §32.1; en.wikipedia.org/wiki/String-searching_algorithm |
+| stringops.NaiveSearch | O(len(pat) len(text)) | O(len(pat) len(text)) | exact | O(1) | O(1) | exact |  | CLRS §32.1; en.wikipedia.org/wiki/String-searching_algorithm |
 | stringops.RabinKarp | O(len(pat) len(text)) | unverifiable | top | O(1) | O(1) | exact | loop | CLRS §32.2 (worst case); en.wikipedia.org/wiki/Rabin%E2%80%93Karp_algorithm |
 | stringops.Reverse | O(len(s)) | O(len(s)) | exact | O(len(s)) | O(len(s)) | exact |  | ru.wikibooks.org/wiki/Реализации_алгоритмов (strings, bound reference) |
 | stringops.RunLengthEncode | O(len(s)) | unverifiable | top | O(len(s)) | unverifiable | top | loop | en.wikipedia.org/wiki/Run-length_encoding |

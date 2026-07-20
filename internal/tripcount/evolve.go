@@ -14,15 +14,19 @@ import (
 // ruleIncreasing — R1, the generalized counted loop.
 //
 // Shape: `ind ⋖ e` (LSS/LEQ, or GTR/GEQ with sides swapped) where ind is an
-// affine image (constant coefficients — the S1 constraint) of a header phi
-// whose every non-step edge has a provable CONSTANT lower bound (the B1
-// constraint, generalized from "is a constant") and whose steps add positive
-// constants; e resolves to a dominating extent.
+// affine image of a header phi — constant multiplier, NON-NEGATIVE offset (the
+// S1 constraint, narrowed from "constant offset": see affineOfPhi) — whose
+// every non-step edge has a provable CONSTANT lower bound (the B1 constraint,
+// generalized from "is a constant") and whose steps add positive constants;
+// e resolves to a dominating extent.
 //
 // Claim: linear, O(upper(e)). Argument: the phi grows by >= 1 per iteration
 // from >= some constant c, the affine comparand preserves monotonicity, and
 // the guard fails once the comparand reaches e <= upper(e): trips are at most
-// upper(e) - c + O(1).
+// upper(e) - c + O(1). With a non-constant offset b >= 0 the claim is
+// unchanged and needs no invariance assumption: once phi > e, phi+b >= phi > e
+// for ANY b >= 0, so a varying non-negative offset can only make the guard
+// fail sooner.
 func ruleIncreasing(sh *shape) (bound.Bound, bool) {
 	if sh.cmp == nil {
 		return bound.Bound{}, false
@@ -36,7 +40,7 @@ func ruleIncreasing(sh *shape) (bound.Bound, bool) {
 	default:
 		return bound.Bound{}, false
 	}
-	phi, ok := affineOfPhi(indV)
+	phi, ok := affineOfPhi(sh, indV)
 	if !ok || phi.Block() != sh.loop.Header || !isIncreasingInductionPhi(sh, phi) {
 		return bound.Bound{}, false
 	}
@@ -47,10 +51,21 @@ func ruleIncreasing(sh *shape) (bound.Bound, bool) {
 	return bound.Of(bound.Term(v)), true
 }
 
-// affineOfPhi unwraps v = phi, phi+b, b+phi, a*phi, a*phi+b for constant
-// a >= 1, b >= 0. Constant coefficients only: a variable offset shifts the
-// trip count by an unbounded amount (finding S1).
-func affineOfPhi(v ssa.Value) (*ssa.Phi, bool) {
+// affineOfPhi unwraps v = phi, phi+b, b+phi, a*phi, a*phi+b — the multiplier
+// a a constant >= 1, and the offset b NON-NEGATIVE: a constant >= 0, or any
+// value LowerBoundConst proves is >= 0.
+//
+// Only the offset's SIGN is load-bearing, and finding S1 is about the sign,
+// not about being constant: `for i := 0; i+m <= n; i++` with m = -1000000 runs
+// n+1000000 times, so a negative-capable offset must stay rejected. A
+// non-negative one cannot hurt, however it varies — see the callers' claims
+// for the directional argument (once phi > e, phi+b >= phi > e for any
+// b >= 0, so the guard fails). No loop-invariance requirement belongs here:
+// one was tried and it rejected `i+len(pat) <= len(text)` outright, because Go
+// SSA computes len(pat) in the loop header block. A precondition stricter than
+// soundness requires is a silent capability loss, and
+// edge.VaryingNonNegOffset pins against re-introducing it.
+func affineOfPhi(sh *shape, v ssa.Value) (*ssa.Phi, bool) {
 	if p, ok := v.(*ssa.Phi); ok {
 		return p, true
 	}
@@ -74,16 +89,24 @@ func affineOfPhi(v ssa.Value) (*ssa.Phi, bool) {
 	}
 	switch bo.Op {
 	case token.ADD:
-		if c, ok := sizefacts.ConstIntV(bo.Y); ok && c >= 0 {
+		if nonNegOffset(sh, bo.Y) {
 			return mulOfPhi(bo.X)
 		}
-		if c, ok := sizefacts.ConstIntV(bo.X); ok && c >= 0 {
+		if nonNegOffset(sh, bo.X) {
 			return mulOfPhi(bo.Y)
 		}
 	case token.MUL:
 		return mulOfPhi(bo)
 	}
 	return nil, false
+}
+
+// nonNegOffset reports whether v is usable as a guard offset: provably >= 0.
+// Constants answer through LowerBoundConst's strict path, so this subsumes the
+// old constant-only test rather than sitting beside it.
+func nonNegOffset(sh *shape, v ssa.Value) bool {
+	lo, ok := sh.f.LowerBoundConst(v, 0)
+	return ok && lo >= 0
 }
 
 // mulOfPhi unwraps v = phi or a*phi (const a >= 1).
@@ -259,7 +282,7 @@ func ruleGeometricUp(sh *shape) (bound.Bound, bool) {
 	default:
 		return bound.Bound{}, false
 	}
-	phi, ok := affineOfPhi(indV)
+	phi, ok := affineOfPhi(sh, indV)
 	if !ok || phi.Block() != sh.loop.Header {
 		return bound.Bound{}, false
 	}

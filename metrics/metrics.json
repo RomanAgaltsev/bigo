@@ -1,12 +1,12 @@
 {
-  "total": 227,
-  "bounded": 126,
-  "coverage_pct": "55.5",
+  "total": 231,
+  "bounded": 128,
+  "coverage_pct": "55.4",
   "by_cause": {
     "call": 56,
     "go": 3,
     "irreducible": 1,
-    "loop": 33,
+    "loop": 35,
     "nobody": 8
   },
   "per_package": {
@@ -23,8 +23,8 @@
       "bounded": 4
     },
     "edge": {
-      "total": 44,
-      "bounded": 18
+      "total": 48,
+      "bounded": 20
     },
     "fieldsize": {
       "total": 15,
@@ -376,6 +376,12 @@
     },
     {
       "pkg": "edge",
+      "func": "LenOffsetGuard",
+      "verdict": "bounded",
+      "bound": "O(len(text))"
+    },
+    {
+      "pkg": "edge",
       "func": "MakeFullLen",
       "verdict": "bounded",
       "bound": "O(len(s))"
@@ -383,6 +389,12 @@
     {
       "pkg": "edge",
       "func": "MakeZeroLenCap",
+      "verdict": "unverifiable",
+      "cause": "loop"
+    },
+    {
+      "pkg": "edge",
+      "func": "NegCapableOffset",
       "verdict": "unverifiable",
       "cause": "loop"
     },
@@ -401,6 +413,12 @@
     {
       "pkg": "edge",
       "func": "OffsetCondition",
+      "verdict": "unverifiable",
+      "cause": "loop"
+    },
+    {
+      "pkg": "edge",
+      "func": "ParamOffsetGuard",
       "verdict": "unverifiable",
       "cause": "loop"
     },
@@ -517,6 +535,12 @@
       "func": "VarShiftAmount",
       "verdict": "unverifiable",
       "cause": "loop"
+    },
+    {
+      "pkg": "edge",
+      "func": "VaryingNonNegOffset",
+      "verdict": "bounded",
+      "bound": "O(len(s))"
     },
     {
       "pkg": "edge",
