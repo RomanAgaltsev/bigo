@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.34.0](https://github.com/RomanAgaltsev/bigo/compare/v1.33.1...v1.34.0) (2026-07-20)
+
+
+### Features
+
+* real-world survey harness, the third instrument ([#109](https://github.com/RomanAgaltsev/bigo/issues/109)) ([16321ba](https://github.com/RomanAgaltsev/bigo/commit/16321ba39830d0a58af154df1f52b3bd6e7574be))
+
 ## [1.33.1](https://github.com/RomanAgaltsev/bigo/compare/v1.33.0...v1.33.1) (2026-07-20)
 
 
