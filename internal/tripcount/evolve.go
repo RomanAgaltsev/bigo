@@ -112,7 +112,7 @@ func isIncreasingInductionPhi(sh *shape, phi *ssa.Phi) bool {
 			hasStep = true
 			continue
 		}
-		if sh.loop.Blocks[phi.Block().Preds[k]] {
+		if !isInitEdge(sh, phi, k) {
 			return false
 		}
 		if _, ok := sh.f.LowerBoundConst(e, 0); !ok {
@@ -123,6 +123,24 @@ func isIncreasingInductionPhi(sh *shape, phi *ssa.Phi) bool {
 	return hasStep && hasInit
 }
 
+// isInitEdge reports whether phi's k-th edge enters from OUTSIDE the loop —
+// the structural test every evolution rule owes its non-step edges.
+//
+// Each rule argues "the value moves monotonically every iteration, so the
+// guard eventually fails". A non-step edge reaching the header from INSIDE the
+// loop breaks that argument outright: it is another back edge, and the value
+// it carries need not have moved at all. The canonical counter-example is a
+// reset — `for i > 0 { …; if b { i = len(s); continue }; i-- }`, which never
+// terminates while R2 read the reset as an "init" and reported O(len(s)).
+//
+// Init-ness is a fact about the CFG edge, NOT about whether the value happens
+// to resolve. Every rule that partitions phi edges into step/init must call
+// this; the no-fire pins live in analyzer/testdata/src/edge (neither golden can
+// see this family — see the review of 2026-07-18, F1 / issue #97).
+func isInitEdge(sh *shape, phi *ssa.Phi, k int) bool {
+	return !sh.loop.Blocks[phi.Block().Preds[k]]
+}
+
 // ruleDecreasing — R2, the decreasing counted loop.
 //
 // Shape: `phi ⋗ c` (GTR/GEQ, or LSS/LEQ with sides swapped) for a CONSTANT c;
@@ -131,7 +149,8 @@ func isIncreasingInductionPhi(sh *shape, phi *ssa.Phi) bool {
 // bound stays ⊤ — the mirror image of B1's parameter start.
 //
 // Claim: linear, O(upper(init)). Argument: the value starts <= upper(init),
-// drops by >= 1 per iteration, and the guard fails at the constant.
+// drops by >= 1 per iteration, and the guard fails at the constant. The claim
+// needs EVERY in-loop edge to be a step: see isInitEdge.
 func ruleDecreasing(sh *shape) (bound.Bound, bool) {
 	if sh.cmp == nil {
 		return bound.Bound{}, false
@@ -154,10 +173,13 @@ func ruleDecreasing(sh *shape) (bound.Bound, bool) {
 	}
 	var extent bound.Var
 	hasStep, hasInit := false, false
-	for _, e := range phi.Edges {
+	for k, e := range phi.Edges {
 		if isNegStep(phi, e) {
 			hasStep = true
 			continue
+		}
+		if !isInitEdge(sh, phi, k) {
+			return bound.Bound{}, false
 		}
 		v, ok := sh.f.UpperExtent(e, 0)
 		if !ok {
@@ -229,13 +251,16 @@ func ruleGeometricUp(sh *shape) (bound.Bound, bool) {
 	}
 	minInit, allD1 := int64(0), true
 	hasStep, hasInit := false, false
-	for _, e := range phi.Edges {
+	for k, e := range phi.Edges {
 		if _, d, ok := mulStep(phi, e); ok {
 			hasStep = true
 			if d < 1 {
 				allD1 = false
 			}
 			continue
+		}
+		if !isInitEdge(sh, phi, k) {
+			return bound.Bound{}, false
 		}
 		lo, ok := sh.f.LowerBoundConst(e, 0)
 		if !ok {
@@ -393,10 +418,13 @@ func ruleGeometricDown(sh *shape) (bound.Bound, bool) {
 	}
 	var extent bound.Var
 	hasStep, hasInit := false, false
-	for _, e := range phi.Edges {
+	for k, e := range phi.Edges {
 		if divStep(phi, e) {
 			hasStep = true
 			continue
+		}
+		if !isInitEdge(sh, phi, k) {
+			return bound.Bound{}, false
 		}
 		v, ok := sh.f.UpperExtent(e, 0)
 		if !ok {
