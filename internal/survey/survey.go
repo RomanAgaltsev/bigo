@@ -50,6 +50,17 @@ type Totals struct {
 	Bounded     int    `json:"bounded"`
 	Seen        int    `json:"functions_total_seen"`
 	CoveragePct string `json:"coverage_pct"`
+
+	// The near-frontier measurement (frontier.go). CoveragePct averages two
+	// populations that behave completely differently — measured 2026-07-20,
+	// 29.1% of ⊤ functions sit ONE blocker from a bound while 25.3% sit ten or
+	// more — so these separate them.
+	//
+	// CeilingPct is an UPPER BOUND, never a projection: see ceilingPct.
+	Top          int            `json:"top"`
+	NearFrontier int            `json:"near_frontier"`
+	CeilingPct   string         `json:"ceiling_pct"`
+	DistanceHist map[string]int `json:"distance_histogram,omitempty"`
 }
 
 // Target is one measured repository.
@@ -61,7 +72,13 @@ type Target struct {
 
 	Totals
 	ByCause  map[string]int `json:"by_cause,omitempty"`  // cause KIND
-	ByDetail map[string]int `json:"by_detail,omitempty"` // cause DETAIL — the actionable one
+	ByDetail map[string]int `json:"by_detail,omitempty"` // cause DETAIL — SITES, a concentration measure
+
+	// SoleBlocker counts functions whose ONLY leaf blocker is this detail — the
+	// GRADUATION count, and the one that ranks work. ByDetail counts sites,
+	// which two 2026-07-20 probes proved finds where ⊤ concentrates rather than
+	// where ⊤ is removable (ROADMAP §1).
+	SoleBlocker map[string]int `json:"sole_blocker,omitempty"`
 }
 
 // Report is the committed record of one survey run.
@@ -71,8 +88,9 @@ type Report struct {
 	Targets     []Target `json:"targets"`
 	Aggregate   Totals   `json:"aggregate"`
 
-	AggByCause  map[string]int `json:"aggregate_by_cause"`
-	AggByDetail map[string]int `json:"aggregate_by_detail"`
+	AggByCause     map[string]int `json:"aggregate_by_cause"`
+	AggByDetail    map[string]int `json:"aggregate_by_detail"`
+	AggSoleBlocker map[string]int `json:"aggregate_sole_blocker"`
 }
 
 // firstParty reports whether pkg belongs to module — the correctness crux of
@@ -106,7 +124,7 @@ func pct(bounded, total int) string {
 // Summarize reduces one document to a target's counts and histograms. Pure:
 // this is the part worth testing, and it is tested on fixtures rather than on
 // real repositories.
-func Summarize(doc report.Document) (Totals, map[string]int, map[string]int) {
+func Summarize(doc report.Document) (Totals, map[string]int, map[string]int, map[string]int) {
 	// Sized by KEY CARDINALITY, not by the loop bound: byCause is keyed by
 	// engine.CauseKind, a closed set of six, and byDetail by distinct cause
 	// prose, which grows far more slowly than the function count. Hinting
@@ -130,7 +148,11 @@ func Summarize(doc report.Document) (Totals, map[string]int, map[string]int) {
 		}
 	}
 	t.CoveragePct = pct(t.Bounded, t.Functions)
-	return t, byCause, byDetail
+
+	fr := frontierOf(doc)
+	t.Top, t.NearFrontier, t.DistanceHist = fr.Top, fr.Near, fr.Hist
+	t.CeilingPct = ceilingPct(t.Bounded, fr.Near, t.Functions)
+	return t, byCause, byDetail, fr.SoleBlocker
 }
 
 // commitOf returns the target's short HEAD, or "" when it cannot be read. A
@@ -156,11 +178,13 @@ func Run(cfg Config, version string, progress func(string, ...any)) Report {
 		progress = func(string, ...any) {}
 	}
 	r := Report{
-		Generated:   time.Now().UTC().Format("2006-01-02"),
-		BigoVersion: version,
-		AggByCause:  map[string]int{},
-		AggByDetail: map[string]int{},
+		Generated:      time.Now().UTC().Format("2006-01-02"),
+		BigoVersion:    version,
+		AggByCause:     map[string]int{},
+		AggByDetail:    map[string]int{},
+		AggSoleBlocker: map[string]int{},
 	}
+	r.Aggregate.DistanceHist = map[string]int{}
 	for _, tc := range cfg.Targets {
 		progress("survey: %s", tc.Name)
 		t := Target{Name: tc.Name}
@@ -175,7 +199,7 @@ func Run(cfg Config, version string, progress func(string, ...any)) Report {
 			r.Targets = append(r.Targets, t)
 			continue
 		}
-		totals, byCause, byDetail := Summarize(doc)
+		totals, byCause, byDetail, soleBlocker := Summarize(doc)
 		t.Module, t.Commit, t.Totals = doc.Module, commitOf(tc.Path), totals
 		t.ByCause, t.ByDetail = byCause, byDetail
 		for k, v := range byCause {
@@ -184,12 +208,22 @@ func Run(cfg Config, version string, progress func(string, ...any)) Report {
 		for k, v := range byDetail {
 			r.AggByDetail[k] += v
 		}
+		t.SoleBlocker = soleBlocker
+		for k, v := range soleBlocker {
+			r.AggSoleBlocker[k] += v
+		}
+		for k, v := range totals.DistanceHist {
+			r.Aggregate.DistanceHist[k] += v
+		}
 		r.Aggregate.Functions += totals.Functions
 		r.Aggregate.Bounded += totals.Bounded
 		r.Aggregate.Seen += totals.Seen
+		r.Aggregate.Top += totals.Top
+		r.Aggregate.NearFrontier += totals.NearFrontier
 		r.Targets = append(r.Targets, t)
 	}
 	r.Aggregate.CoveragePct = pct(r.Aggregate.Bounded, r.Aggregate.Functions)
+	r.Aggregate.CeilingPct = ceilingPct(r.Aggregate.Bounded, r.Aggregate.NearFrontier, r.Aggregate.Functions)
 	return r
 }
 
