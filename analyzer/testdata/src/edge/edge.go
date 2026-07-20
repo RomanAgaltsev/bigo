@@ -773,3 +773,29 @@ func LenOffsetGuard(text, pat string) int {
 	}
 	return t
 }
+
+// Positive control for the v1.33.0 review's F2: the guard offset on the LEFT.
+// The ADD arm tests bo.Y first, and a non-negative induction phi satisfies that
+// test as readily as len(x) does — so `3+i` must not be lost to the wrong
+// branch. This form bounded before C5 and regressed to ⊤ with it.
+//
+//bigo:max O(n) where n=len(s)
+func ConstOffsetLeft(s []int) int {
+	t := 0
+	for i := 0; 3+i <= len(s); i++ {
+		t++
+	}
+	return t
+}
+
+// Positive control: a non-constant offset on the left — the capability C5's
+// spec implied but did not deliver until F2 was fixed.
+//
+//bigo:max O(n) where n=len(text)
+func LenOffsetLeft(text, pat string) int {
+	t := 0
+	for i := 0; len(pat)+i <= len(text); i++ {
+		t++
+	}
+	return t
+}

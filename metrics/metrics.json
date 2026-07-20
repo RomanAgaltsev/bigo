@@ -1,7 +1,7 @@
 {
-  "total": 231,
-  "bounded": 128,
-  "coverage_pct": "55.4",
+  "total": 233,
+  "bounded": 130,
+  "coverage_pct": "55.8",
   "by_cause": {
     "call": 56,
     "go": 3,
@@ -23,8 +23,8 @@
       "bounded": 4
     },
     "edge": {
-      "total": 48,
-      "bounded": 20
+      "total": 50,
+      "bounded": 22
     },
     "fieldsize": {
       "total": 15,
@@ -292,6 +292,12 @@
     },
     {
       "pkg": "edge",
+      "func": "ConstOffsetLeft",
+      "verdict": "bounded",
+      "bound": "O(len(s))"
+    },
+    {
+      "pkg": "edge",
       "func": "ConstShift",
       "verdict": "bounded",
       "bound": "O(log(b))"
@@ -377,6 +383,12 @@
     {
       "pkg": "edge",
       "func": "LenOffsetGuard",
+      "verdict": "bounded",
+      "bound": "O(len(text))"
+    },
+    {
+      "pkg": "edge",
+      "func": "LenOffsetLeft",
       "verdict": "bounded",
       "bound": "O(len(text))"
     },
