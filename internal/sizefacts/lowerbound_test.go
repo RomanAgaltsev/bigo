@@ -183,3 +183,70 @@ func f(a []int, c bool) int {
 	}
 	t.Fatal("no phi-valued init edge found")
 }
+
+// sinkArgOf returns the sole argument of the sink call in f, plus a Facts.
+func sinkArgOf(t *testing.T, src string) (ssa.Value, *Facts) {
+	t.Helper()
+	pkg, _, err := ssasupport.Build(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fn := ssasupport.Func(pkg, "f")
+	for _, b := range fn.Blocks {
+		for _, instr := range b.Instrs {
+			c, ok := instr.(*ssa.Call)
+			if !ok {
+				continue
+			}
+			if sc := c.Call.StaticCallee(); sc != nil && sc.Name() == "sink" {
+				return c.Call.Args[0], &Facts{Stab: fieldpath.Analyze(fn)}
+			}
+		}
+	}
+	t.Fatal("no sink call")
+	return nil, nil
+}
+
+// TestNonNegInvariantDerived pins the len/cap and QUO arms. Each case is a
+// value the MaxSubarrayDC family produces (or a near-miss that must stay
+// rejected); the arms prove >= 0 and nothing more, so the expected lower
+// bound is always exactly 0.
+func TestNonNegInvariantDerived(t *testing.T) {
+	const preamble = `package input
+func sink(n int) {}
+`
+	cases := []struct {
+		name, body string
+		want       bool
+	}{
+		{"len call", `func f(s []int) { sink(len(s)) }`, true},
+		{"cap call", `func f(s []int) { sink(cap(s)) }`, true},
+		{"len div two", `func f(s []int) { sink(len(s) / 2) }`, true},
+		{"len div one", `func f(s []int) { sink(len(s) / 1) }`, true},
+		{"nested div", `func f(s []int) { sink(len(s) / 2 / 3) }`, true},
+		{"div plus const", `func f(s []int) { sink(len(s)/2 + 4) }`, true},
+		// The divisor gate: only a CONSTANT >= 1 preserves the sign.
+		{"variable divisor", `func f(s []int, k int) { sink(len(s) / k) }`, false},
+		{"negative const divisor", `func f(s []int) { sink(len(s) / -2) }`, false},
+		// A non-builtin one-arg call proves nothing about its result's sign.
+		{"opaque call", `func g(s []int) int { return -1 }
+func f(s []int) { sink(g(s)) }`, false},
+		// The dividend still has to be non-negative in its own right. (A
+		// constant-folded dividend is not a test of this: `-8 / 2` reaches
+		// LowerBoundConst as *ssa.Const -4 and the strict path answers it
+		// exactly, never touching the QUO arm.)
+		{"unprovable dividend", `func f(s []int, k int) { sink((k - len(s)) / 2) }`, false},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			v, f := sinkArgOf(t, preamble+c.body)
+			lo, ok := f.LowerBoundConst(v, 0)
+			if ok != c.want {
+				t.Fatalf("LowerBoundConst = (%d, %v), want ok=%v", lo, ok, c.want)
+			}
+			if ok && lo < 0 {
+				t.Errorf("LowerBoundConst = %d, want a non-negative bound", lo)
+			}
+		})
+	}
+}

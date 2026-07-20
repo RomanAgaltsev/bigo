@@ -112,6 +112,12 @@ func (f *Facts) LowerBoundConst(v ssa.Value, depth int) (int64, bool) {
 // is >= 0 and every in-cycle step adds >= 0, the invariant holds at every
 // execution step. Termination is the seen set, not a depth cap — the
 // &&-lowered loop's two-phi cycle is exactly what a depth cap kills.
+//
+// The cases here are grown one measured corpus row at a time, deliberately —
+// this is a non-negativity lattice with plenty of unwritten members (MUL by a
+// non-negative const, REM, &-masks, shifts), and each unmeasured one would be
+// soundness surface directly upstream of the prime directive with no test that
+// would catch it being wrong. Add a case when a row demands it, not before.
 func nonNegInvariant(v ssa.Value, seen map[ssa.Value]bool) bool {
 	if seen[v] {
 		return true
@@ -128,6 +134,11 @@ func nonNegInvariant(v ssa.Value, seen map[ssa.Value]bool) bool {
 			}
 		}
 		return true
+	case *ssa.Call:
+		// len(x) and cap(x) are >= 0 by Go's semantics, unconditionally.
+		if b, isB := t.Call.Value.(*ssa.Builtin); isB && len(t.Call.Args) == 1 {
+			return b.Name() == "len" || b.Name() == "cap"
+		}
 	case *ssa.BinOp:
 		if t.Op == token.ADD {
 			if c, ok := ConstIntV(t.Y); ok && c >= 0 {
@@ -135,6 +146,15 @@ func nonNegInvariant(v ssa.Value, seen map[ssa.Value]bool) bool {
 			}
 			if c, ok := ConstIntV(t.X); ok && c >= 0 {
 				return nonNegInvariant(t.Y, seen)
+			}
+		}
+		// x / c is >= 0 for x >= 0 and CONSTANT c >= 1: Go truncates toward
+		// zero, so a non-negative dividend stays non-negative. The divisor
+		// must be both constant and positive — a variable one may be negative
+		// (flipping the sign), and c >= 1 also excludes the MinInt/-1 trap.
+		if t.Op == token.QUO {
+			if c, ok := ConstIntV(t.Y); ok && c >= 1 {
+				return nonNegInvariant(t.X, seen)
 			}
 		}
 	}

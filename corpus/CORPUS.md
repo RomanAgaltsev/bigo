@@ -15,17 +15,17 @@ composition, not a percentage.
 
 | Status | Count |
 |---|---|
-| exact | 24 |
+| exact | 25 |
 | loose | 0 |
-| top | 32 |
+| top | 31 |
 
 ## Space statuses (pinned entries only)
 
 | Status | Count |
 |---|---|
-| exact | 40 |
+| exact | 41 |
 | loose | 2 |
-| top | 14 |
+| top | 13 |
 
 ## Per family
 
@@ -47,7 +47,7 @@ composition, not a percentage.
 | dandc.CountInversions | O(len(s) log(len(s))) | O(len(s) log(len(s))) | exact | O(len(s)) | O(len(s)) | exact |  | CLRS problem 2-4; en.wikipedia.org/wiki/Counting_inversions |
 | dandc.MajorityDC | O(len(s) log(len(s))) | O(len(s) log(len(s))) | exact | O(log(len(s))) | O(log(len(s))) | exact |  | CLRS-style D&C; en.wikipedia.org/wiki/Boyer%E2%80%93Moore_majority_vote_algorithm (D&C alternative, bound reference) |
 | dandc.MaxMinDC | O(len(s)) | O(len(s)) | exact | O(log(len(s))) | O(log(len(s))) | exact |  | www.geeksforgeeks.org/maximum-and-minimum-in-an-array/ (tournament method, bound reference) |
-| dandc.MaxSubarrayDC | O(len(s) log(len(s))) | unverifiable | top | O(log(len(s))) | unverifiable | top | call | CLRS §4.1; en.wikipedia.org/wiki/Maximum_subarray_problem |
+| dandc.MaxSubarrayDC | O(len(s) log(len(s))) | O(len(s) log(len(s))) | exact | O(log(len(s))) | O(log(len(s))) | exact |  | CLRS §4.1; en.wikipedia.org/wiki/Maximum_subarray_problem |
 | dandc.PeakElement | O(log(len(s))) | O(log(len(s))) | exact | O(1) | O(1) | exact |  | jeffe.cs.illinois.edu/teaching/algorithms/ (recursion notes); www.geeksforgeeks.org/find-a-peak-in-a-given-array/ (bound reference) |
 | dandc.PowerDC | O(log(b)) | O(log(b)) | exact | O(log(b)) | O(log(b)) | exact |  | CLRS §31.6 (repeated squaring); en.wikipedia.org/wiki/Exponentiation_by_squaring |
 | graphs.BFS | O(len(adj)^2) | unverifiable | top | O(len(adj)) | unverifiable | top | loop | CLRS §22.2 — O(V+E), pinned at the E≤n² worst case |

@@ -1,12 +1,12 @@
 {
-  "total": 219,
-  "bounded": 123,
-  "coverage_pct": "56.2",
+  "total": 222,
+  "bounded": 124,
+  "coverage_pct": "55.9",
   "by_cause": {
     "call": 56,
     "go": 3,
     "irreducible": 1,
-    "loop": 28,
+    "loop": 30,
     "nobody": 8
   },
   "per_package": {
@@ -23,8 +23,8 @@
       "bounded": 4
     },
     "edge": {
-      "total": 36,
-      "bounded": 15
+      "total": 39,
+      "bounded": 16
     },
     "fieldsize": {
       "total": 15,
@@ -340,6 +340,12 @@
     },
     {
       "pkg": "edge",
+      "func": "HalfDivisorInit",
+      "verdict": "bounded",
+      "bound": "O(len(s))"
+    },
+    {
+      "pkg": "edge",
       "func": "InfiniteGEQ",
       "verdict": "unverifiable",
       "cause": "loop"
@@ -365,6 +371,12 @@
     {
       "pkg": "edge",
       "func": "MakeZeroLenCap",
+      "verdict": "unverifiable",
+      "cause": "loop"
+    },
+    {
+      "pkg": "edge",
+      "func": "NegDivisorInit",
       "verdict": "unverifiable",
       "cause": "loop"
     },
@@ -473,6 +485,12 @@
     {
       "pkg": "edge",
       "func": "TwoPointerStalls",
+      "verdict": "unverifiable",
+      "cause": "loop"
+    },
+    {
+      "pkg": "edge",
+      "func": "VarDivisorInit",
       "verdict": "unverifiable",
       "cause": "loop"
     },

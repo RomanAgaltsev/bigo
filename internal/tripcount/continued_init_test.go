@@ -72,3 +72,56 @@ func f(a []int, m int) int {
 		t.Errorf("Of = %q, want Top — parameter init has no provable sign", got.String())
 	}
 }
+
+func TestRuleIncreasingDerivedHalfInit(t *testing.T) {
+	// The MaxSubarrayDC shape: the init is len(s)/2, non-constant but provably
+	// >= 0 through the len and QUO arms. Trips <= upper(len(a)) - init.
+	loop, stab := lastLoopOf(t, `package input
+func f(a []int) int {
+	mid := len(a) / 2
+	t := 0
+	for i := mid; i < len(a); i++ {
+		t++
+	}
+	return t
+}`)
+	got := Of(loop, stab)
+	if got.String() != "O(len(a))" {
+		t.Errorf("Of = %q, want O(len(a))", got.String())
+	}
+}
+
+func TestRuleIncreasingUnsignedDivisorRejected(t *testing.T) {
+	// The divisor gate at the trip-count level. Both shapes have an init the
+	// engine must NOT read as non-negative:
+	//   - a variable divisor: k = -1 makes len(a)/k negative, and the loop
+	//     then runs len(a) + len(a) times;
+	//   - a negative constant divisor: len(a)/-2 is <= 0 and shrinks with n,
+	//     so trips <= upper(len(a)) - init is not bounded by len(a).
+	cases := []struct{ name, src string }{
+		{"variable divisor", `package input
+func f(a []int, k int) int {
+	t := 0
+	for i := len(a) / k; i < len(a); i++ {
+		t++
+	}
+	return t
+}`},
+		{"negative const divisor", `package input
+func f(a []int) int {
+	t := 0
+	for i := len(a) / -2; i < len(a); i++ {
+		t++
+	}
+	return t
+}`},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			loop, stab := lastLoopOf(t, c.src)
+			if got := Of(loop, stab); !got.IsTop() {
+				t.Errorf("Of = %q, want Top — divisor does not preserve the sign", got.String())
+			}
+		})
+	}
+}
