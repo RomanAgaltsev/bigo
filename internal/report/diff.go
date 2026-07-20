@@ -104,19 +104,78 @@ func (c Class) String() string {
 // Finding is one reportable difference.
 type Finding struct {
 	Class   Class
-	Key     string // package.(receiver).func — the join identity
+	Key     string // the join identity from keysOf: package.(receiver).func, plus #ordinal when the name repeats in its package
 	File    string
 	Line    int
 	Message string
 }
 
-// key is a function's join identity: package + receiver + name. A rename is a
-// remove plus an add, never tracked as a rename (spec §4).
-func key(f Function) string {
+// baseKey is a function's nominal identity: package + receiver + name. A
+// rename is a remove plus an add, never tracked as a rename (spec §4).
+//
+// This is NOT unique on its own: Go permits several functions with the same
+// name in one package — most commonly multiple init()s, which are ordinary in
+// real code. See keysOf.
+func baseKey(f Function) string {
 	if f.Receiver != "" {
 		return f.Package + ".(" + f.Receiver + ")." + f.Func
 	}
 	return f.Package + "." + f.Func
+}
+
+// keysOf assigns every function in a document its join identity, disambiguating
+// same-named functions.
+//
+// Why this is not just baseKey: keying a map by baseKey collapses a package's
+// init()s onto one entry, so all but one are dropped and the survivor is
+// compared against the wrong partner. That made the diff report regressions
+// that did not happen (a document differed from itself) and, worse, MASK
+// regressions that did — a bounded sibling hid a real break. `bigo diff` is the
+// shipped CI gate, so both directions are release-blocking.
+//
+// Why disambiguation is applied ONLY on collision: identity must not be
+// positional for ordinary functions, or inserting a blank line above one would
+// read as a remove plus an add. Uniquely-named functions therefore keep exactly
+// the key they had; only genuinely ambiguous names pay a positional suffix.
+//
+// Residual limitation, stated rather than hidden: when the NUMBER of same-named
+// functions differs between base and head, the ordinals shift and some pairs
+// mismatch. That is inherent — those functions have no stable identity to
+// track — and it is still strictly better than dropping all but one.
+func keysOf(fns []Function) []string {
+	keys := make([]string, len(fns))
+	count := make(map[string]int, len(fns))
+	for i, f := range fns {
+		keys[i] = baseKey(f)
+		count[keys[i]]++
+	}
+	// One walk in a deterministic (file, line) order, so both sides of a diff
+	// number duplicates alike. The sort is hoisted out of the walk on purpose:
+	// sorting per duplicate group composes as O(n·m log m), which is precisely
+	// what bigo's own SM5 smell flags — and it caught this in dogfooding.
+	order := make([]int, len(fns))
+	for i := range order {
+		order[i] = i
+	}
+	sort.Slice(order, func(a, b int) bool {
+		fa, fb := fns[order[a]], fns[order[b]]
+		if fa.File != fb.File {
+			return fa.File < fb.File
+		}
+		if fa.Line != fb.Line {
+			return fa.Line < fb.Line
+		}
+		return order[a] < order[b] // total order even for identical positions
+	})
+	seen := make(map[string]int)
+	for _, i := range order {
+		k := keys[i]
+		if count[k] > 1 {
+			keys[i] = fmt.Sprintf("%s#%d", k, seen[k])
+			seen[k]++
+		}
+	}
+	return keys
 }
 
 // Diff compares two report documents and returns findings ordered by severity
@@ -130,14 +189,16 @@ func Diff(base, head Document) ([]Finding, string, error) {
 	if err != nil {
 		return nil, "", err
 	}
+	baseKeys := keysOf(base.Functions)
 	prior := make(map[string]Function, len(base.Functions))
-	for _, f := range base.Functions {
-		prior[key(f)] = f
+	for i, f := range base.Functions {
+		prior[baseKeys[i]] = f
 	}
 	var out []Finding
-	for _, h := range head.Functions {
-		b, existed := prior[key(h)]
-		if f, ok := classify(b, h, existed); ok {
+	headKeys := keysOf(head.Functions)
+	for i, h := range head.Functions {
+		b, existed := prior[headKeys[i]]
+		if f, ok := classify(b, h, existed, headKeys[i]); ok {
 			out = append(out, f)
 		}
 	}
@@ -154,9 +215,9 @@ func Diff(base, head Document) ([]Finding, string, error) {
 // severity order: the first predicate that holds wins, so a function that both
 // broke its budget and regressed reports once, as the budget break — the budget
 // is the declared contract and the more actionable message.
-func classify(b, h Function, existed bool) (Finding, bool) {
+func classify(b, h Function, existed bool, k string) (Finding, bool) {
 	at := func(c Class, msg string) (Finding, bool) {
-		return Finding{Class: c, Key: key(h), File: h.File, Line: h.Line, Message: msg}, true
+		return Finding{Class: c, Key: k, File: h.File, Line: h.Line, Message: msg}, true
 	}
 	name := h.Func
 	if h.Receiver != "" {

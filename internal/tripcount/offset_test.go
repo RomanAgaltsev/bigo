@@ -99,3 +99,51 @@ func f(a []int, pat string) int {
 		t.Errorf("Of = %q, want O(log(len(a)))", got)
 	}
 }
+
+// TestRuleIncreasingOffsetOnTheLeft is the regression test for the v1.33.0
+// review's F2. The ADD arm tries bo.Y as the offset first; widening that test
+// from "is a constant" to "is provably >= 0" made it match a non-negative
+// induction PHI, so `3 + i` fired the first branch on i, returned
+// mulOfPhi(3) = false, and never tried the symmetric arm that works.
+//
+// `3+i <= len(a)` bounded at O(len(a)) in v1.31.0 and v1.32.0 and went ⊤ in
+// v1.33.0 — a silent capability loss shipped by a widening.
+//
+// The lesson these cases pin: widening a predicate inside an ORDERED CHAIN
+// changes which branch fires, not just how often. Both operand orders must be
+// covered, for every offset kind.
+func TestRuleIncreasingOffsetOnTheLeft(t *testing.T) {
+	tests := []struct{ name, src, want string }{
+		{
+			"constant offset on the left (F2 regression)",
+			`package input
+func f(a []int) int { s := 0; for i := 0; 3+i <= len(a); i++ { s++ }; return s }`,
+			"O(len(a))",
+		},
+		{
+			"constant offset on the right",
+			`package input
+func f(a []int) int { s := 0; for i := 0; i+3 <= len(a); i++ { s++ }; return s }`,
+			"O(len(a))",
+		},
+		{
+			"len offset on the left",
+			`package input
+func f(text, pat string) int { s := 0; for i := 0; len(pat)+i <= len(text); i++ { s++ }; return s }`,
+			"O(len(text))",
+		},
+		{
+			"len offset on the right",
+			`package input
+func f(text, pat string) int { s := 0; for i := 0; i+len(pat) <= len(text); i++ { s++ }; return s }`,
+			"O(len(text))",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := Of(innerLoop(t, tt.src)).String(); got != tt.want {
+				t.Errorf("Of = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}

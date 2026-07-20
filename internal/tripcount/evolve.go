@@ -89,11 +89,21 @@ func affineOfPhi(sh *shape, v ssa.Value) (*ssa.Phi, bool) {
 	}
 	switch bo.Op {
 	case token.ADD:
+		// Try BOTH orders. Neither branch may return on a failed mulOfPhi:
+		// nonNegOffset matches a non-negative induction phi as readily as it
+		// matches len(x), so on `3 + i` the first test succeeds against the
+		// INDUCTION VARIABLE and the offset is on the other side. Returning
+		// there loses the shape entirely — it did, between v1.31.0 and the
+		// v1.33.0 review's F2.
 		if nonNegOffset(sh, bo.Y) {
-			return mulOfPhi(bo.X)
+			if p, ok := mulOfPhi(bo.X); ok {
+				return p, true
+			}
 		}
 		if nonNegOffset(sh, bo.X) {
-			return mulOfPhi(bo.Y)
+			if p, ok := mulOfPhi(bo.Y); ok {
+				return p, true
+			}
 		}
 	case token.MUL:
 		return mulOfPhi(bo)
