@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.33.0](https://github.com/RomanAgaltsev/bigo/compare/v1.32.0...v1.33.0) (2026-07-20)
+
+
+### Features
+
+* non-negative guard offsets ([3d493c0](https://github.com/RomanAgaltsev/bigo/commit/3d493c0ae1dce618d69c1b7d95f7d9f7a0b803bd))
+
 ## [1.32.0](https://github.com/RomanAgaltsev/bigo/compare/v1.31.0...v1.32.0) (2026-07-20)
 
 
