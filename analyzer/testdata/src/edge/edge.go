@@ -707,3 +707,69 @@ func SquareGuard(n int) int {
 	}
 	return t
 }
+
+// --- v1.33.0: C5's guard-offset sign gate (affineOfPhi's ADD arm).
+//
+// Finding S1 is about the offset's SIGN, not about it being constant. These
+// pins hold the sign requirement shut and — critically — hold the rule OPEN
+// against being re-tightened.
+
+// S1 verbatim: m = -1000000 runs len(s)+1000000 times.
+//
+//bigo:max O(n) where n=len(s)
+func ParamOffsetGuard(s []int, m int) int { // want `cannot verify budget`
+	t := 0
+	for i := 0; i+m <= len(s); i++ {
+		t++
+	}
+	return t
+}
+
+// The offset may go negative on one path, which is S1 again.
+//
+//bigo:max O(n) where n=len(s)
+func NegCapableOffset(s []int, c bool) int { // want `cannot verify budget`
+	t, k := 0, 0
+	for i := 0; i+k <= len(s); i++ {
+		if c {
+			k = -1000000
+		} else {
+			k = 0
+		}
+		t++
+	}
+	return t
+}
+
+// POSITIVE CONTROL, and the load-bearing one. The offset VARIES inside the
+// loop and is never negative, so the loop genuinely runs at most len(s)+1
+// times. Any future "tightening" of the offset rule — a loop-invariance
+// requirement, or a restoration of constant-only — turns this red instead of
+// silently losing capability. An invariance test was tried during the probe
+// and rejected the real target (`i+len(pat) <= len(text)`), because Go SSA
+// computes len(pat) in the loop header block.
+//
+//bigo:max O(n) where n=len(s)
+func VaryingNonNegOffset(s []int, c bool) int {
+	t, k := 0, 0
+	for i := 0; i+k <= len(s); i++ {
+		if c {
+			k = 5
+		} else {
+			k = 0
+		}
+		t++
+	}
+	return t
+}
+
+// Positive control: the NaiveSearch form.
+//
+//bigo:max O(n) where n=len(text)
+func LenOffsetGuard(text, pat string) int {
+	t := 0
+	for i := 0; i+len(pat) <= len(text); i++ {
+		t++
+	}
+	return t
+}

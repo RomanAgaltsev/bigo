@@ -1,8 +1,8 @@
 {
   "total": 56,
   "time_by_status": {
-    "exact": 27,
-    "top": 29
+    "exact": 28,
+    "top": 28
   },
   "space_by_status": {
     "exact": 41,
@@ -527,12 +527,11 @@
       "pkg": "stringops",
       "func": "NaiveSearch",
       "time_pin": "O(len(pat) len(text))",
-      "time_got": "unverifiable",
-      "time_status": "top",
+      "time_got": "O(len(pat) len(text))",
+      "time_status": "exact",
       "space_pin": "O(1)",
       "space_got": "O(1)",
       "space_status": "exact",
-      "cause": "loop",
       "source": "CLRS §32.1; en.wikipedia.org/wiki/String-searching_algorithm"
     },
     {
