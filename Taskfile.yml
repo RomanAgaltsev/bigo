@@ -6,6 +6,11 @@ tasks:
     cmds:
       - go test ./internal/metrics/ -run TestGolden -update
 
+  survey:
+    desc: Run the real-world survey over survey/targets.json (MANUAL — not a CI gate)
+    cmds:
+      - go test ./internal/survey/ -run TestSurvey -update -timeout 60m -v
+
   corpus:
     desc: Regenerate the canonical-corpus oracle golden (corpus/corpus.json + corpus/CORPUS.md)
     cmds:

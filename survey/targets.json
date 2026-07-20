@@ -1,0 +1,17 @@
+{
+  "_comment": "Machine-specific paths. A missing path is a skip, not an error, so this file is a record of intent and stays useful on any machine. Targets are chosen for diversity of domain and style, not size alone.",
+  "targets": [
+    {"name": "grpc-go",     "path": "E:/GIT/grpc-go"},
+    {"name": "caddy",       "path": "E:/GIT/caddy"},
+    {"name": "prometheus",  "path": "E:/GIT/prometheus"},
+    {"name": "etcd",        "path": "E:/GIT/etcd"},
+    {"name": "delve",       "path": "E:/GIT/delve"},
+    {"name": "chi",         "path": "E:/GIT/chi"},
+    {"name": "goldmark",    "path": "E:/GIT/goldmark"},
+    {"name": "pgx",         "path": "E:/GIT/pgx"},
+    {"name": "cel-go",      "path": "E:/GIT/cel-go"},
+    {"name": "expr",        "path": "E:/GIT/expr"},
+    {"name": "nats-server", "path": "E:/GIT/nats-server"},
+    {"name": "hugo",        "path": "E:/GIT/hugo"}
+  ]
+}

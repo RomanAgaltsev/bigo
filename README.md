@@ -473,6 +473,23 @@ budget the caller.
 
 The corpus is **not** a coverage metric. Read composition, not a percentage.
 
+### Reach: the real-world survey
+
+The corpus answers "did we get the literature's answer?" and `metrics/` answers
+"did anything drift?". Neither answers "how much real Go can bigo bound, and what
+stops it?" — so a third instrument does.
+
+[survey/SURVEY.md](survey/SURVEY.md) records a run of the shipped analyzer over
+external repositories listed in `survey/targets.json`, reporting coverage over
+**first-party functions only** (dependencies are filtered by module path) plus a
+ranked histogram of what blocked the rest. That histogram is what ranks engine
+and cost-table work: the canonical corpus and real code do **not** agree on which
+causes dominate, and real code is the one that reflects adoption.
+
+Unlike the other two it is a **manual measurement, not a golden test** — its
+inputs are repositories on one machine at whatever commit they sit, and its
+numbers are expected to move. `task survey` regenerates it; CI never runs it.
+
 ## Status & versioning
 
 Complete: intraprocedural engine, cost tables, acyclic interprocedural
