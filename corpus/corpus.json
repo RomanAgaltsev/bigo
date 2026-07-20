@@ -1,13 +1,13 @@
 {
   "total": 56,
   "time_by_status": {
-    "exact": 24,
-    "top": 32
+    "exact": 25,
+    "top": 31
   },
   "space_by_status": {
-    "exact": 40,
+    "exact": 41,
     "loose": 2,
-    "top": 14
+    "top": 13
   },
   "per_family": {
     "dandc": 6,
@@ -57,12 +57,11 @@
       "pkg": "dandc",
       "func": "MaxSubarrayDC",
       "time_pin": "O(len(s) log(len(s)))",
-      "time_got": "unverifiable",
-      "time_status": "top",
+      "time_got": "O(len(s) log(len(s)))",
+      "time_status": "exact",
       "space_pin": "O(log(len(s)))",
-      "space_got": "unverifiable",
-      "space_status": "top",
-      "cause": "call",
+      "space_got": "O(log(len(s)))",
+      "space_status": "exact",
       "source": "CLRS §4.1; en.wikipedia.org/wiki/Maximum_subarray_problem"
     },
     {

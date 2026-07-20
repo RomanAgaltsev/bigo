@@ -600,3 +600,45 @@ func TwoContinuesBothStepR4(n int, a bool) int {
 	}
 	return t
 }
+
+// --- v1.31.0: the non-negativity divisor gate (nonNegInvariant's QUO arm).
+//
+// The arm accepts `x / c` only for a CONSTANT c >= 1. These two pins hold that
+// gate shut: each is budgeted at the bound the engine would emit if the gate
+// were dropped, so relaxing it turns them red.
+
+// A variable divisor proves nothing: k = -1 makes the init -len(s), and the
+// loop runs 2*len(s) times.
+//
+//bigo:max O(n) where n=len(s)
+func VarDivisorInit(s []int, k int) int { // want `cannot verify budget`
+	t := 0
+	for i := len(s) / k; i < len(s); i++ {
+		t++
+	}
+	return t
+}
+
+// A negative constant divisor makes the init <= 0 and shrinking in n, so the
+// trip count is not bounded by len(s).
+//
+//bigo:max O(n) where n=len(s)
+func NegDivisorInit(s []int) int { // want `cannot verify budget`
+	t := 0
+	for i := len(s) / -2; i < len(s); i++ {
+		t++
+	}
+	return t
+}
+
+// Positive control: the MaxSubarrayDC form. The gate must ACCEPT this one —
+// a pin that only ever rejects would stay green if the arms were deleted.
+//
+//bigo:max O(n) where n=len(s)
+func HalfDivisorInit(s []int) int {
+	t := 0
+	for i := len(s) / 2; i < len(s); i++ {
+		t++
+	}
+	return t
+}
