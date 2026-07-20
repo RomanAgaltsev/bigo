@@ -2,7 +2,7 @@
 
 GENERATED — do not edit; regenerate with `task metrics`.
 
-**Coverage: 55.8%** — 130 of 233 corpus functions bounded.
+**Coverage: 56.7%** — 136 of 240 corpus functions bounded.
 
 ## Per package
 
@@ -11,7 +11,7 @@ GENERATED — do not edit; regenerate with `task metrics`.
 | budget | 9 | 7 | 2 |
 | concurrent | 8 | 6 | 2 |
 | costignore | 10 | 4 | 6 |
-| edge | 50 | 22 | 28 |
+| edge | 57 | 27 | 30 |
 | fieldsize | 15 | 10 | 5 |
 | funcvalue | 20 | 8 | 12 |
 | interproc | 5 | 5 | 0 |
@@ -21,7 +21,7 @@ GENERATED — do not edit; regenerate with `task metrics`.
 | negative | 3 | 0 | 3 |
 | positive | 4 | 4 | 0 |
 | recursion | 16 | 9 | 7 |
-| smells | 24 | 13 | 11 |
+| smells | 24 | 14 | 10 |
 | smoke | 2 | 1 | 1 |
 | space | 13 | 10 | 3 |
 | structures/array | 7 | 7 | 0 |
@@ -36,7 +36,7 @@ GENERATED — do not edit; regenerate with `task metrics`.
 
 | Cause | Count |
 |---|---|
-| call | 56 |
+| call | 57 |
 | go | 3 |
 | irreducible | 1 |
 | loop | 35 |

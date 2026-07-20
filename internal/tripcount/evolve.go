@@ -44,6 +44,9 @@ func ruleIncreasing(sh *shape) (bound.Bound, bool) {
 	if !ok || phi.Block() != sh.loop.Header || !isIncreasingInductionPhi(sh, phi) {
 		return bound.Bound{}, false
 	}
+	if constGuard(boundV) {
+		return bound.Constant(), true
+	}
 	v, ok := sh.f.UpperExtent(boundV, 0)
 	if !ok {
 		return bound.Bound{}, false
@@ -219,7 +222,7 @@ func ruleDecreasing(sh *shape) (bound.Bound, bool) {
 		return bound.Bound{}, false
 	}
 	var extent bound.Var
-	hasStep, hasInit := false, false
+	hasStep, hasInit, allConst := false, false, true
 	for k, e := range phi.Edges {
 		if isNegStep(phi, e) {
 			hasStep = true
@@ -228,8 +231,17 @@ func ruleDecreasing(sh *shape) (bound.Bound, bool) {
 		if !isInitEdge(sh, phi, k) {
 			return bound.Bound{}, false
 		}
+		if !constGuard(e) {
+			allConst = false
+		}
 		v, ok := sh.f.UpperExtent(e, 0)
 		if !ok {
+			// A constant init has no size-variable name, so UpperExtent cannot
+			// answer for it — but if EVERY init is constant the trip count is
+			// constant. Defer to the allConst check below rather than failing.
+			if allConst {
+				continue
+			}
 			return bound.Bound{}, false
 		}
 		if hasInit && v != extent {
@@ -237,10 +249,31 @@ func ruleDecreasing(sh *shape) (bound.Bound, bool) {
 		}
 		extent, hasInit = v, true
 	}
-	if !hasStep || !hasInit {
+	if !hasStep {
+		return bound.Bound{}, false
+	}
+	// All-constant inits: the value starts at a constant, drops by >= 1 per
+	// iteration, and the guard fails at a constant floor. Trips <= K - c.
+	//
+	// Mixed inits deliberately stay ⊤: the extent-agreement check above already
+	// rejects them, and widening that is a separate claim no measured row asks
+	// for. Note a PARAMETER init is not constant and keeps its O(m) bound — an
+	// integer parameter is its own extent here, which this must not swallow.
+	if allConst && len(phi.Edges) > 1 {
+		return bound.Constant(), true
+	}
+	if !hasInit {
 		return bound.Bound{}, false
 	}
 	return bound.Of(bound.Term(extent)), true
+}
+
+// constGuard reports whether v is a compile-time integer constant — the value
+// each rule's extent machinery cannot represent, because UpperExtent returns a
+// size VARIABLE and a constant has no name.
+func constGuard(v ssa.Value) bool {
+	_, ok := sizefacts.ConstIntV(v)
+	return ok
 }
 
 // isNegStep reports whether e is phi - c (c > 0) or phi + c (c < 0).
@@ -323,6 +356,9 @@ func ruleGeometricUp(sh *shape) (bound.Bound, bool) {
 	}
 	if minInit < 1 && (minInit < 0 || !allD1) {
 		return bound.Bound{}, false
+	}
+	if constGuard(boundV) {
+		return bound.Constant(), true
 	}
 	v, ok := sh.f.UpperExtent(boundV, 0)
 	if !ok {
@@ -464,7 +500,7 @@ func ruleGeometricDown(sh *shape) (bound.Bound, bool) {
 		return bound.Bound{}, false
 	}
 	var extent bound.Var
-	hasStep, hasInit := false, false
+	hasStep, hasInit, allConst := false, false, true
 	for k, e := range phi.Edges {
 		if divStep(phi, e) {
 			hasStep = true
@@ -473,8 +509,14 @@ func ruleGeometricDown(sh *shape) (bound.Bound, bool) {
 		if !isInitEdge(sh, phi, k) {
 			return bound.Bound{}, false
 		}
+		if !constGuard(e) {
+			allConst = false
+		}
 		v, ok := sh.f.UpperExtent(e, 0)
 		if !ok {
+			if allConst { // see ruleDecreasing: a constant init has no name
+				continue
+			}
 			return bound.Bound{}, false
 		}
 		if hasInit && v != extent {
@@ -482,7 +524,15 @@ func ruleGeometricDown(sh *shape) (bound.Bound, bool) {
 		}
 		extent, hasInit = v, true
 	}
-	if !hasStep || !hasInit {
+	if !hasStep {
+		return bound.Bound{}, false
+	}
+	// All-constant inits: the value starts at a constant, at least halves each
+	// step, and the guard fails at a constant floor. Trips <= log2(K) + O(1).
+	if allConst && len(phi.Edges) > 1 {
+		return bound.Constant(), true
+	}
+	if !hasInit {
 		return bound.Bound{}, false
 	}
 	return bound.Of(bound.Mono(extent, 0, 1)), true

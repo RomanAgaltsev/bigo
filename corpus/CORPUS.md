@@ -15,17 +15,17 @@ composition, not a percentage.
 
 | Status | Count |
 |---|---|
-| exact | 28 |
+| exact | 30 |
 | loose | 0 |
-| top | 28 |
+| top | 26 |
 
 ## Space statuses (pinned entries only)
 
 | Status | Count |
 |---|---|
-| exact | 41 |
+| exact | 42 |
 | loose | 2 |
-| top | 13 |
+| top | 12 |
 
 ## Per family
 
@@ -80,11 +80,11 @@ composition, not a percentage.
 | sorting.InsertionSort | O(len(s)^2) | O(len(s)^2) | exact | O(1) | O(1) | exact |  | CLRS §2.1; en.wikipedia.org/wiki/Insertion_sort (worst case) |
 | sorting.MergeSort | O(len(s) log(len(s))) | unverifiable | top | O(len(s)) | unverifiable | top | call | CLRS §2.3.1; en.wikipedia.org/wiki/Merge_sort |
 | sorting.QuickSort | O(len(s)^2) | unverifiable | top | O(len(s)) | unverifiable | top | call | CLRS §7; en.wikipedia.org/wiki/Quicksort (worst case) |
-| sorting.RadixSortLSD | O(len(s)) | unverifiable | top | O(len(s)) | unverifiable | top | loop | CLRS §8.3 (fixed d, k); en.wikipedia.org/wiki/Radix_sort |
+| sorting.RadixSortLSD | O(len(s)) | O(len(s)) | exact | O(len(s)) | O(len(s)) | exact |  | CLRS §8.3 (fixed d, k); en.wikipedia.org/wiki/Radix_sort |
 | sorting.SelectionSort | O(len(s)^2) | O(len(s)^2) | exact | O(1) | O(1) | exact |  | CLRS ex. 2.2-2; en.wikipedia.org/wiki/Selection_sort |
 | sorting.ShellSort | O(len(s)^2) | unverifiable | top | O(1) | O(1) | exact | loop | en.wikipedia.org/wiki/Shellsort (Shell's sequence, worst case) |
 | sorting.SortedCopy | O(len(s) log(len(s))) | O(len(s) log(len(s))) | exact | O(len(s)) | unverifiable | top |  | CLRS §2.3 (comparison-sort bound); pkg.go.dev/slices#Sort (O(n log n) documented) |
-| stringops.AreAnagrams | O(len(a) + len(b)) | unverifiable | top | O(1) | O(1) | exact | loop | www.geeksforgeeks.org/check-whether-two-strings-are-anagram-of-each-other/ (bound reference) |
+| stringops.AreAnagrams | O(len(a) + len(b)) | O(len(a) + len(b)) | exact | O(1) | O(1) | exact |  | www.geeksforgeeks.org/check-whether-two-strings-are-anagram-of-each-other/ (bound reference) |
 | stringops.CommonPrefix | O(len(a)) | O(len(a)) | exact | O(1) | O(1) | exact |  | en.wikipedia.org/wiki/LCP_array (pairwise base case, bound reference) |
 | stringops.IsPalindrome | O(len(s)) | O(len(s)) | exact | O(1) | O(1) | exact |  | ru.algorithmica.org (strings, bound reference); en.wikipedia.org/wiki/Palindrome |
 | stringops.KMPSearch | O(len(pat) + len(text)) | unverifiable | top | O(len(pat)) | O(len(pat)) | exact | loop | CLRS §32.4; en.wikipedia.org/wiki/Knuth%E2%80%93Morris%E2%80%93Pratt_algorithm |

@@ -7,9 +7,9 @@ contents and CI never runs it. Its targets are repositories that exist on one
 machine at whatever commit they happen to sit, so these numbers are a record
 of one run — compare across runs only via the per-target commit below.
 
-Run 2026-07-20 with bigo 1.34.0.
+Run 2026-07-20 with bigo 1.35.0.
 
-**Aggregate: 31.5%** — 10554 of 33504 first-party functions bounded.
+**Aggregate: 31.6%** — 10572 of 33504 first-party functions bounded.
 
 ## Per target
 
@@ -17,23 +17,23 @@ Run 2026-07-20 with bigo 1.34.0.
 |---|---|---|---|---|---|
 | grpc-go | google.golang.org/grpc | 2fd426d0 | 5467 | 1901 | 34.8% |
 | caddy | github.com/caddyserver/caddy/v2 | 0e8eb41b | 1963 | 454 | 23.1% |
-| prometheus | github.com/prometheus/prometheus | a0524eeca | 5859 | 1845 | 31.5% |
+| prometheus | github.com/prometheus/prometheus | a0524eeca | 5859 | 1848 | 31.5% |
 | etcd | go.etcd.io/etcd/v3 | 22b4192b9 | 98 | 9 | 9.2% |
-| delve | github.com/go-delve/delve | 8fc4acbd | 2793 | 707 | 25.3% |
+| delve | github.com/go-delve/delve | 8fc4acbd | 2793 | 709 | 25.4% |
 | chi | github.com/go-chi/chi/v5 | 3b17157 | 180 | 60 | 33.3% |
-| goldmark | github.com/yuin/goldmark | 50ba9fc | 795 | 441 | 55.5% |
-| pgx | github.com/jackc/pgx/v5 | 0a977a6 | 2099 | 749 | 35.7% |
+| goldmark | github.com/yuin/goldmark | 50ba9fc | 795 | 442 | 55.6% |
+| pgx | github.com/jackc/pgx/v5 | 0a977a6 | 2099 | 750 | 35.7% |
 | cel-go | github.com/google/cel-go | 646511d | 3586 | 1503 | 41.9% |
 | expr | github.com/expr-lang/expr | 4b31df3 | 1286 | 224 | 17.4% |
-| nats-server | github.com/nats-io/nats-server/v2 | 2e5f51f31 | 4000 | 910 | 22.8% |
+| nats-server | github.com/nats-io/nats-server/v2 | 2e5f51f31 | 4000 | 921 | 23.0% |
 | hugo | github.com/gohugoio/hugo | 89b8c3220 | 5378 | 1751 | 32.6% |
 
 ## Unverifiable by cause kind
 
 | Cause | Count |
 |---|---|
-| call | 102147 |
-| loop | 48275 |
+| call | 102137 |
+| loop | 47965 |
 | defer | 884 |
 | go | 335 |
 | nobody | 3 |
@@ -48,7 +48,7 @@ on real code, rather than by what the self-authored corpus happens to contain.
 
 | Blocker | Sites |
 |---|---|
-| loop with unrecognized trip count | 48275 |
+| loop with unrecognized trip count | 47965 |
 | unresolved cost at call to fmt.Errorf | 5431 |
 | unresolved cost at call to fmt.Sprintf | 2204 |
 | unresolved cost at call to (interface).Helper | 573 |
