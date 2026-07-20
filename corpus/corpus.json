@@ -1,8 +1,8 @@
 {
   "total": 56,
   "time_by_status": {
-    "exact": 25,
-    "top": 31
+    "exact": 27,
+    "top": 29
   },
   "space_by_status": {
     "exact": 41,
@@ -229,12 +229,11 @@
       "pkg": "numeric",
       "func": "FastPow",
       "time_pin": "O(log(b))",
-      "time_got": "unverifiable",
-      "time_status": "top",
+      "time_got": "O(log(b))",
+      "time_status": "exact",
       "space_pin": "O(1)",
       "space_got": "O(1)",
       "space_status": "exact",
-      "cause": "loop",
       "source": "CLRS §31.6; ru.algorithmica.org (binary exponentiation)"
     },
     {
@@ -288,12 +287,11 @@
       "pkg": "numeric",
       "func": "TrialDivision",
       "time_pin": "O(n)",
-      "time_got": "unverifiable",
-      "time_status": "top",
+      "time_got": "O(n)",
+      "time_status": "exact",
       "space_pin": "O(1)",
       "space_got": "O(1)",
       "space_status": "exact",
-      "cause": "loop",
       "source": "en.wikipedia.org/wiki/Trial_division (conservative pin)"
     },
     {
