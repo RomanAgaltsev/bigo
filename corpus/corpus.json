@@ -1,13 +1,13 @@
 {
   "total": 56,
   "time_by_status": {
-    "exact": 28,
-    "top": 28
+    "exact": 30,
+    "top": 26
   },
   "space_by_status": {
-    "exact": 41,
+    "exact": 42,
     "loose": 2,
-    "top": 13
+    "top": 12
   },
   "per_family": {
     "dandc": 6,
@@ -435,12 +435,11 @@
       "pkg": "sorting",
       "func": "RadixSortLSD",
       "time_pin": "O(len(s))",
-      "time_got": "unverifiable",
-      "time_status": "top",
+      "time_got": "O(len(s))",
+      "time_status": "exact",
       "space_pin": "O(len(s))",
-      "space_got": "unverifiable",
-      "space_status": "top",
-      "cause": "loop",
+      "space_got": "O(len(s))",
+      "space_status": "exact",
       "source": "CLRS §8.3 (fixed d, k); en.wikipedia.org/wiki/Radix_sort"
     },
     {
@@ -481,12 +480,11 @@
       "pkg": "stringops",
       "func": "AreAnagrams",
       "time_pin": "O(len(a) + len(b))",
-      "time_got": "unverifiable",
-      "time_status": "top",
+      "time_got": "O(len(a) + len(b))",
+      "time_status": "exact",
       "space_pin": "O(1)",
       "space_got": "O(1)",
       "space_status": "exact",
-      "cause": "loop",
       "source": "www.geeksforgeeks.org/check-whether-two-strings-are-anagram-of-each-other/ (bound reference)"
     },
     {

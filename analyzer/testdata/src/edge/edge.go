@@ -799,3 +799,87 @@ func LenOffsetLeft(text, pat string) int {
 	}
 	return t
 }
+
+// --- v1.36.0: constant trip counts.
+//
+// A loop bounded by a compile-time constant contributes O(1). The no-fire pins
+// hold the INIT precondition shut: a constant guard is not licence to skip it.
+
+// S1 under a constant guard: m = -1000000 runs 1000256 times, so the constant
+// guard proves nothing on its own.
+//
+//bigo:max O(1)
+func ParamInitConstGuard(m int) int { // want `cannot verify budget`
+	t := 0
+	for i := m; i < 256; i++ {
+		t++
+	}
+	return t
+}
+
+// Mixed inits stay ⊤: one constant, one len(s). The loop is genuinely
+// O(len(s)), and collapsing it to O(1) would be a wrong bound.
+//
+//bigo:max O(1)
+func MixedConstAndSizeInit(s []int, c bool) int { // want `cannot verify budget`
+	i := 256
+	if c {
+		i = len(s)
+	}
+	t := 0
+	for ; i > 0; i-- {
+		t++
+	}
+	return t
+}
+
+// Positive controls, one per counted-loop rule.
+//
+//bigo:max O(1)
+func ConstGuardR1() int {
+	t := 0
+	for i := 0; i < 256; i++ {
+		t++
+	}
+	return t
+}
+
+//bigo:max O(1)
+func ConstInitR2() int {
+	t := 0
+	for i := 256; i > 0; i-- {
+		t++
+	}
+	return t
+}
+
+//bigo:max O(1)
+func ConstGuardR3() int {
+	t := 0
+	for i := 1; i < 256; i *= 2 {
+		t++
+	}
+	return t
+}
+
+//bigo:max O(1)
+func ConstInitR4() int {
+	t := 0
+	for i := 256; i > 1; i /= 2 {
+		t++
+	}
+	return t
+}
+
+// The poisoning case: a constant inner loop must not make the function ⊤.
+//
+//bigo:max O(n) where n=len(s)
+func ConstInnerDoesNotPoison(s []int) int {
+	t := 0
+	for i := 0; i < len(s); i++ {
+		for j := 0; j < 4; j++ {
+			t++
+		}
+	}
+	return t
+}

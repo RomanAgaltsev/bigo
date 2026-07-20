@@ -1,9 +1,9 @@
 {
-  "total": 233,
-  "bounded": 130,
-  "coverage_pct": "55.8",
+  "total": 240,
+  "bounded": 136,
+  "coverage_pct": "56.7",
   "by_cause": {
-    "call": 56,
+    "call": 57,
     "go": 3,
     "irreducible": 1,
     "loop": 35,
@@ -23,8 +23,8 @@
       "bounded": 4
     },
     "edge": {
-      "total": 50,
-      "bounded": 22
+      "total": 57,
+      "bounded": 27
     },
     "fieldsize": {
       "total": 15,
@@ -64,7 +64,7 @@
     },
     "smells": {
       "total": 24,
-      "bounded": 13
+      "bounded": 14
     },
     "smoke": {
       "total": 2,
@@ -292,6 +292,36 @@
     },
     {
       "pkg": "edge",
+      "func": "ConstGuardR1",
+      "verdict": "bounded",
+      "bound": "O(1)"
+    },
+    {
+      "pkg": "edge",
+      "func": "ConstGuardR3",
+      "verdict": "bounded",
+      "bound": "O(1)"
+    },
+    {
+      "pkg": "edge",
+      "func": "ConstInitR2",
+      "verdict": "bounded",
+      "bound": "O(1)"
+    },
+    {
+      "pkg": "edge",
+      "func": "ConstInitR4",
+      "verdict": "bounded",
+      "bound": "O(1)"
+    },
+    {
+      "pkg": "edge",
+      "func": "ConstInnerDoesNotPoison",
+      "verdict": "bounded",
+      "bound": "O(len(s))"
+    },
+    {
+      "pkg": "edge",
       "func": "ConstOffsetLeft",
       "verdict": "bounded",
       "bound": "O(len(s))"
@@ -406,6 +436,12 @@
     },
     {
       "pkg": "edge",
+      "func": "MixedConstAndSizeInit",
+      "verdict": "unverifiable",
+      "cause": "loop"
+    },
+    {
+      "pkg": "edge",
       "func": "NegCapableOffset",
       "verdict": "unverifiable",
       "cause": "loop"
@@ -425,6 +461,12 @@
     {
       "pkg": "edge",
       "func": "OffsetCondition",
+      "verdict": "unverifiable",
+      "cause": "loop"
+    },
+    {
+      "pkg": "edge",
+      "func": "ParamInitConstGuard",
       "verdict": "unverifiable",
       "cause": "loop"
     },
@@ -1145,8 +1187,8 @@
     {
       "pkg": "smells",
       "func": "SM1NoFireConstTrip",
-      "verdict": "unverifiable",
-      "cause": "loop"
+      "verdict": "bounded",
+      "bound": "O(1)"
     },
     {
       "pkg": "smells",
@@ -1200,7 +1242,7 @@
       "pkg": "smells",
       "func": "SM5NoFireConstTrip",
       "verdict": "unverifiable",
-      "cause": "loop"
+      "cause": "call"
     },
     {
       "pkg": "smells",
