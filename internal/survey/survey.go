@@ -137,6 +137,10 @@ func Summarize(doc report.Document) (Totals, map[string]int, map[string]int) {
 // number without a commit is not comparable across runs, but failing the whole
 // target over a missing SHA would be worse than recording it as unknown.
 func commitOf(path string) string {
+	// #nosec G204 -- path comes from survey/targets.json, an operator-authored
+	// file committed to this repo, and the survey is a manual developer tool
+	// that never runs in CI or on untrusted input. The argument is passed as a
+	// separate argv element, so there is no shell to inject into.
 	out, err := exec.Command("git", "-C", path, "rev-parse", "--short", "HEAD").Output()
 	if err != nil {
 		return ""
@@ -200,7 +204,10 @@ func firstLine(s string) string {
 
 // LoadConfig reads survey/targets.json.
 func LoadConfig(path string) (Config, error) {
-	b, err := os.ReadFile(path) //nolint:gosec // operator-supplied config path
+	// #nosec G304 -- path is survey/targets.json, resolved from the repo root by
+	// the caller; this is a manual developer tool, not a service reading user
+	// input.
+	b, err := os.ReadFile(path)
 	if err != nil {
 		return Config{}, err
 	}

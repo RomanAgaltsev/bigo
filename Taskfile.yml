@@ -42,6 +42,11 @@ tasks:
     desc: Tidy modules
     cmds:
       - go mod tidy
+  security:
+    desc: Run gosec with the same arguments as the security workflow
+    cmds:
+      - gosec -exclude-dir=testdata ./...
+
   ci:
-    desc: Full local CI
-    deps: [tidy, lint, test]
+    desc: Full local CI (tidy, lint, security, test)
+    deps: [tidy, lint, security, test]
