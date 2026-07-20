@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.35.0](https://github.com/RomanAgaltsev/bigo/compare/v1.34.0...v1.35.0) (2026-07-20)
+
+
+### Features
+
+* survey-ranked stdlib cost-table entries ([#111](https://github.com/RomanAgaltsev/bigo/issues/111)) ([9f0510a](https://github.com/RomanAgaltsev/bigo/commit/9f0510a5632ea15bf66c2acfe48e8271a5d0f9fc))
+
 ## [1.34.0](https://github.com/RomanAgaltsev/bigo/compare/v1.33.1...v1.34.0) (2026-07-20)
 
 
