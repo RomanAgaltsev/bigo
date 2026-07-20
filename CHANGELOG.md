@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.33.1](https://github.com/RomanAgaltsev/bigo/compare/v1.33.0...v1.33.1) (2026-07-20)
+
+
+### Bug Fixes
+
+* diff join-key collision and a guard-offset branch-ordering loss ([#107](https://github.com/RomanAgaltsev/bigo/issues/107)) ([cf1227f](https://github.com/RomanAgaltsev/bigo/commit/cf1227f04a4a3d6867592ecda4de3f4f9a6eecbb))
+
 ## [1.33.0](https://github.com/RomanAgaltsev/bigo/compare/v1.32.0...v1.33.0) (2026-07-20)
 
 
