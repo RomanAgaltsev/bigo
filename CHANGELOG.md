@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.36.0](https://github.com/RomanAgaltsev/bigo/compare/v1.35.0...v1.36.0) (2026-07-20)
+
+
+### Features
+
+* constant trip counts are O(1) ([#113](https://github.com/RomanAgaltsev/bigo/issues/113)) ([8106cfa](https://github.com/RomanAgaltsev/bigo/commit/8106cfa412a5005a044c1772bc8ad97a46a148d1))
+
 ## [1.35.0](https://github.com/RomanAgaltsev/bigo/compare/v1.34.0...v1.35.0) (2026-07-20)
 
 
