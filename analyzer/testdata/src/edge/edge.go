@@ -642,3 +642,68 @@ func HalfDivisorInit(s []int) int {
 	}
 	return t
 }
+
+// --- v1.32.0: C10's shift gate and C6's square gate.
+//
+// Each no-fire pin is budgeted at the bound the engine would emit if its gate
+// were dropped, so relaxing either turns them red. The positive controls exist
+// because no-fire pins alone would stay green if the arms were deleted outright.
+
+// A zero shift is the identity — b never moves, so the loop does not terminate.
+//
+//bigo:max O(log n) where n=b
+func ZeroShiftAmount(b int) int { // want `cannot verify budget`
+	t := 0
+	for b > 0 {
+		b >>= 0
+		t++
+	}
+	return t
+}
+
+// A variable shift amount may be 0 at runtime, proving no decrease.
+//
+//bigo:max O(log n) where n=b
+func VarShiftAmount(b, k int) int { // want `cannot verify budget`
+	t := 0
+	for b > 0 {
+		b >>= k
+		t++
+	}
+	return t
+}
+
+// Positive control: the binary-exponentiation form must verify.
+//
+//bigo:max O(log n) where n=b
+func ConstShift(b int) int {
+	t := 0
+	for b > 0 {
+		b >>= 1
+		t++
+	}
+	return t
+}
+
+// A distinct-operand product bounds neither factor: m may be tiny (or zero,
+// or negative) while d runs far past n.
+//
+//bigo:max O(n) where n=n
+func DistinctMulGuard(n, m int) int { // want `cannot verify budget`
+	t := 0
+	for d := 2; d*m <= n; d++ {
+		t++
+	}
+	return t
+}
+
+// Positive control: the trial-division form must verify.
+//
+//bigo:max O(n) where n=n
+func SquareGuard(n int) int {
+	t := 0
+	for d := 2; d*d <= n; d++ {
+		t++
+	}
+	return t
+}

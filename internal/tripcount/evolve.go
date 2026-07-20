@@ -54,6 +54,20 @@ func affineOfPhi(v ssa.Value) (*ssa.Phi, bool) {
 	if p, ok := v.(*ssa.Phi); ok {
 		return p, true
 	}
+	// phi*phi. For phi >= 1, phi <= phi*phi, so a guard `phi*phi <= e` implies
+	// `phi <= e` and R1's linear claim is unchanged; R1's own preconditions
+	// (constant lower bound on every init, positive constant steps) confine
+	// the sub-1 region to a constant prefix. The operands must be the SAME SSA
+	// value: `a*b <= e` bounds neither factor, since a may be huge while b is
+	// tiny. Caveat, same class as R6's documented (lo+hi)/2 case: phi*phi
+	// overflows to a negative value for large phi, which re-satisfies the
+	// guard — the engine models Go arithmetic as unbounded and treats
+	// overflow-dependent termination as out of contract.
+	if bo, ok := v.(*ssa.BinOp); ok && bo.Op == token.MUL {
+		if p, isPhi := bo.X.(*ssa.Phi); isPhi && bo.X == bo.Y {
+			return p, true
+		}
+	}
 	bo, ok := v.(*ssa.BinOp)
 	if !ok {
 		return nil, false
@@ -444,7 +458,19 @@ func ruleGeometricDown(sh *shape) (bound.Bound, bool) {
 // divStep matches e = phi/k or (phi-d)/k for consts k >= 2, d >= 0.
 func divStep(phi *ssa.Phi, e ssa.Value) bool {
 	bo, ok := e.(*ssa.BinOp)
-	if !ok || bo.Op != token.QUO {
+	if !ok {
+		return false
+	}
+	// phi >> k is phi / 2^k. Arithmetic SHR differs from truncating QUO only
+	// in sign — SHR rounds toward -inf, QUO toward zero — and that case cannot
+	// arise here: R4's guard forces phi >= 1 whenever the step executes. A
+	// variable amount may be 0 at runtime and k = 0 is the identity, so the
+	// amount must be a constant >= 1.
+	if bo.Op == token.SHR {
+		k, ok := sizefacts.ConstIntV(bo.Y)
+		return ok && k >= 1 && bo.X == phi
+	}
+	if bo.Op != token.QUO {
 		return false
 	}
 	k, ok := sizefacts.ConstIntV(bo.Y)

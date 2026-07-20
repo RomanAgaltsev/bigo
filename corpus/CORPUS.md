@@ -15,9 +15,9 @@ composition, not a percentage.
 
 | Status | Count |
 |---|---|
-| exact | 25 |
+| exact | 27 |
 | loose | 0 |
-| top | 31 |
+| top | 29 |
 
 ## Space statuses (pinned entries only)
 
@@ -62,12 +62,12 @@ composition, not a percentage.
 | matrix.SpiralOrder | O(len(m)^2) | unverifiable | top | O(len(m)^2) | unverifiable | top | loop | www.geeksforgeeks.org/print-a-given-matrix-in-spiral-form/ (bound reference) |
 | matrix.TransposeInPlace | O(len(m)^2) | O(len(m)^2) | exact | O(1) | O(1) | exact |  | en.wikipedia.org/wiki/Transpose |
 | numeric.DigitSum | O(log(n)) | O(log(n)) | exact | O(1) | O(1) | exact |  | www.geeksforgeeks.org/program-for-sum-of-the-digits-of-a-given-number/ (bound reference) |
-| numeric.FastPow | O(log(b)) | unverifiable | top | O(1) | O(1) | exact | loop | CLRS §31.6; ru.algorithmica.org (binary exponentiation) |
+| numeric.FastPow | O(log(b)) | O(log(b)) | exact | O(1) | O(1) | exact |  | CLRS §31.6; ru.algorithmica.org (binary exponentiation) |
 | numeric.FibIter | O(n) | O(n) | exact | O(1) | O(1) | exact |  | en.wikipedia.org/wiki/Fibonacci_sequence (iterative) |
 | numeric.FibMemo | O(n) | unverifiable | top | O(n) | unverifiable | top | call | CLRS §15.1 (memoization); en.wikipedia.org/wiki/Memoization |
 | numeric.GCD | O(log(a)) | unverifiable | top | O(1) | O(1) | exact | loop | CLRS §31.2 (Lamé); en.wikipedia.org/wiki/Euclidean_algorithm |
 | numeric.Sieve | O(n log(n)) | unverifiable | top | O(n) | O(n) | exact | loop | CLRS ex. 31-3; en.wikipedia.org/wiki/Sieve_of_Eratosthenes (conservative pin) |
-| numeric.TrialDivision | O(n) | unverifiable | top | O(1) | O(1) | exact | loop | en.wikipedia.org/wiki/Trial_division (conservative pin) |
+| numeric.TrialDivision | O(n) | O(n) | exact | O(1) | O(1) | exact |  | en.wikipedia.org/wiki/Trial_division (conservative pin) |
 | searching.BinarySearch | O(log(len(s))) | O(log(len(s))) | exact | O(1) | O(1) | exact |  | CLRS ex. 2.3-5; en.wikipedia.org/wiki/Binary_search_algorithm |
 | searching.BinarySearchRec | O(log(len(s))) | O(log(len(s))) | exact | O(log(len(s))) | O(log(len(s))) | exact |  | CLRS ex. 2.3-5 (recursive form) |
 | searching.FirstOccurrence | O(log(len(s))) | O(log(len(s))) | exact | O(1) | O(1) | exact |  | en.wikipedia.org/wiki/Binary_search_algorithm (leftmost variant) |

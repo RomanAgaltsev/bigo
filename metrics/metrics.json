@@ -1,12 +1,12 @@
 {
-  "total": 222,
-  "bounded": 124,
-  "coverage_pct": "55.9",
+  "total": 227,
+  "bounded": 126,
+  "coverage_pct": "55.5",
   "by_cause": {
     "call": 56,
     "go": 3,
     "irreducible": 1,
-    "loop": 30,
+    "loop": 33,
     "nobody": 8
   },
   "per_package": {
@@ -23,8 +23,8 @@
       "bounded": 4
     },
     "edge": {
-      "total": 39,
-      "bounded": 16
+      "total": 44,
+      "bounded": 18
     },
     "fieldsize": {
       "total": 15,
@@ -292,6 +292,18 @@
     },
     {
       "pkg": "edge",
+      "func": "ConstShift",
+      "verdict": "bounded",
+      "bound": "O(log(b))"
+    },
+    {
+      "pkg": "edge",
+      "func": "DistinctMulGuard",
+      "verdict": "unverifiable",
+      "cause": "loop"
+    },
+    {
+      "pkg": "edge",
       "func": "EarlyReturn",
       "verdict": "bounded",
       "bound": "O(len(xs))"
@@ -448,6 +460,12 @@
     },
     {
       "pkg": "edge",
+      "func": "SquareGuard",
+      "verdict": "bounded",
+      "bound": "O(n)"
+    },
+    {
+      "pkg": "edge",
       "func": "SwitchInLoop",
       "verdict": "bounded",
       "bound": "O(len(xs))"
@@ -491,6 +509,18 @@
     {
       "pkg": "edge",
       "func": "VarDivisorInit",
+      "verdict": "unverifiable",
+      "cause": "loop"
+    },
+    {
+      "pkg": "edge",
+      "func": "VarShiftAmount",
+      "verdict": "unverifiable",
+      "cause": "loop"
+    },
+    {
+      "pkg": "edge",
+      "func": "ZeroShiftAmount",
       "verdict": "unverifiable",
       "cause": "loop"
     },
