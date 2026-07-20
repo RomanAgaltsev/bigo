@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.31.0](https://github.com/RomanAgaltsev/bigo/compare/v1.30.1...v1.31.0) (2026-07-20)
+
+
+### Features
+
+* non-negativity for len/cap and constant division (MaxSubarrayDC) ([#101](https://github.com/RomanAgaltsev/bigo/issues/101)) ([5e12f59](https://github.com/RomanAgaltsev/bigo/commit/5e12f599bff9d9669ba91aec51098ba7238da167))
+
 ## [1.30.1](https://github.com/RomanAgaltsev/bigo/compare/v1.30.0...v1.30.1) (2026-07-20)
 
 
