@@ -37,7 +37,7 @@ func TestSummarizeExcludesDependencies(t *testing.T) {
 			fn("example.com/mtools", "F", false),
 		},
 	}
-	got, byCause, byDetail := Summarize(doc)
+	got, byCause, byDetail, _ := Summarize(doc)
 
 	if got.Functions != 3 {
 		t.Errorf("Functions = %d, want 3 (only example.com/m and example.com/m/inner)", got.Functions)
@@ -86,7 +86,7 @@ func TestSummarizeEmptyIsNotADivideByZero(t *testing.T) {
 		Module:    "example.com/m",
 		Functions: []report.Function{fn("github.com/other/dep", "D", false)},
 	}
-	got, _, _ := Summarize(doc)
+	got, _, _, _ := Summarize(doc)
 	if got.Functions != 0 || got.CoveragePct != "0.0" {
 		t.Errorf("empty target = %+v, want 0 functions and \"0.0\"", got)
 	}
