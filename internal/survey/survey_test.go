@@ -46,7 +46,7 @@ func TestSummarizeExcludesDependencies(t *testing.T) {
 			fn("example.com/mtools", "F", false),
 		},
 	}
-	got, byCause, byDetail, _ := Summarize(doc)
+	got, byCause, byDetail, _ := Summarize(doc, nil)
 
 	if got.Functions != 3 {
 		t.Errorf("Functions = %d, want 3 (only example.com/m and example.com/m/inner)", got.Functions)
@@ -95,7 +95,7 @@ func TestSummarizeEmptyIsNotADivideByZero(t *testing.T) {
 		Module:    "example.com/m",
 		Functions: []report.Function{fn("github.com/other/dep", "D", false)},
 	}
-	got, _, _, _ := Summarize(doc)
+	got, _, _, _ := Summarize(doc, nil)
 	if got.Functions != 0 || got.CoveragePct != "0.0" {
 		t.Errorf("empty target = %+v, want 0 functions and \"0.0\"", got)
 	}
@@ -166,5 +166,85 @@ func TestMarkdownEscapesPipes(t *testing.T) {
 	}
 	if !strings.Contains(string(r.Markdown()), `Map[string\|int]`) {
 		t.Error("pipe in a cause detail was not escaped")
+	}
+}
+
+// byFile classifies on the fixture's filename, standing in for the real
+// detector so these tests never touch the filesystem.
+func byFile(f string) bool { return strings.HasSuffix(f, ".pb.go") }
+
+func TestSummarizeSplitsGeneratedFromHandWritten(t *testing.T) {
+	doc := report.Document{
+		Module: "example.com/m",
+		Functions: []report.Function{
+			fn("example.com/m", "HandBounded", false),
+			fn("example.com/m", "HandTop", true, cause("call", costPrefix+"fmt.Errorf")),
+			genFn("example.com/m", "GenBounded", false),
+			genFn("example.com/m", "GenTop", true, cause("call", costPrefix+"sync.Once.Do")),
+		},
+	}
+	got, _, _, _ := Summarize(doc, byFile)
+
+	// The headline population is unchanged: all four first-party functions.
+	if got.Functions != 4 || got.Bounded != 2 {
+		t.Errorf("headline must count everything: functions=%d bounded=%d, want 4/2",
+			got.Functions, got.Bounded)
+	}
+	if got.CoveragePct != "50.0" {
+		t.Errorf("headline coverage = %s, want 50.0", got.CoveragePct)
+	}
+	if got.Generated != 2 {
+		t.Errorf("generated = %d, want 2", got.Generated)
+	}
+	if got.Hand.Functions != 2 || got.Hand.Bounded != 1 {
+		t.Errorf("hand-written: functions=%d bounded=%d, want 2/1",
+			got.Hand.Functions, got.Hand.Bounded)
+	}
+	if got.Hand.CoveragePct != "50.0" {
+		t.Errorf("hand coverage = %s, want 50.0", got.Hand.CoveragePct)
+	}
+}
+
+// TestSummarizeTablesExcludeGenerated is the point of the change: the ranking
+// tables are labelled the deliverable, so they must not rank work nobody will
+// ever do.
+func TestSummarizeTablesExcludeGenerated(t *testing.T) {
+	doc := report.Document{
+		Module: "example.com/m",
+		Functions: []report.Function{
+			fn("example.com/m", "Hand", true, cause("call", costPrefix+"fmt.Errorf")),
+			genFn("example.com/m", "Gen", true, cause("call", costPrefix+"sync.Once.Do")),
+		},
+	}
+	_, byCause, byDetail, sole := Summarize(doc, byFile)
+
+	if byDetail[costPrefix+"sync.Once.Do"] != 0 {
+		t.Errorf("generated code must not appear in the sites table: %v", byDetail)
+	}
+	if byDetail[costPrefix+"fmt.Errorf"] != 1 {
+		t.Errorf("hand-written code must appear in the sites table: %v", byDetail)
+	}
+	if byCause["call"] != 1 {
+		t.Errorf("cause table must count hand-written only, got %v", byCause)
+	}
+	if sole[costPrefix+"sync.Once.Do"] != 0 {
+		t.Errorf("generated code must not appear in the graduation table: %v", sole)
+	}
+	if sole[costPrefix+"fmt.Errorf"] != 1 {
+		t.Errorf("hand-written graduation count wrong: %v", sole)
+	}
+}
+
+// TestSummarizeNilDetectorCountsEverythingAsHandWritten keeps the pre-split
+// behaviour available to callers and tests that do not classify.
+func TestSummarizeNilDetectorCountsEverythingAsHandWritten(t *testing.T) {
+	doc := report.Document{
+		Module:    "example.com/m",
+		Functions: []report.Function{genFn("example.com/m", "Gen", false)},
+	}
+	got, _, _, _ := Summarize(doc, nil)
+	if got.Generated != 0 || got.Hand.Functions != 1 {
+		t.Errorf("nil detector: generated=%d hand=%d, want 0/1",
+			got.Generated, got.Hand.Functions)
 	}
 }
