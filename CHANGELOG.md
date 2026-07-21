@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.37.0](https://github.com/RomanAgaltsev/bigo/compare/v1.36.0...v1.37.0) (2026-07-21)
+
+
+### Features
+
+* near-frontier metric and graduation-count blocker ranking ([#115](https://github.com/RomanAgaltsev/bigo/issues/115)) ([e9a04c8](https://github.com/RomanAgaltsev/bigo/commit/e9a04c899ae351a53efc8b401833283e6381b7ee))
+
 ## [1.36.0](https://github.com/RomanAgaltsev/bigo/compare/v1.35.0...v1.36.0) (2026-07-20)
 
 
