@@ -20,6 +20,15 @@ func cause(kind, detail string) report.CauseJSON {
 	return report.CauseJSON{Kind: kind, Detail: detail}
 }
 
+// genFn is fn with a filename a generated-code detector would flag. The
+// frontier tests pass an explicit skip predicate rather than reading files, so
+// this only has to be distinguishable.
+func genFn(pkg, name string, top bool, causes ...report.CauseJSON) report.Function {
+	f := fn(pkg, name, top, causes...)
+	f.File = name + ".pb.go"
+	return f
+}
+
 // TestSummarizeExcludesDependencies is the harness's correctness crux. An
 // ad-hoc run over prometheus counted pb33f/libopenapi symbols — somebody else's
 // code — and any coverage number computed over those measures the wrong thing.

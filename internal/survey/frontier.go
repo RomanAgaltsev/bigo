@@ -96,6 +96,22 @@ func bucket(d int) string {
 // engine does not already know. There is no inference here and no soundness
 // surface — a wrong distance is a wrong PRIORITY, never a wrong bound.
 func frontierOf(doc report.Document) frontier {
+	return frontierExcluding(doc, nil)
+}
+
+// frontierExcluding is frontierOf over a population that omits every function
+// for which skip returns true. A nil skip measures everything.
+//
+// THE SKIP FILTERS THE POPULATION, NEVER THE WALK. leafSet is untouched and
+// still recurses through skipped ⊤ functions, because a counted function whose
+// blocker sits BEHIND a skipped one has a genuine blocker — the skipped code
+// stands between it and a bound. Filtering the walk instead would erase real
+// work from the queue, which is the exact opposite of why any caller skips.
+//
+// Used by the generated-code split: generated functions leave the scoring
+// population, while a hand-written caller of a generated ⊤ function keeps the
+// leaf it actually waits on.
+func frontierExcluding(doc report.Document, skip func(report.Function) bool) frontier {
 	fr := frontier{Hist: map[string]int{}, SoleBlocker: map[string]int{}}
 
 	byKey := make(map[string][]int, len(doc.Functions))
@@ -106,6 +122,9 @@ func frontierOf(doc report.Document) frontier {
 	for i, f := range doc.Functions {
 		if !firstParty(f.Package, doc.Module) || !f.Time.Top {
 			continue
+		}
+		if skip != nil && skip(f) {
+			continue // population only — the walk below still passes through it
 		}
 		fr.Top++
 

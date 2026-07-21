@@ -230,3 +230,49 @@ func TestMarkdownRendersBothBlockerTables(t *testing.T) {
 		t.Error("the deliverable label is attached to the sites table")
 	}
 }
+
+// TestFrontierExcludingFiltersPopulationNotWalk is the load-bearing
+// distinction of the generated-code split. A HAND-WRITTEN function whose only
+// blocker sits behind a GENERATED callee still has a genuine blocker: the
+// generated code stands between real user code and a bound. Truncating the
+// walk there would erase that blocker from the work queue, which is the
+// opposite of the split's purpose.
+func TestFrontierExcludingFiltersPopulationNotWalk(t *testing.T) {
+	doc := report.Document{
+		Module: "example.com/m",
+		Functions: []report.Function{
+			// Hand-written caller of a generated ⊤ function.
+			fn("example.com/m", "Caller", true, callTo("example.com/m.Gen")),
+			// Generated, ⊤, and itself blocked by a real leaf.
+			genFn("example.com/m", "Gen", true, callTo("sync.Once.Do")),
+		},
+	}
+	skip := func(f report.Function) bool { return f.Func == "Gen" }
+
+	fr := frontierExcluding(doc, skip)
+
+	if fr.Top != 1 {
+		t.Errorf("only the hand-written function counts: Top = %d, want 1", fr.Top)
+	}
+	if got := fr.SoleBlocker[costPrefix+"sync.Once.Do"]; got != 1 {
+		t.Errorf("the caller must KEEP the leaf behind the generated callee, got %d want 1", got)
+	}
+	if fr.Hist["1"] != 1 {
+		t.Errorf("caller sits at distance 1, hist=%v", fr.Hist)
+	}
+}
+
+// TestFrontierOfIsUnfiltered pins that the existing entry point did not change
+// meaning: with no skip, both functions are counted.
+func TestFrontierOfIsUnfiltered(t *testing.T) {
+	doc := report.Document{
+		Module: "example.com/m",
+		Functions: []report.Function{
+			fn("example.com/m", "Caller", true, callTo("example.com/m.Gen")),
+			genFn("example.com/m", "Gen", true, callTo("sync.Once.Do")),
+		},
+	}
+	if fr := frontierOf(doc); fr.Top != 2 {
+		t.Errorf("frontierOf must count both: Top = %d, want 2", fr.Top)
+	}
+}
