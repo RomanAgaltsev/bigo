@@ -7,11 +7,11 @@ contents and CI never runs it. Its targets are repositories that exist on one
 machine at whatever commit they happen to sit, so these numbers are a record
 of one run — compare across runs only via the per-target commit below.
 
-Run 2026-07-21 with bigo 1.37.0.
+Run 2026-07-21 with bigo 1.38.0.
 
-**Aggregate: 31.6%** — 10572 of 33504 first-party functions bounded.
+**Aggregate: 31.6%** — 10571 of 33504 first-party functions bounded.
 
-**Hand-written: 30.2%** — 8832 of 29214 functions bounded, with 4290 generated functions excluded.
+**Hand-written: 30.2%** — 8831 of 29214 functions bounded, with 4290 generated functions excluded.
 
 Generated code is first-party by module path and is real code, but nobody
 hand-tunes it and its unverifiability is usually the CORRECT answer — the
@@ -20,9 +20,9 @@ sole-blocker functions as generated protobuf whose verdict is right.
 **The aggregate above is kept unrebased** so it stays comparable with the
 2026-07-20/21 probes, which pin their population to it.
 
-**Hand-written near frontier: 8337 of 20382 (40.9%), ceiling 58.8%.**
+**Hand-written near frontier: 8338 of 20383 (40.9%), ceiling 58.8%.**
 
-**Near frontier: 9966 of 22932 unverifiable functions (43.5%) sit within 2 distinct blockers of a bound.** Clearing all of them would put coverage at **61.3%** — an UPPER BOUND, not a forecast: clearing a blocker for one function need not clear it for another. Two 2026-07-20 probes measured that gap directly (`fmt`: 744 sole-blocker functions, 298 actually priceable; function values: 573, zero reachable).
+**Near frontier: 9967 of 22933 unverifiable functions (43.5%) sit within 2 distinct blockers of a bound.** Clearing all of them would put coverage at **61.3%** — an UPPER BOUND, not a forecast: clearing a blocker for one function need not clear it for another. Two 2026-07-20 probes measured that gap directly (`fmt`: 744 sole-blocker functions, 298 actually priceable; function values: 573, zero reachable).
 
 ## Per target
 
@@ -39,7 +39,7 @@ sole-blocker functions as generated protobuf whose verdict is right.
 | cel-go | github.com/google/cel-go | 646511d | 3586 | 1503 | 41.9% | 937 | 2649 | 39.0% | 1122 | 73.2% |
 | expr | github.com/expr-lang/expr | 4b31df3 | 1286 | 224 | 17.4% | 515 | 771 | 29.1% | 215 | 34.1% |
 | nats-server | github.com/nats-io/nats-server/v2 | 2e5f51f31 | 4000 | 921 | 23.0% | 0 | 4000 | 23.0% | 1105 | 50.6% |
-| hugo | github.com/gohugoio/hugo | 89b8c3220 | 5378 | 1751 | 32.6% | 22 | 5356 | 32.3% | 1677 | 63.7% |
+| hugo | github.com/gohugoio/hugo | 89b8c3220 | 5378 | 1750 | 32.5% | 22 | 5356 | 32.3% | 1678 | 63.7% |
 
 ## Distance to bound
 
@@ -51,7 +51,7 @@ reach against a deep tail that no achievable engine work will.
 | Blockers | Functions | Share |
 |---|---|---|
 | 0 | 22 | 0.1% |
-| 1 | 6665 | 29.1% |
+| 1 | 6666 | 29.1% |
 | 2 | 3279 | 14.3% |
 | 3 | 2058 | 9.0% |
 | 4 | 1662 | 7.2% |
@@ -66,7 +66,7 @@ reach against a deep tail that no achievable engine work will.
 
 | Cause | Count |
 |---|---|
-| call | 95650 |
+| call | 95651 |
 | loop | 43226 |
 | defer | 884 |
 | go | 335 |

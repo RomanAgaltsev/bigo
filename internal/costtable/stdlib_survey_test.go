@@ -73,6 +73,43 @@ func f(s, x string) string { return strings.TrimPrefix(s, x) }`, "O(len(s))"},
 		{"bytes.Equal", `package input
 import "bytes"
 func f(a, b []byte) bool { return bytes.Equal(a, b) }`, "O(len(a))"},
+
+		// --- The Trim family: the PRODUCT, not the first argument ---
+		//
+		// These do not compare two sequences, they test MEMBERSHIP of every
+		// rune of s in cutset, and both of Go's paths carry a cutset term:
+		// makeASCIISet walks the whole cutset before any trimming, and a
+		// cutset holding any non-ASCII byte falls back to trimLeftUnicode,
+		// which calls ContainsRune — a scan of cutset — once per rune of s.
+		//
+		// Priced O(len(s)) from v1.35.0 to v1.38.0 by inheriting the
+		// HasPrefix/slices.Equal precedent, which does not apply to them.
+		// That was the SEVENTH wrong bound; see the 2026-07-21 review, F1.
+		{"strings.Trim", `package input
+import "strings"
+func f(s, cutset string) string { return strings.Trim(s, cutset) }`, "O(len(cutset) len(s))"},
+
+		{"strings.TrimLeft", `package input
+import "strings"
+func f(s, cutset string) string { return strings.TrimLeft(s, cutset) }`, "O(len(cutset) len(s))"},
+
+		{"strings.TrimRight", `package input
+import "strings"
+func f(s, cutset string) string { return strings.TrimRight(s, cutset) }`, "O(len(cutset) len(s))"},
+
+		// A CONSTANT cutset keeps the linear bound: a compile-time string has a
+		// fixed length and contributes only a constant factor. This is the
+		// common real-world shape, and it is a POSITIVE CONTROL — the first fix
+		// for F1 priced the product unconditionally and turned
+		// strings.Trim(s, " \t\n") into ⊤, a silent capability loss of exactly
+		// the kind C5 already cost this project once.
+		{"strings.Trim const cutset", `package input
+import "strings"
+func f(s string) string { return strings.Trim(s, " \t\n") }`, "O(len(s))"},
+
+		{"strings.TrimLeft const cutset", `package input
+import "strings"
+func f(s string) string { return strings.TrimLeft(s, "x") }`, "O(len(s))"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

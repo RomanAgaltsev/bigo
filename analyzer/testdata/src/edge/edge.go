@@ -883,3 +883,49 @@ func ConstInnerDoesNotPoison(s []int) int {
 	}
 	return t
 }
+
+// MixedInitConstFirst / MixedInitParamFirst are a DIFFERENTIAL PAIR pinning
+// that a mixed constant/parameter init stays unverifiable under R2, whichever
+// CFG edge happens to carry the constant.
+//
+// Both loops run max(1000, m) times, so O(m) is not a bound either can be
+// given. Before the 2026-07-21 review's F2 fix, ConstFirst reported O(m) and
+// ParamFirst reported ⊤ — identical semantics, opposite verdicts — because
+// ruleDecreasing read its allConst flag inside the same walk that wrote it,
+// making the answer depend on phi edge order. Each is budgeted at exactly the
+// wrong bound that regression emitted.
+//
+// The pair must be kept together: pinning only one of them tests one edge
+// order and would have passed throughout the defect's life.
+
+//bigo:max O(n) where n=m
+func MixedInitConstFirst(m int, c bool) int { // want `cannot verify budget`
+	t := 0
+	i := 0
+	if c {
+		i = 1000
+		goto L
+	}
+	i = m
+L:
+	for ; i > 0; i-- {
+		t++
+	}
+	return t
+}
+
+//bigo:max O(n) where n=m
+func MixedInitParamFirst(m int, c bool) int { // want `cannot verify budget`
+	t := 0
+	i := 0
+	if c {
+		i = m
+		goto L
+	}
+	i = 1000
+L:
+	for ; i > 0; i-- {
+		t++
+	}
+	return t
+}

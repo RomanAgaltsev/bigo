@@ -221,8 +221,16 @@ func ruleDecreasing(sh *shape) (bound.Bound, bool) {
 	if !ok || phi.Block() != sh.loop.Header {
 		return bound.Bound{}, false
 	}
+	// Decide the all-constant question in a PRE-PASS, before the walk that
+	// consumes it. Computing it inside that walk made the answer depend on phi
+	// EDGE ORDER: the skip below fires only while the flag is still true, so a
+	// mixed constant/parameter init was rejected or silently accepted according
+	// to which edge the CFG happened to list first. See the 2026-07-21 review,
+	// F2, and the MixedInit differential pair in analyzer/testdata/src/edge.
+	allConst := allInitsConst(phi, isNegStep)
+
 	var extent bound.Var
-	hasStep, hasInit, allConst := false, false, true
+	hasStep, hasInit := false, false
 	for k, e := range phi.Edges {
 		if isNegStep(phi, e) {
 			hasStep = true
@@ -230,9 +238,6 @@ func ruleDecreasing(sh *shape) (bound.Bound, bool) {
 		}
 		if !isInitEdge(sh, phi, k) {
 			return bound.Bound{}, false
-		}
-		if !constGuard(e) {
-			allConst = false
 		}
 		v, ok := sh.f.UpperExtent(e, 0)
 		if !ok {
@@ -255,9 +260,14 @@ func ruleDecreasing(sh *shape) (bound.Bound, bool) {
 	// All-constant inits: the value starts at a constant, drops by >= 1 per
 	// iteration, and the guard fails at a constant floor. Trips <= K - c.
 	//
-	// Mixed inits deliberately stay ⊤: the extent-agreement check above already
-	// rejects them, and widening that is a separate claim no measured row asks
-	// for. Note a PARAMETER init is not constant and keeps its O(m) bound — an
+	// Mixed constant/non-constant inits stay ⊤, and the mechanism is the
+	// UpperExtent refusal above, NOT the extent-agreement check: with allConst
+	// false the constant edge has no name, fails UpperExtent, and returns. The
+	// agreement check never sees it. That distinction is load-bearing — the
+	// comment here used to credit the agreement check, and the code did not in
+	// fact reject mixed inits at all in one edge order.
+	//
+	// Note a PARAMETER init is not constant and keeps its O(m) bound — an
 	// integer parameter is its own extent here, which this must not swallow.
 	if allConst && len(phi.Edges) > 1 {
 		return bound.Constant(), true
@@ -266,6 +276,26 @@ func ruleDecreasing(sh *shape) (bound.Bound, bool) {
 		return bound.Bound{}, false
 	}
 	return bound.Of(bound.Term(extent)), true
+}
+
+// allInitsConst reports whether EVERY non-step edge of phi carries a
+// compile-time constant, isStep naming the rule's own step predicate.
+//
+// Deliberately a separate pass rather than a flag accumulated inside the rule's
+// edge walk. That walk both writes and reads the answer, so the reader saw a
+// partially-computed value and the verdict fell out of phi edge order — the
+// 2026-07-21 review's F2, and the third order-dependence defect in this file.
+// A rule that partitions phi edges must finish deciding before it starts acting.
+func allInitsConst(phi *ssa.Phi, isStep func(*ssa.Phi, ssa.Value) bool) bool {
+	for _, e := range phi.Edges {
+		if isStep(phi, e) {
+			continue
+		}
+		if !constGuard(e) {
+			return false
+		}
+	}
+	return true
 }
 
 // constGuard reports whether v is a compile-time integer constant — the value
@@ -499,8 +529,12 @@ func ruleGeometricDown(sh *shape) (bound.Bound, bool) {
 	if !ok || phi.Block() != sh.loop.Header {
 		return bound.Bound{}, false
 	}
+	// Pre-pass, for the reason given in ruleDecreasing: deciding this inside
+	// the walk below makes the verdict depend on phi edge order.
+	allConst := allInitsConst(phi, divStep)
+
 	var extent bound.Var
-	hasStep, hasInit, allConst := false, false, true
+	hasStep, hasInit := false, false
 	for k, e := range phi.Edges {
 		if divStep(phi, e) {
 			hasStep = true
@@ -508,9 +542,6 @@ func ruleGeometricDown(sh *shape) (bound.Bound, bool) {
 		}
 		if !isInitEdge(sh, phi, k) {
 			return bound.Bound{}, false
-		}
-		if !constGuard(e) {
-			allConst = false
 		}
 		v, ok := sh.f.UpperExtent(e, 0)
 		if !ok {

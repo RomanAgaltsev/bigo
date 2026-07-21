@@ -1,12 +1,12 @@
 {
-  "total": 240,
+  "total": 242,
   "bounded": 136,
-  "coverage_pct": "56.7",
+  "coverage_pct": "56.2",
   "by_cause": {
     "call": 57,
     "go": 3,
     "irreducible": 1,
-    "loop": 35,
+    "loop": 37,
     "nobody": 8
   },
   "per_package": {
@@ -23,7 +23,7 @@
       "bounded": 4
     },
     "edge": {
-      "total": 57,
+      "total": 59,
       "bounded": 27
     },
     "fieldsize": {
@@ -437,6 +437,18 @@
     {
       "pkg": "edge",
       "func": "MixedConstAndSizeInit",
+      "verdict": "unverifiable",
+      "cause": "loop"
+    },
+    {
+      "pkg": "edge",
+      "func": "MixedInitConstFirst",
+      "verdict": "unverifiable",
+      "cause": "loop"
+    },
+    {
+      "pkg": "edge",
+      "func": "MixedInitParamFirst",
       "verdict": "unverifiable",
       "cause": "loop"
     },
