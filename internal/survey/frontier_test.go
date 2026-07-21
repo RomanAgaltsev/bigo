@@ -276,3 +276,40 @@ func TestFrontierOfIsUnfiltered(t *testing.T) {
 		t.Errorf("frontierOf must count both: Top = %d, want 2", fr.Top)
 	}
 }
+
+// TestMarkdownReportsBothPopulations pins that the split is visible in the
+// rendered file: the unrebased aggregate, the hand-written headline, the
+// generated count, and each ranking table's population.
+func TestMarkdownReportsBothPopulations(t *testing.T) {
+	r := Report{
+		Generated:   "2026-07-21",
+		BigoVersion: "test",
+		Aggregate: Totals{
+			Functions: 100, Bounded: 40, CoveragePct: "40.0",
+			Seen: 100, Top: 60, NearFrontier: 30, CeilingPct: "70.0",
+			Generated: 20,
+			Hand: HandTotals{
+				Functions: 80, Bounded: 36, CoveragePct: "45.0",
+				Top: 44, NearFrontier: 22, CeilingPct: "72.5",
+			},
+			DistanceHist: map[string]int{"1": 30, "2": 30},
+		},
+		AggByCause:     map[string]int{"call": 1},
+		AggByDetail:    map[string]int{"unresolved cost at call to fmt.Errorf": 1},
+		AggSoleBlocker: map[string]int{"unresolved cost at call to fmt.Errorf": 1},
+	}
+	md := string(r.Markdown())
+
+	if !strings.Contains(md, "**Aggregate: 40.0%**") {
+		t.Error("the all-first-party headline must survive unchanged")
+	}
+	if !strings.Contains(md, "**Hand-written: 45.0%**") {
+		t.Error("the hand-written headline is missing")
+	}
+	if !strings.Contains(md, "20 generated") {
+		t.Error("the generated count must be visible, never silent")
+	}
+	if !strings.Contains(md, "hand-written code only") {
+		t.Error("the tables must state their population")
+	}
+}

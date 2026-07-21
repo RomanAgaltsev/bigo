@@ -273,10 +273,18 @@ func Run(cfg Config, version string, progress func(string, ...any)) Report {
 		r.Aggregate.Seen += totals.Seen
 		r.Aggregate.Top += totals.Top
 		r.Aggregate.NearFrontier += totals.NearFrontier
+		r.Aggregate.Generated += totals.Generated
+		r.Aggregate.Hand.Functions += totals.Hand.Functions
+		r.Aggregate.Hand.Bounded += totals.Hand.Bounded
+		r.Aggregate.Hand.Top += totals.Hand.Top
+		r.Aggregate.Hand.NearFrontier += totals.Hand.NearFrontier
 		r.Targets = append(r.Targets, t)
 	}
 	r.Aggregate.CoveragePct = pct(r.Aggregate.Bounded, r.Aggregate.Functions)
 	r.Aggregate.CeilingPct = ceilingPct(r.Aggregate.Bounded, r.Aggregate.NearFrontier, r.Aggregate.Functions)
+	r.Aggregate.Hand.CoveragePct = pct(r.Aggregate.Hand.Bounded, r.Aggregate.Hand.Functions)
+	r.Aggregate.Hand.CeilingPct = ceilingPct(r.Aggregate.Hand.Bounded,
+		r.Aggregate.Hand.NearFrontier, r.Aggregate.Hand.Functions)
 	return r
 }
 
