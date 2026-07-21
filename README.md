@@ -99,8 +99,9 @@ The document format is versioned independently of bigo releases
 [`schema/report.schema.json`](schema/report.schema.json). Within a major
 version, changes are additive-only and no field is ever reinterpreted —
 consumers must ignore unknown fields. Verdicts never affect the exit code:
-the report describes; enforcement belongs to tools built on it (a
-complexity-diff CI action is the planned first consumer).
+the report describes; enforcement belongs to tools built on it — `bigo diff`
+and the GitHub Action below were its first consumers, and gate this
+repository's own CI.
 
 ### Budget badge
 
@@ -482,9 +483,24 @@ stops it?" — so a third instrument does.
 [survey/SURVEY.md](survey/SURVEY.md) records a run of the shipped analyzer over
 external repositories listed in `survey/targets.json`, reporting coverage over
 **first-party functions only** (dependencies are filtered by module path) plus a
-ranked histogram of what blocked the rest. That histogram is what ranks engine
-and cost-table work: the canonical corpus and real code do **not** agree on which
-causes dominate, and real code is the one that reflects adoption.
+ranked histogram of what blocked the rest. It leads with three numbers rather
+than one, because a single coverage figure averages populations that behave
+differently:
+
+- **coverage** — how much of the module bigo bounds;
+- **the near frontier** — ⊤ functions within two distinct blockers of a bound,
+  reported beside a `ceiling_pct` that is an upper bound and never a forecast.
+  Measured 2026-07-20: 29% of ⊤ functions sit **one** blocker from a bound
+  while 25% sit ten or more, so incremental work reaches one population and not
+  the other;
+- **hand-written versus generated** — generated code is first-party by module
+  path and is real code, but nobody hand-tunes it and its unverifiability is
+  usually the *correct* answer. Every ranking table counts hand-written code
+  only.
+
+Work is ranked by the **graduation-count** table — functions whose *only*
+blocker is one entry — not by the site histogram beside it. Those disagree, and
+ranking by sites has twice produced directions that measured out at nothing.
 
 Unlike the other two it is a **manual measurement, not a golden test** — its
 inputs are repositories on one machine at whatever commit they sit, and its
