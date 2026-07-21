@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.38.1](https://github.com/RomanAgaltsev/bigo/compare/v1.38.0...v1.38.1) (2026-07-21)
+
+
+### Bug Fixes
+
+* the Trim family's wrong bound and an order-dependent trip count ([#119](https://github.com/RomanAgaltsev/bigo/issues/119)) ([23ec1c3](https://github.com/RomanAgaltsev/bigo/commit/23ec1c31d382b048c143104d9d10396c30cdf40b))
+
 ## [1.38.0](https://github.com/RomanAgaltsev/bigo/compare/v1.37.0...v1.38.0) (2026-07-21)
 
 
