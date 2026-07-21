@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.38.0](https://github.com/RomanAgaltsev/bigo/compare/v1.37.0...v1.38.0) (2026-07-21)
+
+
+### Features
+
+* split generated code out of the survey rankings ([#117](https://github.com/RomanAgaltsev/bigo/issues/117)) ([4ca1686](https://github.com/RomanAgaltsev/bigo/commit/4ca1686880ed792fd13248f1b33a3b136a742af3))
+
 ## [1.37.0](https://github.com/RomanAgaltsev/bigo/compare/v1.36.0...v1.37.0) (2026-07-21)
 
 
