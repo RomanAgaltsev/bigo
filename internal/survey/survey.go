@@ -61,6 +61,31 @@ type Totals struct {
 	NearFrontier int            `json:"near_frontier"`
 	CeilingPct   string         `json:"ceiling_pct"`
 	DistanceHist map[string]int `json:"distance_histogram,omitempty"`
+
+	// Generated counts first-party functions in machine-generated files. They
+	// are excluded from Hand and from every ranking table, and reported here so
+	// the exclusion stays VISIBLE rather than silent — the same reason Seen sits
+	// beside Functions.
+	Generated int `json:"generated_functions"`
+
+	// Hand is the same measurement over generated-excluded code: what bigo can
+	// bound in code a human actually wrote and could act on.
+	Hand HandTotals `json:"hand_written"`
+}
+
+// HandTotals are the headline counts over the generated-excluded population.
+//
+// The all-first-party headline in Totals is deliberately kept alongside it and
+// is NOT rebased: three 2026-07-20/21 probes each pin their population as
+// "33,504 functions, 31.6% bounded", and quietly changing that number would
+// invalidate every note quoting it.
+type HandTotals struct {
+	Functions    int    `json:"functions"`
+	Bounded      int    `json:"bounded"`
+	CoveragePct  string `json:"coverage_pct"`
+	Top          int    `json:"top"`
+	NearFrontier int    `json:"near_frontier"`
+	CeilingPct   string `json:"ceiling_pct"`
 }
 
 // Target is one measured repository.
@@ -124,7 +149,15 @@ func pct(bounded, total int) string {
 // Summarize reduces one document to a target's counts and histograms. Pure:
 // this is the part worth testing, and it is tested on fixtures rather than on
 // real repositories.
-func Summarize(doc report.Document) (Totals, map[string]int, map[string]int, map[string]int) {
+//
+// isGen classifies a module-relative file as machine-generated; nil means
+// nothing is. Generated functions stay in the headline counts and are excluded
+// from Hand and from all three returned histograms, because those tables rank
+// work and nobody hand-tunes generated code.
+func Summarize(doc report.Document, isGen func(string) bool) (Totals, map[string]int, map[string]int, map[string]int) {
+	if isGen == nil {
+		isGen = func(string) bool { return false }
+	}
 	// Sized by KEY CARDINALITY, not by the loop bound: byCause is keyed by
 	// engine.CauseKind, a closed set of six, and byDetail by distinct cause
 	// prose, which grows far more slowly than the function count. Hinting
@@ -138,9 +171,21 @@ func Summarize(doc report.Document) (Totals, map[string]int, map[string]int, map
 			continue
 		}
 		t.Functions++
+		gen := isGen(f.File)
+		if gen {
+			t.Generated++
+		} else {
+			t.Hand.Functions++
+		}
 		if !f.Time.Top {
 			t.Bounded++
+			if !gen {
+				t.Hand.Bounded++
+			}
 			continue
+		}
+		if gen {
+			continue // generated code never enters a ranking table
 		}
 		for _, c := range f.Causes {
 			byCause[c.Kind]++
@@ -148,11 +193,19 @@ func Summarize(doc report.Document) (Totals, map[string]int, map[string]int, map
 		}
 	}
 	t.CoveragePct = pct(t.Bounded, t.Functions)
+	t.Hand.CoveragePct = pct(t.Hand.Bounded, t.Hand.Functions)
 
 	fr := frontierOf(doc)
 	t.Top, t.NearFrontier, t.DistanceHist = fr.Top, fr.Near, fr.Hist
 	t.CeilingPct = ceilingPct(t.Bounded, fr.Near, t.Functions)
-	return t, byCause, byDetail, fr.SoleBlocker
+
+	// The hand-written frontier: same walk, smaller population. Its SoleBlocker
+	// map is what ranks work, so it is the one returned.
+	hfr := frontierExcluding(doc, func(f report.Function) bool { return isGen(f.File) })
+	t.Hand.Top, t.Hand.NearFrontier = hfr.Top, hfr.Near
+	t.Hand.CeilingPct = ceilingPct(t.Hand.Bounded, hfr.Near, t.Hand.Functions)
+
+	return t, byCause, byDetail, hfr.SoleBlocker
 }
 
 // commitOf returns the target's short HEAD, or "" when it cannot be read. A
@@ -199,7 +252,7 @@ func Run(cfg Config, version string, progress func(string, ...any)) Report {
 			r.Targets = append(r.Targets, t)
 			continue
 		}
-		totals, byCause, byDetail, soleBlocker := Summarize(doc)
+		totals, byCause, byDetail, soleBlocker := Summarize(doc, newGeneratedDetector(tc.Path).isGenerated)
 		t.Module, t.Commit, t.Totals = doc.Module, commitOf(tc.Path), totals
 		t.ByCause, t.ByDetail = byCause, byDetail
 		for k, v := range byCause {
@@ -220,10 +273,18 @@ func Run(cfg Config, version string, progress func(string, ...any)) Report {
 		r.Aggregate.Seen += totals.Seen
 		r.Aggregate.Top += totals.Top
 		r.Aggregate.NearFrontier += totals.NearFrontier
+		r.Aggregate.Generated += totals.Generated
+		r.Aggregate.Hand.Functions += totals.Hand.Functions
+		r.Aggregate.Hand.Bounded += totals.Hand.Bounded
+		r.Aggregate.Hand.Top += totals.Hand.Top
+		r.Aggregate.Hand.NearFrontier += totals.Hand.NearFrontier
 		r.Targets = append(r.Targets, t)
 	}
 	r.Aggregate.CoveragePct = pct(r.Aggregate.Bounded, r.Aggregate.Functions)
 	r.Aggregate.CeilingPct = ceilingPct(r.Aggregate.Bounded, r.Aggregate.NearFrontier, r.Aggregate.Functions)
+	r.Aggregate.Hand.CoveragePct = pct(r.Aggregate.Hand.Bounded, r.Aggregate.Hand.Functions)
+	r.Aggregate.Hand.CeilingPct = ceilingPct(r.Aggregate.Hand.Bounded,
+		r.Aggregate.Hand.NearFrontier, r.Aggregate.Hand.Functions)
 	return r
 }
 

@@ -88,6 +88,19 @@ func (r Report) Markdown() []byte {
 	}
 	b.WriteString(".\n\n")
 
+	fmt.Fprintf(&b, "**Hand-written: %s%%** — %d of %d functions bounded, with %d generated "+
+		"functions excluded.\n\n", r.Aggregate.Hand.CoveragePct, r.Aggregate.Hand.Bounded,
+		r.Aggregate.Hand.Functions, r.Aggregate.Generated)
+	b.WriteString("Generated code is first-party by module path and is real code, but nobody\n")
+	b.WriteString("hand-tunes it and its unverifiability is usually the CORRECT answer — the\n")
+	b.WriteString("2026-07-21 `(*sync.Once).Do` probe measured 239 of that class's 326\n")
+	b.WriteString("sole-blocker functions as generated protobuf whose verdict is right.\n")
+	b.WriteString("**The aggregate above is kept unrebased** so it stays comparable with the\n")
+	b.WriteString("2026-07-20/21 probes, which pin their population to it.\n\n")
+	fmt.Fprintf(&b, "**Hand-written near frontier: %d of %d (%s%%), ceiling %s%%.**\n\n",
+		r.Aggregate.Hand.NearFrontier, r.Aggregate.Hand.Top,
+		pct(r.Aggregate.Hand.NearFrontier, r.Aggregate.Hand.Top), r.Aggregate.Hand.CeilingPct)
+
 	fmt.Fprintf(&b, "**Near frontier: %d of %d unverifiable functions (%s%%) sit within %d "+
 		"distinct blockers of a bound.** Clearing all of them would put coverage at "+
 		"**%s%%** — an UPPER BOUND, not a forecast: clearing a blocker for one function "+
@@ -98,14 +111,16 @@ func (r Report) Markdown() []byte {
 		pct(r.Aggregate.NearFrontier, r.Aggregate.Top), nearDistance, r.Aggregate.CeilingPct)
 
 	b.WriteString("## Per target\n\n")
-	b.WriteString("| Target | Module | Commit | Functions | Bounded | Coverage | Near | Ceiling |\n|---|---|---|---|---|---|---|---|\n")
+	b.WriteString("| Target | Module | Commit | Functions | Bounded | Coverage | Generated | Hand | Hand cov | Near | Ceiling |\n")
+	b.WriteString("|---|---|---|---|---|---|---|---|---|---|---|\n")
 	for _, t := range r.Targets {
 		if t.Skipped != "" {
-			fmt.Fprintf(&b, "| %s | — | — | — | — | skipped: %s | — | — |\n", t.Name, t.Skipped)
+			fmt.Fprintf(&b, "| %s | — | — | — | — | skipped: %s | — | — | — | — | — |\n", t.Name, t.Skipped)
 			continue
 		}
-		fmt.Fprintf(&b, "| %s | %s | %s | %d | %d | %s%% | %d | %s%% |\n",
+		fmt.Fprintf(&b, "| %s | %s | %s | %d | %d | %s%% | %d | %d | %s%% | %d | %s%% |\n",
 			t.Name, t.Module, t.Commit, t.Functions, t.Bounded, t.CoveragePct,
+			t.Generated, t.Hand.Functions, t.Hand.CoveragePct,
 			t.NearFrontier, t.CeilingPct)
 	}
 
@@ -125,6 +140,7 @@ func (r Report) Markdown() []byte {
 		fmt.Fprintf(&b, "| %s | %d |\n", p.Key, p.Count)
 	}
 	b.WriteString("\nCompare with `corpus/CORPUS.md`: the canonical corpus and real code do not\nagree on this ranking, and real code is the one that reflects adoption.\n")
+	b.WriteString("\nPopulation: hand-written code only.\n")
 
 	fmt.Fprintf(&b, "\n## Top %d blockers by GRADUATION count\n\n", detailTop)
 	b.WriteString("**This table is the deliverable.** It counts functions whose ONLY blocker is\n")
@@ -133,6 +149,10 @@ func (r Report) Markdown() []byte {
 	b.WriteString("different `fmt` calls counts toward neither: **these are a LOWER bound per\n")
 	b.WriteString("class**, deliberately, because collapsing callee strings into classes is\n")
 	b.WriteString("fragile and got it wrong once already.\n\n")
+	b.WriteString("**Population: hand-written code only.** Generated functions are excluded\n")
+	b.WriteString("here, because this table ranks work and generated code is not work anyone\n")
+	b.WriteString("does. Before that exclusion the 2026-07-21 measurement had this table's\n")
+	b.WriteString("`(*sync.Once).Do` row at 326 functions, 239 of them generated.\n\n")
 	b.WriteString("| Blocker | Functions |\n|---|---|\n")
 	for i, p := range ranked(r.AggSoleBlocker) {
 		if i >= detailTop {
@@ -147,6 +167,7 @@ func (r Report) Markdown() []byte {
 	b.WriteString("probes worked this ranking from the top down and produced no engine slice\n")
 	b.WriteString("(`fmt` 8,367 sites → 298 priceable functions; function values 2,878 → zero).\n")
 	b.WriteString("Rank work by the table above; use this one to understand shape.\n\n")
+	b.WriteString("Population: hand-written code only, as above.\n\n")
 	b.WriteString("| Blocker | Sites |\n|---|---|\n")
 	for i, p := range ranked(r.AggByDetail) {
 		if i >= detailTop {

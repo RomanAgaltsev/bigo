@@ -230,3 +230,86 @@ func TestMarkdownRendersBothBlockerTables(t *testing.T) {
 		t.Error("the deliverable label is attached to the sites table")
 	}
 }
+
+// TestFrontierExcludingFiltersPopulationNotWalk is the load-bearing
+// distinction of the generated-code split. A HAND-WRITTEN function whose only
+// blocker sits behind a GENERATED callee still has a genuine blocker: the
+// generated code stands between real user code and a bound. Truncating the
+// walk there would erase that blocker from the work queue, which is the
+// opposite of the split's purpose.
+func TestFrontierExcludingFiltersPopulationNotWalk(t *testing.T) {
+	doc := report.Document{
+		Module: "example.com/m",
+		Functions: []report.Function{
+			// Hand-written caller of a generated ⊤ function.
+			fn("example.com/m", "Caller", true, callTo("example.com/m.Gen")),
+			// Generated, ⊤, and itself blocked by a real leaf.
+			genFn("example.com/m", "Gen", true, callTo("sync.Once.Do")),
+		},
+	}
+	skip := func(f report.Function) bool { return f.Func == "Gen" }
+
+	fr := frontierExcluding(doc, skip)
+
+	if fr.Top != 1 {
+		t.Errorf("only the hand-written function counts: Top = %d, want 1", fr.Top)
+	}
+	if got := fr.SoleBlocker[costPrefix+"sync.Once.Do"]; got != 1 {
+		t.Errorf("the caller must KEEP the leaf behind the generated callee, got %d want 1", got)
+	}
+	if fr.Hist["1"] != 1 {
+		t.Errorf("caller sits at distance 1, hist=%v", fr.Hist)
+	}
+}
+
+// TestFrontierOfIsUnfiltered pins that the existing entry point did not change
+// meaning: with no skip, both functions are counted.
+func TestFrontierOfIsUnfiltered(t *testing.T) {
+	doc := report.Document{
+		Module: "example.com/m",
+		Functions: []report.Function{
+			fn("example.com/m", "Caller", true, callTo("example.com/m.Gen")),
+			genFn("example.com/m", "Gen", true, callTo("sync.Once.Do")),
+		},
+	}
+	if fr := frontierOf(doc); fr.Top != 2 {
+		t.Errorf("frontierOf must count both: Top = %d, want 2", fr.Top)
+	}
+}
+
+// TestMarkdownReportsBothPopulations pins that the split is visible in the
+// rendered file: the unrebased aggregate, the hand-written headline, the
+// generated count, and each ranking table's population.
+func TestMarkdownReportsBothPopulations(t *testing.T) {
+	r := Report{
+		Generated:   "2026-07-21",
+		BigoVersion: "test",
+		Aggregate: Totals{
+			Functions: 100, Bounded: 40, CoveragePct: "40.0",
+			Seen: 100, Top: 60, NearFrontier: 30, CeilingPct: "70.0",
+			Generated: 20,
+			Hand: HandTotals{
+				Functions: 80, Bounded: 36, CoveragePct: "45.0",
+				Top: 44, NearFrontier: 22, CeilingPct: "72.5",
+			},
+			DistanceHist: map[string]int{"1": 30, "2": 30},
+		},
+		AggByCause:     map[string]int{"call": 1},
+		AggByDetail:    map[string]int{"unresolved cost at call to fmt.Errorf": 1},
+		AggSoleBlocker: map[string]int{"unresolved cost at call to fmt.Errorf": 1},
+	}
+	md := string(r.Markdown())
+
+	if !strings.Contains(md, "**Aggregate: 40.0%**") {
+		t.Error("the all-first-party headline must survive unchanged")
+	}
+	if !strings.Contains(md, "**Hand-written: 45.0%**") {
+		t.Error("the hand-written headline is missing")
+	}
+	if !strings.Contains(md, "20 generated") {
+		t.Error("the generated count must be visible, never silent")
+	}
+	if !strings.Contains(md, "hand-written code only") {
+		t.Error("the tables must state their population")
+	}
+}
