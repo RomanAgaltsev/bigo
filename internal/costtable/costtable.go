@@ -2,6 +2,7 @@
 package costtable
 
 import (
+	"go/constant"
 	"go/types"
 	"sync"
 
@@ -190,6 +191,47 @@ func linear(args []ssa.Value, i int) bound.Bound {
 		return bound.Of(bound.Term(v))
 	}
 	return bound.Top()
+}
+
+// product returns O(size(args[i]) * size(args[j])), or Top() if either size is
+// unknown.
+//
+// For entries whose cost is bounded by NEITHER argument alone. The Trim family
+// is the case that earned it: those functions test membership of every element
+// of one sequence in another, so the two lengths multiply, and pricing them by
+// the first argument alone was the seventh wrong bound this project shipped.
+func product(args []ssa.Value, i, j int) bound.Bound {
+	if i >= len(args) || j >= len(args) {
+		return bound.Top()
+	}
+	vi, ok := argExtent(args[i])
+	if !ok {
+		return bound.Top()
+	}
+	vj, ok := argExtent(args[j])
+	if !ok {
+		return bound.Top()
+	}
+	return bound.Of(bound.Term(vi).Mul(bound.Term(vj)))
+}
+
+// trimCost prices the strings.Trim family, whose cost is bounded by NEITHER
+// argument alone: they test membership of every rune of args[0] in the CUTSET
+// args[1], so the two lengths multiply.
+//
+// A CONSTANT cutset is the common case and keeps the linear bound, because a
+// compile-time string has a fixed length and contributes only a constant
+// factor — `strings.Trim(s, " \t\n")` really is O(len(s)). Refusing that would
+// be a precondition stricter than soundness requires, which this project has
+// already paid for once (C5's loop-invariance requirement, v1.33.0).
+func trimCost(args []ssa.Value) bound.Bound {
+	if len(args) < 2 {
+		return bound.Top()
+	}
+	if c, ok := args[1].(*ssa.Const); ok && c.Value != nil && c.Value.Kind() == constant.String {
+		return linear(args, 0)
+	}
+	return product(args, 0, 1)
 }
 
 // nLogN returns O(n log n) where n = size of args[i], or Top().
@@ -394,18 +436,43 @@ var stdlib = map[string]func(args []ssa.Value) bound.Bound{
 	"(reflect.Value).CanAddr":  constCost,
 	"(reflect.Value).IsZero":   constCost,
 
-	// O(len(arg 0)) — the strings.HasPrefix / slices.Equal precedents.
+	// O(len(arg 0)) — the strings.HasPrefix / slices.Equal precedents, which
+	// apply because each of these COMPARES two sequences and stops at the
+	// shorter, so the cost is O(min(len)) <= O(len(arg 0)).
+	//
+	// The precedent is about the IMPLEMENTATION, not the signature: it does not
+	// extend to a second argument that is scanned repeatedly. See the Trim
+	// family below, which took it by analogy and shipped a wrong bound.
 	"strings.HasSuffix":  func(a []ssa.Value) bound.Bound { return linear(a, 0) },
 	"strings.TrimPrefix": func(a []ssa.Value) bound.Bound { return linear(a, 0) },
 	"strings.TrimSuffix": func(a []ssa.Value) bound.Bound { return linear(a, 0) },
-	"strings.Trim":       func(a []ssa.Value) bound.Bound { return linear(a, 0) },
-	"strings.TrimLeft":   func(a []ssa.Value) bound.Bound { return linear(a, 0) },
-	"strings.TrimRight":  func(a []ssa.Value) bound.Bound { return linear(a, 0) },
-	"strings.LastIndex":  func(a []ssa.Value) bound.Bound { return linear(a, 0) },
-	"strings.IndexByte":  func(a []ssa.Value) bound.Bound { return linear(a, 0) },
-	"strings.SplitN":     func(a []ssa.Value) bound.Bound { return linear(a, 0) },
-	"strings.Title":      func(a []ssa.Value) bound.Bound { return linear(a, 0) },
-	"bytes.Equal":        func(a []ssa.Value) bound.Bound { return linear(a, 0) },
-	"bytes.HasPrefix":    func(a []ssa.Value) bound.Bound { return linear(a, 0) },
-	"bytes.HasSuffix":    func(a []ssa.Value) bound.Bound { return linear(a, 0) },
+
+	// O(len(s) * len(cutset)) — NOT O(len(s)).
+	//
+	// These take a CUTSET, not a prefix, and test membership of every rune of s
+	// in it. Both of Go's paths carry a cutset term:
+	//
+	//   - makeASCIISet walks the entire cutset before any trimming begins, so
+	//     even the ASCII fast path is O(len(s) + len(cutset));
+	//   - a cutset holding any byte >= utf8.RuneSelf makes makeASCIISet fail,
+	//     and trimLeftUnicode then calls ContainsRune — a scan of cutset — once
+	//     per rune of s: O(len(s) * len(cutset)).
+	//
+	// The product dominates both. Priced O(len(s)) from v1.35.0 to v1.38.0 by
+	// inheriting the HasPrefix precedent above; that was the SEVENTH wrong
+	// bound, found by the 2026-07-21 review reading the stdlib source rather
+	// than by any of the three instruments. Pinned in stdlib_survey_test.go.
+	"strings.Trim":      trimCost,
+	"strings.TrimLeft":  trimCost,
+	"strings.TrimRight": trimCost,
+
+	// Safe on a second string argument because Index returns early when the
+	// needle is longer than the haystack, so all work is bounded by len(arg 0).
+	"strings.LastIndex": func(a []ssa.Value) bound.Bound { return linear(a, 0) },
+	"strings.IndexByte": func(a []ssa.Value) bound.Bound { return linear(a, 0) },
+	"strings.SplitN":    func(a []ssa.Value) bound.Bound { return linear(a, 0) },
+	"strings.Title":     func(a []ssa.Value) bound.Bound { return linear(a, 0) },
+	"bytes.Equal":       func(a []ssa.Value) bound.Bound { return linear(a, 0) },
+	"bytes.HasPrefix":   func(a []ssa.Value) bound.Bound { return linear(a, 0) },
+	"bytes.HasSuffix":   func(a []ssa.Value) bound.Bound { return linear(a, 0) },
 }
