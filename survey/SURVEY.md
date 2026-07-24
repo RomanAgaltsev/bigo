@@ -7,11 +7,11 @@ contents and CI never runs it. Its targets are repositories that exist on one
 machine at whatever commit they happen to sit, so these numbers are a record
 of one run — compare across runs only via the per-target commit below.
 
-Run 2026-07-24 with bigo 1.39.0.
+Run 2026-07-24 with bigo 1.39.1.
 
-**Aggregate: 31.6%** — 10571 of 33504 first-party functions bounded.
+**Aggregate: 32.0%** — 10734 of 33504 first-party functions bounded.
 
-**Hand-written: 30.2%** — 8831 of 29214 functions bounded, with 4290 generated functions excluded.
+**Hand-written: 30.8%** — 8994 of 29214 functions bounded, with 4290 generated functions excluded.
 
 Generated code is first-party by module path and is real code, but nobody
 hand-tunes it and its unverifiability is usually the CORRECT answer — the
@@ -20,26 +20,26 @@ sole-blocker functions as generated protobuf whose verdict is right.
 **The aggregate above is kept unrebased** so it stays comparable with the
 2026-07-20/21 probes, which pin their population to it.
 
-**Hand-written near frontier: 8338 of 20383 (40.9%), ceiling 58.8%.**
+**Hand-written near frontier: 8280 of 20220 (40.9%), ceiling 59.1%.**
 
-**Near frontier: 9967 of 22933 unverifiable functions (43.5%) sit within 2 distinct blockers of a bound.** Clearing all of them would put coverage at **61.3%** — an UPPER BOUND, not a forecast: clearing a blocker for one function need not clear it for another. Two 2026-07-20 probes measured that gap directly (`fmt`: 744 sole-blocker functions, 298 actually priceable; function values: 573, zero reachable).
+**Near frontier: 9909 of 22770 unverifiable functions (43.5%) sit within 2 distinct blockers of a bound.** Clearing all of them would put coverage at **61.6%** — an UPPER BOUND, not a forecast: clearing a blocker for one function need not clear it for another. Two 2026-07-20 probes measured that gap directly (`fmt`: 744 sole-blocker functions, 298 actually priceable; function values: 573, zero reachable).
 
 ## Per target
 
 | Target | Module | Commit | Functions | Bounded | Coverage | Generated | Hand | Hand cov | Near | Ceiling |
 |---|---|---|---|---|---|---|---|---|---|---|
-| grpc-go | google.golang.org/grpc | 2fd426d0 | 5467 | 1901 | 34.8% | 1902 | 3565 | 28.0% | 1991 | 71.2% |
-| caddy | github.com/caddyserver/caddy/v2 | 0e8eb41b | 1963 | 454 | 23.1% | 0 | 1963 | 23.1% | 475 | 47.3% |
-| prometheus | github.com/prometheus/prometheus | a0524eeca | 5859 | 1848 | 31.5% | 776 | 5083 | 30.4% | 1773 | 61.8% |
+| grpc-go | google.golang.org/grpc | 2fd426d0 | 5467 | 1940 | 35.5% | 1902 | 3565 | 29.1% | 1991 | 71.9% |
+| caddy | github.com/caddyserver/caddy/v2 | 0e8eb41b | 1963 | 467 | 23.8% | 0 | 1963 | 23.8% | 476 | 48.0% |
+| prometheus | github.com/prometheus/prometheus | a0524eeca | 5859 | 1852 | 31.6% | 776 | 5083 | 30.5% | 1771 | 61.8% |
 | etcd | go.etcd.io/etcd/v3 | 22b4192b9 | 98 | 9 | 9.2% | 0 | 98 | 9.2% | 40 | 50.0% |
-| delve | github.com/go-delve/delve | 8fc4acbd | 2793 | 709 | 25.4% | 28 | 2765 | 25.4% | 716 | 51.0% |
-| chi | github.com/go-chi/chi/v5 | 3b17157 | 180 | 60 | 33.3% | 0 | 180 | 33.3% | 60 | 66.7% |
+| delve | github.com/go-delve/delve | 8fc4acbd | 2793 | 714 | 25.6% | 28 | 2765 | 25.6% | 716 | 51.2% |
+| chi | github.com/go-chi/chi/v5 | 3b17157 | 180 | 61 | 33.9% | 0 | 180 | 33.9% | 59 | 66.7% |
 | goldmark | github.com/yuin/goldmark | 50ba9fc | 795 | 442 | 55.6% | 0 | 795 | 55.6% | 130 | 71.9% |
 | pgx | github.com/jackc/pgx/v5 | 0a977a6 | 2099 | 750 | 35.7% | 110 | 1989 | 35.9% | 662 | 67.3% |
-| cel-go | github.com/google/cel-go | 646511d | 3586 | 1503 | 41.9% | 937 | 2649 | 39.0% | 1122 | 73.2% |
+| cel-go | github.com/google/cel-go | 646511d | 3586 | 1512 | 42.2% | 937 | 2649 | 39.3% | 1120 | 73.4% |
 | expr | github.com/expr-lang/expr | 4b31df3 | 1286 | 224 | 17.4% | 515 | 771 | 29.1% | 215 | 34.1% |
-| nats-server | github.com/nats-io/nats-server/v2 | 2e5f51f31 | 4000 | 921 | 23.0% | 0 | 4000 | 23.0% | 1105 | 50.6% |
-| hugo | github.com/gohugoio/hugo | 89b8c3220 | 5378 | 1750 | 32.5% | 22 | 5356 | 32.3% | 1678 | 63.7% |
+| nats-server | github.com/nats-io/nats-server/v2 | 2e5f51f31 | 4000 | 993 | 24.8% | 0 | 4000 | 24.8% | 1062 | 51.4% |
+| hugo | github.com/gohugoio/hugo | 89b8c3220 | 5378 | 1770 | 32.9% | 22 | 5356 | 32.6% | 1667 | 63.9% |
 
 ## Distance to bound
 
@@ -51,24 +51,24 @@ reach against a deep tail that no achievable engine work will.
 | Blockers | Functions | Share |
 |---|---|---|
 | 0 | 22 | 0.1% |
-| 1 | 6666 | 29.1% |
-| 2 | 3279 | 14.3% |
-| 3 | 2058 | 9.0% |
-| 4 | 1662 | 7.2% |
-| 5 | 1131 | 4.9% |
-| 6 | 749 | 3.3% |
-| 7 | 659 | 2.9% |
-| 8 | 494 | 2.2% |
-| 9 | 417 | 1.8% |
-| 10+ | 5796 | 25.3% |
+| 1 | 6613 | 29.0% |
+| 2 | 3274 | 14.4% |
+| 3 | 2027 | 8.9% |
+| 4 | 1671 | 7.3% |
+| 5 | 1106 | 4.9% |
+| 6 | 739 | 3.2% |
+| 7 | 646 | 2.8% |
+| 8 | 505 | 2.2% |
+| 9 | 409 | 1.8% |
+| 10+ | 5758 | 25.3% |
 
 ## Unverifiable by cause kind
 
 | Cause | Count |
 |---|---|
-| call | 95651 |
+| call | 94367 |
 | loop | 43226 |
-| defer | 884 |
+| defer | 829 |
 | go | 335 |
 | nobody | 3 |
 
@@ -94,36 +94,36 @@ does. Before that exclusion the 2026-07-21 measurement had this table's
 
 | Blocker | Functions |
 |---|---|
-| loop with unrecognized trip count | 545 |
-| unresolved cost at call to fmt.Sprintf | 322 |
-| unresolved cost at call to fmt.Errorf | 294 |
-| unresolved cost at call to t6 | 191 |
-| unresolved cost at call to (*sync.Once).Do | 85 |
-| unresolved cost at call to f | 75 |
+| loop with unrecognized trip count | 564 |
+| unresolved cost at call to fmt.Sprintf | 324 |
+| unresolved cost at call to fmt.Errorf | 298 |
+| unresolved cost at call to t6 | 192 |
+| unresolved cost at call to (*sync.Once).Do | 86 |
+| unresolved cost at call to f | 78 |
 | unresolved cost at call to (*net/rpc.Client).Call | 72 |
 | unresolved cost at call to encoding/json.Marshal | 69 |
-| unresolved cost at call to t1 | 65 |
+| unresolved cost at call to t1 | 66 |
 | unresolved cost at call to github.com/google/go-dap.WriteProtocolMessage | 48 |
 | unresolved argument size at call to copy | 46 |
 | unresolved cost at call to google.golang.org/grpc.newFuncDialOption | 45 |
 | unresolved cost at call to (github.com/jackc/pgx/v5/pgtype.EncodePlan).Encode | 44 |
 | goroutine launch (concurrency is unverifiable in v1) | 43 |
 | unresolved cost at call to encoding/json.Unmarshal | 43 |
+| unresolved cost at call to (*sync.Pool).Get | 41 |
 | unresolved cost at call to t4 | 37 |
-| unresolved cost at call to (*sync.Pool).Get | 36 |
 | unresolved cost at call to (context.Context).Value | 34 |
-| unresolved cost at call to (*sync/atomic.Bool).Load | 33 |
 | unresolved cost at call to github.com/gohugoio/hugo/tpl/internal.AddTemplateFuncsNamespace | 30 |
 | unresolved cost at call to context.WithValue | 29 |
 | unresolved cost at call to google.golang.org/grpc.newFuncServerOption | 29 |
 | unresolved cost at call to (*github.com/gohugoio/hugo/common/paths.Path).norm | 27 |
-| unresolved cost at call to (*sync.Pool).Put | 27 |
 | unresolved cost at call to t2 | 26 |
 | unresolved cost at call to (github.com/jackc/pgx/v5/pgtype.ScanPlan).Scan | 25 |
 | unresolved cost at call to (*github.com/prometheus/common/config.HTTPClientConfig).SetDirectory | 24 |
 | unresolved cost at call to (error).Error | 22 |
 | unresolved cost at call to (*strings.Builder).WriteString | 21 |
+| unresolved cost at call to (*time.Timer).Stop | 21 |
 | unresolved cost at call to (encoding/binary.bigEndian).Uint16 | 20 |
+| unresolved cost at call to t10 | 20 |
 
 ## Top 30 blockers by SITES
 

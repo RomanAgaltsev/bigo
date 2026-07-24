@@ -54,8 +54,15 @@ type CandidateResult struct {
 
 // WhatIfReport is the committed record of one what-if run.
 type WhatIfReport struct {
-	Generated         string            `json:"generated"`
-	BigoVersion       string            `json:"bigo_version"`
+	Generated   string `json:"generated"`
+	BigoVersion string `json:"bigo_version"`
+
+	// Candidates names the candidates file this run measured. WHATIF.md is a
+	// single-slot record like SURVEY.md — the next run overwrites it — so
+	// without this a committed record cannot be told apart from the run that
+	// replaced it. Learned by losing one.
+	Candidates string `json:"candidates_file,omitempty"`
+
 	BaselineFunctions int               `json:"baseline_functions"`
 	BaselineBounded   int               `json:"baseline_bounded"`
 	Results           []CandidateResult `json:"results"`

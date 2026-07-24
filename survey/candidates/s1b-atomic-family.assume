@@ -1,0 +1,54 @@
+# S1b — the expansion candidate, permitted by the pre-registered expansion rule
+# and named before its number was produced.
+#
+# Stage 1 established the family argument by reading type.go: EVERY method of
+# the typed atomic API is a direct delegation to a compiler intrinsic, and the
+# package's non-test sources contain NO loop in that API at all. The one
+# exception is deliberately excluded: atomic.Value.Store carries a spin loop
+# for its first-store protocol, so the whole atomic.Value type is refused.
+#
+# This is NOT inheritance from the 22 package-level sync/atomic entries shipped
+# in v1.35.0 (the Trim rule forbids that). It is the same check run again on
+# the methods' own source, which happens to agree.
+#
+# Uintptr methods are omitted: they matched no function in grpc-go and would
+# contribute zero where absent. Dropping a zero-contribution key can only lower
+# the measured yield, never inflate it - a real cost-table entry should still
+# include them, because the entry is free and the argument identical.
+(*sync/atomic.Bool).Load O(1)
+(*sync/atomic.Bool).Store O(1)
+(*sync/atomic.Bool).Swap O(1)
+(*sync/atomic.Bool).CompareAndSwap O(1)
+(*sync/atomic.Pointer[T]).Load O(1)
+(*sync/atomic.Pointer[T]).Store O(1)
+(*sync/atomic.Pointer[T]).Swap O(1)
+(*sync/atomic.Pointer[T]).CompareAndSwap O(1)
+(*sync/atomic.Int32).Load O(1)
+(*sync/atomic.Int32).Store O(1)
+(*sync/atomic.Int32).Swap O(1)
+(*sync/atomic.Int32).CompareAndSwap O(1)
+(*sync/atomic.Int32).Add O(1)
+(*sync/atomic.Int32).And O(1)
+(*sync/atomic.Int32).Or O(1)
+(*sync/atomic.Int64).Load O(1)
+(*sync/atomic.Int64).Store O(1)
+(*sync/atomic.Int64).Swap O(1)
+(*sync/atomic.Int64).CompareAndSwap O(1)
+(*sync/atomic.Int64).Add O(1)
+(*sync/atomic.Int64).And O(1)
+(*sync/atomic.Int64).Or O(1)
+(*sync/atomic.Uint32).Load O(1)
+(*sync/atomic.Uint32).Store O(1)
+(*sync/atomic.Uint32).Swap O(1)
+(*sync/atomic.Uint32).CompareAndSwap O(1)
+(*sync/atomic.Uint32).Add O(1)
+(*sync/atomic.Uint32).And O(1)
+(*sync/atomic.Uint32).Or O(1)
+(*sync/atomic.Uint64).Load O(1)
+(*sync/atomic.Uint64).Store O(1)
+(*sync/atomic.Uint64).Swap O(1)
+(*sync/atomic.Uint64).CompareAndSwap O(1)
+(*sync/atomic.Uint64).Add O(1)
+(*sync/atomic.Uint64).And O(1)
+(*sync/atomic.Uint64).Or O(1)
+(*sync.Pool).Put O(1)
