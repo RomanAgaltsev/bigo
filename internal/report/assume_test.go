@@ -138,3 +138,27 @@ func TestCollectInModuleAssumedTarget(t *testing.T) {
 		t.Errorf("Caller = top:%v provenance:%q", f.Time.Top, f.Provenance)
 	}
 }
+
+func TestUnmatchedKeysReportedWhenCallbackSet(t *testing.T) {
+	es, err := assume.ParseText("os.Getenv O(1)\nexample.com/assumefix.NoSuch O(1)\n")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var reported []string
+	doc, err := Collect("testdata/assumefix", nil, Options{
+		Version: "test", Now: fixedNow, Assume: assume.NewSet(es),
+		AssumeUnmatchedKeys: func(keys []string) { reported = append(reported, keys...) },
+	})
+	if err != nil {
+		t.Fatalf("with the callback set an unmatched key must not fail the run: %v", err)
+	}
+	if len(reported) != 1 || reported[0] != "example.com/assumefix.NoSuch" {
+		t.Fatalf("reported = %v, want the one absent key", reported)
+	}
+	// The matched key still did its job.
+	for _, f := range doc.Functions {
+		if f.Func == "Caller" && f.Time.Top {
+			t.Error("Caller did not graduate — the matched assumption was dropped too")
+		}
+	}
+}

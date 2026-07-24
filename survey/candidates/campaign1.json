@@ -1,0 +1,11 @@
+{
+  "_comment": "What-if campaign 1. Sets frozen 2026-07-24 in investigations/2026-07-24-whatif-campaign-thresholds.md §4 BEFORE any measurement, then revised by Amendment 1 (same file, committed before the re-run): S2 -> S2a and S7 -> S7' drop the two keys measured inexpressible, and S6 is retired as unmeasurable. No threshold was changed. S3 is the calibration candidate, not a work candidate.",
+  "candidates": [
+    {"name": "S1-sync-atomics", "file": "s1-sync-atomics.assume"},
+    {"name": "S2a-context",     "file": "s2a-context.assume"},
+    {"name": "S3-fmt-calib",    "file": "s3-fmt-calibration.assume"},
+    {"name": "S4-json",         "file": "s4-json.assume"},
+    {"name": "S5-small-stdlib", "file": "s5-small-stdlib.assume"},
+    {"name": "S7prime-union",   "file": "s7prime-union.assume"}
+  ]
+}

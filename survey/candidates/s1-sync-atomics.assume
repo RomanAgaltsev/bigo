@@ -1,0 +1,12 @@
+# S1 — sync & atomics. Campaign 1, frozen 2026-07-24 in
+# investigations/2026-07-24-whatif-campaign-thresholds.md §4.
+#
+# Bounds are O(1) throughout on purpose: a var-free bound always substitutes at
+# the call site, so it MAXIMIZES propagation and measures the true ceiling.
+# None of these is asserted to be truthful — that is the probe's question, not
+# the sweep's. (*sync.Pool).Get in particular calls p.New on an empty pool,
+# which is arbitrary user code; prediction 5 says this is what sinks the set.
+(*sync.Pool).Get O(1)
+(*sync.Pool).Put O(1)
+(*sync/atomic.Bool).Load O(1)
+(*sync.Once).Do O(1)

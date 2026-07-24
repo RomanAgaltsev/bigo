@@ -1,0 +1,19 @@
+# S7' — the measurable union, after Amendment 1 (A4). Campaign 1.
+# S1 u S2a u S4 u S5. Drops the two keys measured inexpressible:
+# (context.Context).Value (interface method) and copy (builtin).
+#
+# Still the campaign's real question: the top-30 graduation rows sum to ~2,407
+# against a distance-1 population of 6,666, so the near frontier is a long
+# tail. Under test is whether clearing a whole cheap tier at once clears MORE
+# than the sum of its rows, since the graduation table keys cause details
+# verbatim and a function blocked by two different entries counts toward
+# neither.
+(*sync.Pool).Get O(1)
+(*sync.Pool).Put O(1)
+(*sync/atomic.Bool).Load O(1)
+(*sync.Once).Do O(1)
+context.WithValue O(1)
+encoding/json.Marshal O(1)
+encoding/json.Unmarshal O(1)
+(*strings.Builder).WriteString O(1)
+(encoding/binary.bigEndian).Uint16 O(1)

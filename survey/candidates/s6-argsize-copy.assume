@@ -1,0 +1,9 @@
+# S6 — argument sizes. Campaign 1, frozen 2026-07-24 (§4).
+#
+# Registered as frozen and expected to be INEXPRESSIBLE: the blocker detail is
+# "unresolved argument size at call to copy", which is not a missing cost at
+# all — copy is a priced builtin and the engine cannot name its argument's
+# size. An assumption replaces a callee's cost summary; it cannot inject a size
+# fact. Kept in the run so the failure is measured and reported rather than
+# asserted from code reading.
+copy O(1)

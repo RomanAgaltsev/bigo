@@ -75,7 +75,17 @@ func TestWhatIf(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read %s: %v", cfgPath, err)
 	}
-	wc, sets, err := LoadWhatIfConfig(*whatifFile)
+	// `go test ./internal/survey/` runs with the PACKAGE as the working
+	// directory, so a path typed relative to the repo root (the only place
+	// `task whatif` is ever run from) does not resolve as given. Try it
+	// verbatim first, then relative to the root.
+	candPath := *whatifFile
+	if !filepath.IsAbs(candPath) {
+		if _, statErr := os.Stat(candPath); statErr != nil {
+			candPath = filepath.Join(root, candPath)
+		}
+	}
+	wc, sets, err := LoadWhatIfConfig(candPath)
 	if err != nil {
 		t.Fatal(err)
 	}

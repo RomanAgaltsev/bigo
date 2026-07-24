@@ -1,0 +1,5 @@
+# S2 — context. Campaign 1, frozen 2026-07-24 (§4).
+# O(1) is the ceiling-maximizing choice, not a truthfulness claim:
+# (context.Context).Value walks the parent chain, so it is O(depth) at best.
+(context.Context).Value O(1)
+context.WithValue O(1)

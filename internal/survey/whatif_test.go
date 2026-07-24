@@ -117,3 +117,76 @@ func TestLoadWhatIfConfigErrors(t *testing.T) {
 		t.Error("empty candidate name must error")
 	}
 }
+
+func TestKeyMatchedNowhereBlocksCandidate(t *testing.T) {
+	abs, err := filepath.Abs("../report/testdata/assumefix")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dir := t.TempDir()
+	// One real key, one that matches nothing anywhere: the candidate's number
+	// would not be what the file claims, so it must block.
+	if err := os.WriteFile(filepath.Join(dir, "typo.assume"),
+		[]byte("os.Getenv O(1)\nexample.com/nope.Typo O(1)\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cands := filepath.Join(dir, "c.json")
+	if err := os.WriteFile(cands, []byte(`{"candidates":[{"name":"typo","file":"typo.assume"}]}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	wc, sets, err := LoadWhatIfConfig(cands)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rep := RunWhatIf(Config{Targets: []TargetConfig{{Name: "assumefix", Path: abs}}}, wc, sets, "test", t.Logf)
+	res := rep.Results[0]
+	if !strings.Contains(res.Blocked, "example.com/nope.Typo") {
+		t.Fatalf("blocked = %q, want a matched-nowhere block naming the typo", res.Blocked)
+	}
+	if res.Graduated != 0 {
+		t.Fatalf("a blocked candidate must withhold its count, got %d", res.Graduated)
+	}
+}
+
+func TestKeyAbsentFromSomeTargetsIsWarnedNotBlocked(t *testing.T) {
+	withGetenv, err := filepath.Abs("../report/testdata/assumefix")
+	if err != nil {
+		t.Fatal(err)
+	}
+	withoutGetenv, err := filepath.Abs("../report/testdata/reportfix")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "g.assume"), []byte("os.Getenv O(1)\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cands := filepath.Join(dir, "c.json")
+	if err := os.WriteFile(cands, []byte(`{"candidates":[{"name":"getenv","file":"g.assume"}]}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	wc, sets, err := LoadWhatIfConfig(cands)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rep := RunWhatIf(Config{Targets: []TargetConfig{
+		{Name: "assumefix", Path: withGetenv},
+		{Name: "reportfix", Path: withoutGetenv},
+	}}, wc, sets, "test", t.Logf)
+	res := rep.Results[0]
+	if res.Blocked != "" {
+		t.Fatalf("a key absent from one target of two must not block: %s", res.Blocked)
+	}
+	if res.Graduated != 2 {
+		t.Fatalf("graduated = %d, want the 2 from the target that does use the key", res.Graduated)
+	}
+	var found bool
+	for _, w := range res.Warnings {
+		if strings.Contains(w, "os.Getenv") && strings.Contains(w, "absent from 1 of 2") {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("warnings = %v, want the partial-absence warning; silence would hide a smaller population", res.Warnings)
+	}
+}

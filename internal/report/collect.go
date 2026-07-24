@@ -35,6 +35,14 @@ type Options struct {
 	Assume *assume.Set
 	// Warn receives shadowing warnings (deduplicated); nil drops them.
 	Warn func(string)
+
+	// AssumeUnmatchedKeys, when non-nil, receives the assumption keys that
+	// matched no function in THIS module instead of failing the run. Only a
+	// multi-module consumer may set it: over one module an unmatched key is a
+	// typo and must stay loud, but across a population a key absent from one
+	// module contributes zero to it by arithmetic. The sweep sets this and then
+	// requires every key to match somewhere, which is the same protection.
+	AssumeUnmatchedKeys func([]string)
 }
 
 // Loaded is a parsed, type-checked, SSA-built module, ready to produce
@@ -120,7 +128,15 @@ func (l *Loaded) Document(opts Options) (Document, error) {
 	// message suggests — the loop is not the map's size driver).
 	var warned map[string]bool
 	if opts.Assume != nil {
-		if err := opts.Assume.Validate(prog); err != nil {
+		if opts.AssumeUnmatchedKeys != nil {
+			unmatched, err := opts.Assume.ValidateMatched(prog)
+			if err != nil {
+				return Document{}, err
+			}
+			if len(unmatched) > 0 {
+				opts.AssumeUnmatchedKeys(unmatched)
+			}
+		} else if err := opts.Assume.Validate(prog); err != nil {
 			return Document{}, err
 		}
 		for _, e := range opts.Assume.Entries() {

@@ -1,0 +1,10 @@
+# S2a — context, after Amendment 1 (A1). Campaign 1.
+#
+# (context.Context).Value was removed: it is an INTERFACE method, so the call
+# is invoke-mode, StaticCallee() is nil, costtable.CalleeKey never yields a key
+# and the assumption path is unreachable. Measured on a fixture that literally
+# calls ctx.Value, not inferred. Note the asymmetry worth remembering: a
+# //bigo:cost directive ON an interface method declaration IS honored (via
+# methodCosts), so the directive path can express something an assumption file
+# cannot.
+context.WithValue O(1)

@@ -1,0 +1,20 @@
+# S7 — the whole cheap tier at once. Campaign 1, frozen 2026-07-24 (§4).
+# S1 u S2 u S4 u S5 u S6, deliberately NOT S3 (fmt is the calibration).
+#
+# This is the campaign's real question. The top-30 graduation rows sum to
+# ~2,407 against a distance-1 population of 6,666, so the near frontier is a
+# long tail; the hypothesis under test is whether clearing a whole tier at once
+# clears MORE than the sum of its rows, because the graduation table keys cause
+# details verbatim and a function blocked by two different entries counts
+# toward neither.
+(*sync.Pool).Get O(1)
+(*sync.Pool).Put O(1)
+(*sync/atomic.Bool).Load O(1)
+(*sync.Once).Do O(1)
+(context.Context).Value O(1)
+context.WithValue O(1)
+encoding/json.Marshal O(1)
+encoding/json.Unmarshal O(1)
+(*strings.Builder).WriteString O(1)
+(encoding/binary.bigEndian).Uint16 O(1)
+copy O(1)
