@@ -1,10 +1,11 @@
+package survey
+
 // What-if: the fourth instrument. corpus answers "is it correct", metrics
 // "did it drift", survey "how far does it reach" — whatif answers "what would
 // ACTUALLY graduate if this assumption held", exactly, by running the real
 // engine per candidate assumption set over the survey targets. Never a graph
 // simulation: the fmt probe measured the report-graph prediction at 348
 // against the engine's 298 (spec §1).
-package survey
 
 import (
 	"encoding/json"
@@ -103,7 +104,7 @@ func whatifKey(f report.Function) string {
 // probes taught (a non-zero unattributed count invalidated two probe runs
 // AFTER their headline numbers looked plausible).
 func compareDocs(base, cand report.Document, isGen func(string) bool) (grad, gradHand int, blocked string) {
-	bm := map[string]report.Function{}
+	bm := make(map[string]report.Function, len(base.Functions))
 	for _, f := range base.Functions {
 		if firstParty(f.Package, base.Module) {
 			bm[whatifKey(f)] = f
@@ -162,7 +163,7 @@ func RunWhatIf(cfg Config, wc WhatIfConfig, sets map[string]*assume.Set, version
 	for _, c := range wc.Candidates {
 		results[c.Name] = &CandidateResult{Name: c.Name}
 	}
-	warnSeen := map[string]map[string]bool{}
+	warnSeen := make(map[string]map[string]bool, len(wc.Candidates))
 	for _, tc := range cfg.Targets {
 		if _, err := os.Stat(filepath.Clean(tc.Path)); err != nil {
 			progress("whatif: %s skipped (path not present)", tc.Name)
@@ -212,7 +213,7 @@ func RunWhatIf(cfg Config, wc WhatIfConfig, sets map[string]*assume.Set, version
 			res.GraduatedHand += hand
 			res.PerTarget = append(res.PerTarget, TargetDelta{Target: tc.Name, Graduated: grad, GraduatedHand: hand})
 			if warnSeen[c.Name] == nil {
-				warnSeen[c.Name] = map[string]bool{}
+				warnSeen[c.Name] = make(map[string]bool, len(warns))
 			}
 			for _, w := range warns {
 				if !warnSeen[c.Name][w] {

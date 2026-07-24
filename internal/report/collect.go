@@ -115,6 +115,10 @@ func (l *Loaded) Document(opts Options) (Document, error) {
 		Module:        l.module,
 	}
 
+	// Warnings dedup across packages; a shadow warning names an assumption
+	// key, so the entry count bounds the map (not the package count SM6's
+	// message suggests — the loop is not the map's size driver).
+	var warned map[string]bool
 	if opts.Assume != nil {
 		if err := opts.Assume.Validate(prog); err != nil {
 			return Document{}, err
@@ -122,8 +126,8 @@ func (l *Loaded) Document(opts Options) (Document, error) {
 		for _, e := range opts.Assume.Entries() {
 			doc.Assumptions = append(doc.Assumptions, AssumptionJSON{Key: e.Key, Bound: e.Expr})
 		}
+		warned = make(map[string]bool, len(opts.Assume.Entries()))
 	}
-	warned := map[string]bool{}
 
 	// All rules always run: the document describes the module completely and
 	// consumers filter. ParseRules("all") cannot fail for a literal.
