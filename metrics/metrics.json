@@ -1,15 +1,19 @@
 {
-  "total": 242,
+  "total": 243,
   "bounded": 136,
-  "coverage_pct": "56.2",
+  "coverage_pct": "56.0",
   "by_cause": {
-    "call": 57,
+    "call": 58,
     "go": 3,
     "irreducible": 1,
     "loop": 37,
     "nobody": 8
   },
   "per_package": {
+    "assumeok": {
+      "total": 1,
+      "bounded": 0
+    },
     "budget": {
       "total": 9,
       "bounded": 7
@@ -104,6 +108,12 @@
     }
   },
   "functions": [
+    {
+      "pkg": "assumeok",
+      "func": "Lookup",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
     {
       "pkg": "budget",
       "func": "BadExpr",

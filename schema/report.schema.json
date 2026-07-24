@@ -37,6 +37,11 @@
       "type": "array",
       "description": "Advisory smell findings (SM1..SM8), sorted by file, line, rule. Deliberately top-level and never attached to a function record: a smell is advisory and can never influence a verdict, and the schema mirrors that firewall. Added in schema 1.1.0; absent in 1.0.0 documents and omitted when empty.",
       "items": { "$ref": "#/$defs/smell" }
+    },
+    "assumptions": {
+      "type": "array",
+      "description": "External assumptions (-assume file) in force during the run — the assumption analog of trusted: any entry may have influenced any verdict; audit these when auditing a document. Added in schema 1.2.0; omitted when no assumption file was supplied.",
+      "items": { "$ref": "#/$defs/assumption" }
     }
   },
   "$defs": {
@@ -84,6 +89,11 @@
           "type": "array",
           "description": "Raw //bigo:cost / //bigo:ignore directives declared on this function.",
           "items": { "type": "string" }
+        },
+        "provenance": {
+          "type": "string",
+          "enum": ["assumed", "assumption-tainted"],
+          "description": "Present only when an external assumption influenced this entry: assumed on an assumption's own target, assumption-tainted when an assumed summary is in the bound's support. Absent means inferred. Added in schema 1.2.0."
         }
       }
     },
@@ -158,6 +168,14 @@
         "func": { "type": "string" },
         "receiver": { "type": "string" },
         "directive": { "type": "string", "description": "The assertion as written." }
+      }
+    },
+    "assumption": {
+      "type": "object",
+      "required": ["key", "bound"],
+      "properties": {
+        "key": { "type": "string", "description": "Package-qualified function name; receiver-qualified for methods, e.g. \"(*sync.Once).Do\"." },
+        "bound": { "type": "string", "description": "The assumed bound expression as written in the assumption file." }
       }
     }
   }

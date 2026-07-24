@@ -14,8 +14,10 @@ import (
 	"golang.org/x/tools/go/ssa/ssautil"
 
 	"github.com/RomanAgaltsev/bigo/internal/annotation"
+	"github.com/RomanAgaltsev/bigo/internal/assume"
 	"github.com/RomanAgaltsev/bigo/internal/bound"
 	"github.com/RomanAgaltsev/bigo/internal/callsummary"
+	"github.com/RomanAgaltsev/bigo/internal/costtable"
 	"github.com/RomanAgaltsev/bigo/internal/directive"
 	"github.com/RomanAgaltsev/bigo/internal/engine"
 	"github.com/RomanAgaltsev/bigo/internal/smell"
@@ -26,18 +28,36 @@ import (
 type Options struct {
 	Version string
 	Now     func() time.Time
+
+	// Assume is an external assumption set (spec 2026-07-24). Validated
+	// against the whole loaded program before analysis; nil disables the
+	// mechanism entirely.
+	Assume *assume.Set
+	// Warn receives shadowing warnings (deduplicated); nil drops them.
+	Warn func(string)
 }
 
-// Collect analyzes the module at dir (patterns as for `go build`, default
-// ./...) and returns the report document. Analysis is the same InferTop /
-// SpaceOf pipeline the analyzer runs; Collect adds no inference of its own.
-func Collect(dir string, patterns []string, opts Options) (Document, error) {
+// Loaded is a parsed, type-checked, SSA-built module, ready to produce
+// documents. Splitting the load from the analysis lets a multi-pass consumer
+// (the what-if harness) build SSA once per target and run Document once per
+// candidate assumption set.
+//
+// Every piece of per-Document state — resolvers, warning dedup, the document
+// itself — is constructed inside Document. The only mutable state shared
+// across Document calls is costtable's stability memo, which is safe: field
+// stability is a pure CFG fact, independent of assumptions.
+type Loaded struct {
+	pkgs   []*packages.Package
+	prog   *ssa.Program
+	module string
+	root   string
+}
+
+// LoadModule loads and builds the module at dir (patterns as for `go build`,
+// default ./...).
+func LoadModule(dir string, patterns []string) (*Loaded, error) {
 	if len(patterns) == 0 {
 		patterns = []string{"./..."}
-	}
-	now := opts.Now
-	if now == nil {
-		now = time.Now
 	}
 	cfg := &packages.Config{
 		Mode: packages.NeedName | packages.NeedFiles | packages.NeedSyntax |
@@ -47,29 +67,66 @@ func Collect(dir string, patterns []string, opts Options) (Document, error) {
 	}
 	pkgs, err := packages.Load(cfg, patterns...)
 	if err != nil {
-		return Document{}, err
+		return nil, err
 	}
 	for _, p := range pkgs {
 		if len(p.Errors) > 0 {
-			return Document{}, fmt.Errorf("package %s: %v", p.PkgPath, p.Errors[0])
+			return nil, fmt.Errorf("package %s: %v", p.PkgPath, p.Errors[0])
 		}
 	}
 	prog, _ := ssautil.Packages(pkgs, ssa.BuilderMode(0))
 	prog.Build()
+	l := &Loaded{pkgs: pkgs, prog: prog}
+	for _, p := range pkgs {
+		if p.Module != nil {
+			l.module = p.Module.Path
+			l.root = p.Module.Dir
+			break
+		}
+	}
+	return l, nil
+}
+
+// Collect analyzes the module at dir (patterns as for `go build`, default
+// ./...) and returns the report document. Analysis is the same InferTop /
+// SpaceOf pipeline the analyzer runs; Collect adds no inference of its own.
+func Collect(dir string, patterns []string, opts Options) (Document, error) {
+	l, err := LoadModule(dir, patterns)
+	if err != nil {
+		return Document{}, err
+	}
+	return l.Document(opts)
+}
+
+// Document runs the analysis pipeline over the loaded module and returns one
+// report document.
+func (l *Loaded) Document(opts Options) (Document, error) {
+	now := opts.Now
+	if now == nil {
+		now = time.Now
+	}
+	pkgs, prog, root := l.pkgs, l.prog, l.root
 
 	doc := Document{
 		SchemaVersion: SchemaVersion,
 		BigoVersion:   opts.Version,
 		Generated:     now().UTC().Format(time.RFC3339),
 		Functions:     []Function{},
+		Module:        l.module,
 	}
-	root := ""
-	for _, p := range pkgs {
-		if p.Module != nil {
-			doc.Module = p.Module.Path
-			root = p.Module.Dir
-			break
+
+	// Warnings dedup across packages; a shadow warning names an assumption
+	// key, so the entry count bounds the map (not the package count SM6's
+	// message suggests — the loop is not the map's size driver).
+	var warned map[string]bool
+	if opts.Assume != nil {
+		if err := opts.Assume.Validate(prog); err != nil {
+			return Document{}, err
 		}
+		for _, e := range opts.Assume.Entries() {
+			doc.Assumptions = append(doc.Assumptions, AssumptionJSON{Key: e.Key, Bound: e.Expr})
+		}
+		warned = make(map[string]bool, len(opts.Assume.Entries()))
 	}
 
 	// All rules always run: the document describes the module completely and
@@ -90,6 +147,9 @@ func Collect(dir string, patterns []string, opts Options) (Document, error) {
 		}
 		fns := directive.Scan(p.Syntax, p.TypesInfo, ssaFor, nop)
 		resolver := callsummary.NewWithMethods(fns.Overrides, fns.MethodCosts)
+		if opts.Assume != nil {
+			resolver.UseAssumptions(opts.Assume)
+		}
 		spaceResolver := callsummary.NewSpace(nil)
 
 		// Ignored decls are skipped for smells exactly as for verdicts, so the
@@ -116,6 +176,13 @@ func Collect(dir string, patterns []string, opts Options) (Document, error) {
 			}
 			inferred, causes := resolver.InferTop(fn)
 			rec.Time = boundJSON(inferred)
+			if opts.Assume != nil {
+				if key, ok := costtable.FuncKey(fn); ok && opts.Assume.Has(key) {
+					rec.Provenance = ProvenanceAssumed
+				} else if resolver.Tainted(fn) {
+					rec.Provenance = ProvenanceTainted
+				}
+			}
 			if inferred.IsTop() {
 				for _, c := range causes {
 					cj := CauseJSON{Kind: c.Kind.String(), Detail: c.What}
@@ -170,6 +237,14 @@ func Collect(dir string, patterns []string, opts Options) (Document, error) {
 		}
 		for _, decl := range fns.Plain {
 			measure(decl, nil)
+		}
+		if opts.Assume != nil && opts.Warn != nil {
+			for _, w := range resolver.AssumeWarnings() {
+				if !warned[w] {
+					warned[w] = true
+					opts.Warn(w)
+				}
+			}
 		}
 	}
 

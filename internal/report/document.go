@@ -18,8 +18,17 @@ import (
 )
 
 // SchemaVersion is the version of the document format.
-// 1.1.0 added the top-level smells array (additive; 1.0.0 documents remain valid).
-const SchemaVersion = "1.1.0"
+// 1.1.0 added the top-level smells array. 1.2.0 added provenance and the
+// top-level assumptions array (additive; earlier documents remain valid).
+const SchemaVersion = "1.2.0"
+
+// Provenance values. Absence means "inferred" — the field is omitted for
+// every function no assumption influenced, which is what keeps documents
+// byte-identical to 1.1.0 output when no assumption file is supplied.
+const (
+	ProvenanceAssumed = "assumed"            // this function is an assumption's target
+	ProvenanceTainted = "assumption-tainted" // an assumed summary is in this bound's support
+)
 
 // Document is one `bigo json` run over one module.
 type Document struct {
@@ -29,6 +38,11 @@ type Document struct {
 	Generated     string       `json:"generated"` // RFC 3339, UTC
 	Functions     []Function   `json:"functions"`
 	Trusted       []TrustEntry `json:"trusted,omitempty"`
+
+	// Assumptions are the external assumptions in force during the run — the
+	// assumption analog of Trusted: any entry may have influenced any verdict.
+	// Present since schema 1.2.0.
+	Assumptions []AssumptionJSON `json:"assumptions,omitempty"`
 
 	// Smells are advisory findings, deliberately a top-level array rather than
 	// a field on Function: the document mirrors the engine's firewall, where a
@@ -48,6 +62,17 @@ type Function struct {
 	Budget   *BudgetJSON `json:"budget,omitempty"` // //bigo:max, when declared
 	Space    *SpaceJSON  `json:"space,omitempty"`  // //bigo:space, when declared
 	Trust    []string    `json:"trust,omitempty"`  // raw //bigo:cost / //bigo:ignore on this decl
+
+	// Provenance marks assumption influence: ProvenanceAssumed on an
+	// assumption's own target, ProvenanceTainted downstream. Absent when no
+	// assumption touched this entry (i.e. inferred). Since schema 1.2.0.
+	Provenance string `json:"provenance,omitempty"`
+}
+
+// AssumptionJSON is one external assumption in force during the run.
+type AssumptionJSON struct {
+	Key   string `json:"key"`
+	Bound string `json:"bound"`
 }
 
 // BoundJSON is an asymptotic bound: top (unverifiable), or a canonical string

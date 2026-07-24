@@ -8,12 +8,14 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"sync"
 
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/buildssa"
 	"golang.org/x/tools/go/ssa"
 
 	"github.com/RomanAgaltsev/bigo/internal/annotation"
+	"github.com/RomanAgaltsev/bigo/internal/assume"
 	"github.com/RomanAgaltsev/bigo/internal/bound"
 	"github.com/RomanAgaltsev/bigo/internal/callsummary"
 	"github.com/RomanAgaltsev/bigo/internal/directive"
@@ -25,6 +27,8 @@ import (
 var reportMode bool
 
 var smellsFlag string
+
+var assumeFile string
 
 // Analyzer is the bigo complexity analyzer.
 var Analyzer = newAnalyzer()
@@ -38,7 +42,31 @@ func newAnalyzer() *analysis.Analyzer {
 	}
 	a.Flags.BoolVar(&reportMode, "report", false, "report inferred complexity for every function")
 	a.Flags.StringVar(&smellsFlag, "smells", "all", "smell rules to run: all, none, or comma-separated (SM1..SM8)")
+	a.Flags.StringVar(&assumeFile, "assume", "",
+		"load external assumptions from this file (whole-module key validation runs only under `bigo json`/survey)")
 	return a
+}
+
+// The assumption set is loaded once per process: go/analysis runs the analyzer
+// once per package, concurrently, and every pass must see the same set.
+// Warnings are deduplicated process-wide for the same reason — each package's
+// resolver would otherwise re-warn about the same shadowed entry.
+var (
+	assumeOnce sync.Once
+	assumeSet  *assume.Set
+	assumeErr  error
+
+	assumeWarnMu   sync.Mutex
+	assumeWarnSeen = map[string]bool{}
+)
+
+func loadAssumptions() (*assume.Set, error) {
+	assumeOnce.Do(func() {
+		if assumeFile != "" {
+			assumeSet, assumeErr = assume.Load(assumeFile)
+		}
+	})
+	return assumeSet, assumeErr
 }
 
 func run(pass *analysis.Pass) (any, error) {
@@ -64,6 +92,13 @@ func run(pass *analysis.Pass) (any, error) {
 
 	fns := directive.Scan(pass.Files, pass.TypesInfo, ssaFor, pass.Reportf)
 	resolver := callsummary.NewWithMethods(fns.Overrides, fns.MethodCosts)
+	set, err := loadAssumptions()
+	if err != nil {
+		return nil, err
+	}
+	if set != nil {
+		resolver.UseAssumptions(set)
+	}
 	spaceResolver := callsummary.NewSpace(nil)
 
 	// Pass 3: infer and check.
@@ -127,6 +162,19 @@ func run(pass *analysis.Pass) (any, error) {
 				pass.Reportf(f.Pos, "smell(%s): %s", f.Rule, f.Message)
 			}
 		}
+	}
+	if set != nil {
+		if err := set.Err(); err != nil {
+			return nil, err // a bound that fails to compile is hard, never a skip
+		}
+		assumeWarnMu.Lock()
+		for _, w := range resolver.AssumeWarnings() {
+			if !assumeWarnSeen[w] {
+				assumeWarnSeen[w] = true
+				fmt.Fprintln(os.Stderr, "bigo: warning:", w)
+			}
+		}
+		assumeWarnMu.Unlock()
 	}
 	return nil, nil
 }

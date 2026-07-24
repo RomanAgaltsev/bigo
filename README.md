@@ -69,6 +69,34 @@ field is not mutated between function entry and the loop:
 func (s *S) Sum() int { ... }
 ```
 
+## Assumption files (`-assume`)
+
+An assumption file prices functions you cannot annotate — dependencies,
+stdlib gaps — without touching their source:
+
+```
+# one entry per line: <key> <bound>; '#' starts a comment
+os.Getenv O(1)
+(*sync.Once).Do O(1)
+example.com/dep.Work O(n) where n=len(xs)
+```
+
+Keys are package-qualified (receiver-qualified for methods, e.g.
+`(*sync.Once).Do`); bounds use the `//bigo:cost` grammar, and `where`
+bindings refer to the target's parameters by name. Load one with
+`bigo json -assume assumptions.txt` or `bigo -assume assumptions.txt ./...`.
+
+**An assumed bound is your claim, not bigo's inference.** Precedence is:
+in-source directive, then the curated cost table, then assumptions, then
+inference — and every influenced entry in the report document carries
+`provenance` (`assumed` on an assumption's own target, `assumption-tainted`
+downstream), so no consumer can mistake a trusted claim for a discovered
+bound. A shadowed entry (one a directive or curated entry already answers)
+warns; a malformed entry, an unparseable bound, or a key matching nothing in
+the module is a hard error, never a skip (`bigo json` validates keys
+module-wide; the analyzer driver validates syntax and compilation only).
+Space bounds are not yet supported in assumption files.
+
 ## Machine-readable reports
 
 `bigo json` emits the full analysis as a single JSON document — every
@@ -505,6 +533,21 @@ ranking by sites has twice produced directions that measured out at nothing.
 Unlike the other two it is a **manual measurement, not a golden test** — its
 inputs are repositories on one machine at whatever commit they sit, and its
 numbers are expected to move. `task survey` regenerates it; CI never runs it.
+
+### Removability: the what-if harness
+
+The fourth instrument answers the question the other three cannot: **what
+would actually graduate if a given function were priced?** `task whatif --
+candidates.json` runs the real engine over the survey targets once per
+candidate assumption set and reports, per candidate, the exact functions that
+go ⊤ → bounded with assumption provenance — never a graph estimate, which
+measured 50 functions optimistic on this codebase's own frontier probe. A
+result is **withheld entirely** if any graduation lacks provenance, any bound
+is lost, or the population mismatches: an unattributed count invalidated two
+probe harnesses only after their headlines looked plausible, so here the
+counter is a gate, not a footnote. Output lands in `survey/WHATIF.md` +
+`survey/whatif.json`; like the survey it is manual, machine-local, and never
+a golden.
 
 ## Status & versioning
 

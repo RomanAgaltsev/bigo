@@ -11,6 +11,11 @@ tasks:
     cmds:
       - go test ./internal/survey/ -run TestSurvey -update -timeout 60m -v
 
+  whatif:
+    desc: "Run the what-if harness over survey targets (MANUAL — not a CI gate). Usage: task whatif -- candidates.json"
+    cmds:
+      - go test ./internal/survey/ -run TestWhatIf -whatif {{.CLI_ARGS}} -timeout 120m -v
+
   corpus:
     desc: Regenerate the canonical-corpus oracle golden (corpus/corpus.json + corpus/CORPUS.md)
     cmds:
