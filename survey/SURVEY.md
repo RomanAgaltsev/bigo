@@ -7,7 +7,7 @@ contents and CI never runs it. Its targets are repositories that exist on one
 machine at whatever commit they happen to sit, so these numbers are a record
 of one run — compare across runs only via the per-target commit below.
 
-Run 2026-07-21 with bigo 1.38.0.
+Run 2026-07-24 with bigo 1.39.0.
 
 **Aggregate: 31.6%** — 10571 of 33504 first-party functions bounded.
 
