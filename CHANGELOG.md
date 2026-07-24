@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.39.0](https://github.com/RomanAgaltsev/bigo/compare/v1.38.1...v1.39.0) (2026-07-24)
+
+
+### Features
+
+* external assumption files and the what-if removability harness ([#121](https://github.com/RomanAgaltsev/bigo/issues/121)) ([2fe52a9](https://github.com/RomanAgaltsev/bigo/commit/2fe52a93ad8e331be3483edeb8d8ecae712e124d))
+
 ## [1.38.1](https://github.com/RomanAgaltsev/bigo/compare/v1.38.0...v1.38.1) (2026-07-21)
 
 
