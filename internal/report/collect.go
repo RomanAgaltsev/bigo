@@ -14,8 +14,10 @@ import (
 	"golang.org/x/tools/go/ssa/ssautil"
 
 	"github.com/RomanAgaltsev/bigo/internal/annotation"
+	"github.com/RomanAgaltsev/bigo/internal/assume"
 	"github.com/RomanAgaltsev/bigo/internal/bound"
 	"github.com/RomanAgaltsev/bigo/internal/callsummary"
+	"github.com/RomanAgaltsev/bigo/internal/costtable"
 	"github.com/RomanAgaltsev/bigo/internal/directive"
 	"github.com/RomanAgaltsev/bigo/internal/engine"
 	"github.com/RomanAgaltsev/bigo/internal/smell"
@@ -26,6 +28,13 @@ import (
 type Options struct {
 	Version string
 	Now     func() time.Time
+
+	// Assume is an external assumption set (spec 2026-07-24). Validated
+	// against the whole loaded program before analysis; nil disables the
+	// mechanism entirely.
+	Assume *assume.Set
+	// Warn receives shadowing warnings (deduplicated); nil drops them.
+	Warn func(string)
 }
 
 // Collect analyzes the module at dir (patterns as for `go build`, default
@@ -72,6 +81,16 @@ func Collect(dir string, patterns []string, opts Options) (Document, error) {
 		}
 	}
 
+	if opts.Assume != nil {
+		if err := opts.Assume.Validate(prog); err != nil {
+			return Document{}, err
+		}
+		for _, e := range opts.Assume.Entries() {
+			doc.Assumptions = append(doc.Assumptions, AssumptionJSON{Key: e.Key, Bound: e.Expr})
+		}
+	}
+	warned := map[string]bool{}
+
 	// All rules always run: the document describes the module completely and
 	// consumers filter. ParseRules("all") cannot fail for a literal.
 	enabledSmells, err := smell.ParseRules("all")
@@ -90,6 +109,9 @@ func Collect(dir string, patterns []string, opts Options) (Document, error) {
 		}
 		fns := directive.Scan(p.Syntax, p.TypesInfo, ssaFor, nop)
 		resolver := callsummary.NewWithMethods(fns.Overrides, fns.MethodCosts)
+		if opts.Assume != nil {
+			resolver.UseAssumptions(opts.Assume)
+		}
 		spaceResolver := callsummary.NewSpace(nil)
 
 		// Ignored decls are skipped for smells exactly as for verdicts, so the
@@ -116,6 +138,13 @@ func Collect(dir string, patterns []string, opts Options) (Document, error) {
 			}
 			inferred, causes := resolver.InferTop(fn)
 			rec.Time = boundJSON(inferred)
+			if opts.Assume != nil {
+				if key, ok := costtable.FuncKey(fn); ok && opts.Assume.Has(key) {
+					rec.Provenance = ProvenanceAssumed
+				} else if resolver.Tainted(fn) {
+					rec.Provenance = ProvenanceTainted
+				}
+			}
 			if inferred.IsTop() {
 				for _, c := range causes {
 					cj := CauseJSON{Kind: c.Kind.String(), Detail: c.What}
@@ -170,6 +199,14 @@ func Collect(dir string, patterns []string, opts Options) (Document, error) {
 		}
 		for _, decl := range fns.Plain {
 			measure(decl, nil)
+		}
+		if opts.Assume != nil && opts.Warn != nil {
+			for _, w := range resolver.AssumeWarnings() {
+				if !warned[w] {
+					warned[w] = true
+					opts.Warn(w)
+				}
+			}
 		}
 	}
 
