@@ -100,6 +100,64 @@ func f(xs []int) int { return helper(xs) }`
 	}
 }
 
+func TestTaintDirectAndTransitive(t *testing.T) {
+	pkg, _, err := ssasupport.Build(`package input
+import "os"
+func leaf(k string) string { return os.Getenv(k) }
+func mid(k string) string { return leaf(k) }
+func f(k string) string { return mid(k) }
+func clean(xs []int) int { return len(xs) }`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	es, err := assume.ParseText("os.Getenv O(1)\n")
+	if err != nil {
+		t.Fatal(err)
+	}
+	r := New(nil)
+	r.UseAssumptions(assume.NewSet(es))
+	// Run every function as a top-level target: taint is per-function state.
+	for _, name := range []string{"leaf", "mid", "f", "clean"} {
+		fn := ssasupport.Func(pkg, name)
+		if fn == nil {
+			t.Fatalf("%s not found", name)
+		}
+		b, _ := r.InferTop(fn)
+		if b.IsTop() {
+			t.Fatalf("%s = top, want bounded", name)
+		}
+	}
+	for name, want := range map[string]bool{"f": true, "mid": true, "leaf": true, "clean": false} {
+		fn := ssasupport.Func(pkg, name)
+		if got := r.Tainted(fn); got != want {
+			t.Errorf("Tainted(%s) = %v, want %v", name, got, want)
+		}
+	}
+}
+
+func TestMemoHitPropagatesTaint(t *testing.T) {
+	pkg, _, err := ssasupport.Build(`package input
+import "os"
+func leaf(k string) string { return os.Getenv(k) }
+func a(k string) string { return leaf(k) }
+func b(k string) string { return leaf(k) }`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	es, err := assume.ParseText("os.Getenv O(1)\n")
+	if err != nil {
+		t.Fatal(err)
+	}
+	r := New(nil)
+	r.UseAssumptions(assume.NewSet(es))
+	fa, fb := ssasupport.Func(pkg, "a"), ssasupport.Func(pkg, "b")
+	r.InferTop(fa) // populates leaf's memo with taint
+	r.InferTop(fb) // must inherit taint from the MEMOIZED leaf summary
+	if !r.Tainted(fb) {
+		t.Fatal("b not tainted — memo-hit path dropped the taint bit")
+	}
+}
+
 func TestCuratedTableBeatsAssumptionAndWarns(t *testing.T) {
 	src := `package input
 import "sort"

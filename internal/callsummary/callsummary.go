@@ -27,6 +27,8 @@ type Resolver struct {
 
 	assume *assume.Set
 	shadow map[string]bool
+	stack  []*ssa.Function
+	taint  map[*ssa.Function]bool
 }
 
 // New returns a resolver. overrides maps functions to asserted summaries (from
@@ -41,6 +43,7 @@ func New(overrides map[*ssa.Function]bound.Bound) *Resolver {
 		onStack:   map[*ssa.Function]bool{},
 		overrides: overrides,
 		paramMemo: map[*ssa.Function]ParamSummary{},
+		taint:     map[*ssa.Function]bool{},
 	}
 }
 
@@ -96,7 +99,30 @@ func (r *Resolver) assumeCost(c *ssa.CallCommon, callee *ssa.Function) (bound.Bo
 	if !ok {
 		return bound.Bound{}, false
 	}
+	r.markTaint()
 	return substArgs(b, names, c.Args), true
+}
+
+// Tainted reports whether fn's bound was computed with an assumed summary in
+// its support, directly or transitively (provenance "assumption-tainted").
+func (r *Resolver) Tainted(fn *ssa.Function) bool { return r.taint[fn] }
+
+// markTaint taints the function whose analysis is currently on top of the
+// inference stack — the single point through which every consult flows.
+func (r *Resolver) markTaint() {
+	if n := len(r.stack); n > 0 {
+		r.taint[r.stack[n-1]] = true
+	}
+}
+
+func (r *Resolver) pushInfer(fn *ssa.Function) { r.stack = append(r.stack, fn) }
+
+// popInfer pops fn and propagates its taint to the new top (its consumer).
+func (r *Resolver) popInfer(fn *ssa.Function) {
+	r.stack = r.stack[:len(r.stack)-1]
+	if r.taint[fn] {
+		r.markTaint()
+	}
 }
 
 // override returns the asserted summary for fn, looking through generic
@@ -179,6 +205,8 @@ func (r *Resolver) CallCost(c *ssa.CallCommon) bound.Bound {
 // causes from the body walk drive the diagnostic. Non-recursive functions defer
 // straight to engine.InferDetailed.
 func (r *Resolver) InferTop(fn *ssa.Function) (bound.Bound, []engine.Cause) {
+	r.pushInfer(fn)
+	defer r.popInfer(fn)
 	if recurrence.IsSelfRecursive(fn) {
 		if solved, _, ok := recurrence.Solve(fn, r); ok {
 			return solved, nil
@@ -282,12 +310,17 @@ func (r *Resolver) summary(fn *ssa.Function) bound.Bound {
 		return b
 	}
 	if b, ok := r.memo[fn]; ok {
+		if r.taint[fn] {
+			r.markTaint() // a memoized tainted summary taints its consumer
+		}
 		return b
 	}
 	if r.onStack[fn] {
 		return bound.Top() // call-graph cycle: recursion
 	}
 	r.onStack[fn] = true
+	r.pushInfer(fn)
+	defer r.popInfer(fn)
 	if recurrence.IsSelfRecursive(fn) {
 		if b, _, ok := recurrence.Solve(fn, r); ok {
 			r.onStack[fn] = false
