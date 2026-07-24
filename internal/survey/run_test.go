@@ -1,6 +1,7 @@
 package survey
 
 import (
+	"encoding/json"
 	"flag"
 	"os"
 	"path/filepath"
@@ -8,6 +9,8 @@ import (
 )
 
 var update = flag.Bool("update", false, "run the survey and rewrite survey/survey.json and survey/SURVEY.md")
+
+var whatifFile = flag.String("whatif", "", "candidates file; runs the what-if harness and writes survey/WHATIF.md and survey/whatif.json")
 
 // TestSurvey is the harness's entry point, and it is deliberately NOT a golden
 // test — it asserts nothing and SKIPS unless -update is passed.
@@ -51,6 +54,50 @@ func TestSurvey(t *testing.T) {
 	}
 	t.Logf("survey: %d of %d first-party functions bounded (%s%%) across %d targets",
 		r.Aggregate.Bounded, r.Aggregate.Functions, r.Aggregate.CoveragePct, len(r.Targets))
+}
+
+// TestWhatIf is the what-if harness's entry point, TestSurvey's sibling: it
+// asserts nothing and SKIPS unless -whatif names a candidates file. Its
+// committed output is the record of one run — deliberately NOT a golden, for
+// exactly TestSurvey's reasons.
+//
+// Run it with: task whatif -- candidates.json
+func TestWhatIf(t *testing.T) {
+	if *whatifFile == "" {
+		t.Skip("what-if harness runs only with -whatif <candidates.json> (task whatif)")
+	}
+	root, err := filepath.Abs(filepath.Join("..", ".."))
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfgPath := filepath.Join(root, "survey", "targets.json")
+	cfg, err := LoadConfig(cfgPath)
+	if err != nil {
+		t.Fatalf("read %s: %v", cfgPath, err)
+	}
+	wc, sets, err := LoadWhatIfConfig(*whatifFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rep := RunWhatIf(cfg, wc, sets, version(t, root), func(f string, a ...any) { t.Logf(f, a...) })
+	data, err := json.MarshalIndent(rep, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	outDir := filepath.Join(root, "survey")
+	if err := os.WriteFile(filepath.Join(outDir, "whatif.json"), append(data, '\n'), 0o644); err != nil { //nolint:gosec // generated record, not a secret
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(outDir, "WHATIF.md"), []byte(RenderWhatIf(rep)), 0o644); err != nil { //nolint:gosec // generated record, not a secret
+		t.Fatal(err)
+	}
+	for _, res := range rep.Results {
+		if res.Blocked != "" {
+			t.Logf("whatif: %s BLOCKED: %s", res.Name, res.Blocked)
+			continue
+		}
+		t.Logf("whatif: %s graduated %d (%d hand-written, %s)", res.Name, res.Graduated, res.GraduatedHand, res.DeltaPP)
+	}
 }
 
 // version reads the released version from .release-please-manifest.json so the
