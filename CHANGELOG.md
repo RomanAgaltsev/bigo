@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.39.1](https://github.com/RomanAgaltsev/bigo/compare/v1.39.0...v1.39.1) (2026-07-24)
+
+
+### Bug Fixes
+
+* judge assumption-key absence over the population in the what-if sweep ([#123](https://github.com/RomanAgaltsev/bigo/issues/123)) ([4a9c30a](https://github.com/RomanAgaltsev/bigo/commit/4a9c30a17b55e0ab5902024b1f04421ed8c57867))
+
 ## [1.39.0](https://github.com/RomanAgaltsev/bigo/compare/v1.38.1...v1.39.0) (2026-07-24)
 
 
