@@ -90,6 +90,7 @@ func TestWhatIf(t *testing.T) {
 		t.Fatal(err)
 	}
 	rep := RunWhatIf(cfg, wc, sets, version(t, root), func(f string, a ...any) { t.Logf(f, a...) })
+	rep.Candidates = filepath.Base(candPath)
 	data, err := json.MarshalIndent(rep, "", "  ")
 	if err != nil {
 		t.Fatal(err)

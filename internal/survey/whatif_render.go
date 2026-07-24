@@ -12,6 +12,9 @@ import (
 func RenderWhatIf(r WhatIfReport) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "# bigo what-if — %s (bigo %s)\n\n", r.Generated, r.BigoVersion)
+	if r.Candidates != "" {
+		fmt.Fprintf(&b, "Candidates: `%s`. This file is a SINGLE-SLOT record — the next run\noverwrites it, so a committed record is only the last run measured.\n\n", r.Candidates)
+	}
 	fmt.Fprintf(&b, "Baseline: %d first-party functions, %d bounded.\n\n", r.BaselineFunctions, r.BaselineBounded)
 	b.WriteString("Graduations are EXACT engine results under each candidate's assumption\n")
 	b.WriteString("set — tainted ⊤→bounded transitions only; assumed targets excluded.\n")

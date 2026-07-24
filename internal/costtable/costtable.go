@@ -351,6 +351,21 @@ var stdlib = map[string]func(args []ssa.Value) bound.Bound{
 	"(*sync.WaitGroup).Done":   constCost,
 	"(*sync.WaitGroup).Wait":   constCost,
 
+	// (*sync.Pool).Put is O(1) AMORTIZED, priced from sync/pool.go and
+	// poolqueue.go rather than from the block above. Two allocation paths sit
+	// behind it and both grow geometrically: poolChain.pushHead allocates a
+	// DOUBLED ring when the current one fills, the same shape as append, whose
+	// amortization bigo already licenses as a documented primitive; and pinSlow
+	// allocates make([]poolLocal, GOMAXPROCS) at most once per pool per GC
+	// cycle, where GOMAXPROCS is a machine constant and not an input size.
+	//
+	// Its sibling (*sync.Pool).Get is deliberately ABSENT and must stay so: an
+	// empty pool calls p.New, a func-typed STRUCT FIELD, i.e. arbitrary user
+	// code (the funcvalue class, measured at zero reachable on real code
+	// 2026-07-20). Get also loops over every P in getSlow. Either alone makes
+	// an O(1) entry a wrong bound.
+	"(*sync.Pool).Put": constCost,
+
 	// --- Survey-ranked entries (v1.35.0) ---
 	//
 	// Added because the v1.34.0 real-world survey measured them blocking real
@@ -415,6 +430,63 @@ var stdlib = map[string]func(args []ssa.Value) bound.Bound{
 	"sync/atomic.CompareAndSwapUint32":  constCost,
 	"sync/atomic.CompareAndSwapUint64":  constCost,
 	"sync/atomic.CompareAndSwapPointer": constCost,
+
+	// The TYPED atomic API, added 2026-07-24 after the S1 truthfulness probe
+	// measured 163 hand-written graduations across the survey targets.
+	//
+	// Priced from sync/atomic/type.go, NOT by analogy with the package-level
+	// entries above (the Trim rule forbids inheriting a precedent): every
+	// method there is a one-line delegation to a compiler intrinsic, and the
+	// package's non-test sources contain NO loop anywhere in this API. That
+	// absence is what makes one argument cover all of them.
+	//
+	// atomic.Value is deliberately ABSENT: its Store carries a spin loop for
+	// the first-store protocol. Arguably wall-clock rather than work, but ⊤ is
+	// the safe answer and excluding one type keeps the argument above true as
+	// written.
+	"(*sync/atomic.Bool).Load":                 constCost,
+	"(*sync/atomic.Bool).Store":                constCost,
+	"(*sync/atomic.Bool).Swap":                 constCost,
+	"(*sync/atomic.Bool).CompareAndSwap":       constCost,
+	"(*sync/atomic.Int32).Load":                constCost,
+	"(*sync/atomic.Int32).Store":               constCost,
+	"(*sync/atomic.Int32).Swap":                constCost,
+	"(*sync/atomic.Int32).CompareAndSwap":      constCost,
+	"(*sync/atomic.Int32).Add":                 constCost,
+	"(*sync/atomic.Int32).And":                 constCost,
+	"(*sync/atomic.Int32).Or":                  constCost,
+	"(*sync/atomic.Int64).Load":                constCost,
+	"(*sync/atomic.Int64).Store":               constCost,
+	"(*sync/atomic.Int64).Swap":                constCost,
+	"(*sync/atomic.Int64).CompareAndSwap":      constCost,
+	"(*sync/atomic.Int64).Add":                 constCost,
+	"(*sync/atomic.Int64).And":                 constCost,
+	"(*sync/atomic.Int64).Or":                  constCost,
+	"(*sync/atomic.Uint32).Load":               constCost,
+	"(*sync/atomic.Uint32).Store":              constCost,
+	"(*sync/atomic.Uint32).Swap":               constCost,
+	"(*sync/atomic.Uint32).CompareAndSwap":     constCost,
+	"(*sync/atomic.Uint32).Add":                constCost,
+	"(*sync/atomic.Uint32).And":                constCost,
+	"(*sync/atomic.Uint32).Or":                 constCost,
+	"(*sync/atomic.Uint64).Load":               constCost,
+	"(*sync/atomic.Uint64).Store":              constCost,
+	"(*sync/atomic.Uint64).Swap":               constCost,
+	"(*sync/atomic.Uint64).CompareAndSwap":     constCost,
+	"(*sync/atomic.Uint64).Add":                constCost,
+	"(*sync/atomic.Uint64).And":                constCost,
+	"(*sync/atomic.Uint64).Or":                 constCost,
+	"(*sync/atomic.Uintptr).Load":              constCost,
+	"(*sync/atomic.Uintptr).Store":             constCost,
+	"(*sync/atomic.Uintptr).Swap":              constCost,
+	"(*sync/atomic.Uintptr).CompareAndSwap":    constCost,
+	"(*sync/atomic.Uintptr).Add":               constCost,
+	"(*sync/atomic.Uintptr).And":               constCost,
+	"(*sync/atomic.Uintptr).Or":                constCost,
+	"(*sync/atomic.Pointer[T]).Load":           constCost,
+	"(*sync/atomic.Pointer[T]).Store":          constCost,
+	"(*sync/atomic.Pointer[T]).Swap":           constCost,
+	"(*sync/atomic.Pointer[T]).CompareAndSwap": constCost,
 
 	// Does not return.
 	"os.Exit": constCost,

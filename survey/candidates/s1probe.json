@@ -1,0 +1,7 @@
+{
+  "_comment": "S1 truthfulness probe, criteria pre-registered in the vault at 15349d0 before any stdlib source was read for this purpose. S1-truthful is Stage 2; S1b is the expansion permitted by the pre-registered expansion rule. Both carry the same bar, 100 hand-written.",
+  "candidates": [
+    {"name": "S1-truthful", "file": "s1-truthful.assume"},
+    {"name": "S1b-atomic-family", "file": "s1b-atomic-family.assume"}
+  ]
+}

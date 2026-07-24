@@ -1,0 +1,12 @@
+# S1-truthful — Stage 2 of the S1 probe (criteria 2026-07-24-s1-truthfulness-thresholds.md).
+# ONLY the S1 members that passed Stage 1 against Go's own source, with the
+# bounds Stage 1 proved. Bar: 100 hand-written.
+#
+# (*sync.Pool).Get is REFUSED: an empty pool calls p.New, a func-typed struct
+# field, i.e. the funcvalue class measured at zero on this population. It also
+# loops over all Ps in getSlow.
+# (*sync.Once).Do is REFUSED as an entry: its cost IS the callback's, which
+# needs the PARAMETRIC table, and LookupParametric cannot key a method at all
+# (recorded debt, 2026-07-21). Truthful yield was separately measured at 15.
+(*sync/atomic.Bool).Load O(1)
+(*sync.Pool).Put O(1)

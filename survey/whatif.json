@@ -1,0 +1,178 @@
+{
+  "generated": "2026-07-24",
+  "bigo_version": "1.39.1",
+  "baseline_functions": 33504,
+  "baseline_bounded": 10571,
+  "results": [
+    {
+      "name": "S1-truthful",
+      "graduated": 61,
+      "graduated_hand": 61,
+      "coverage_delta_pp": "+0.18pp",
+      "per_target": [
+        {
+          "target": "grpc-go",
+          "graduated": 6,
+          "graduated_hand": 6
+        },
+        {
+          "target": "caddy",
+          "graduated": 1,
+          "graduated_hand": 1
+        },
+        {
+          "target": "prometheus",
+          "graduated": 2,
+          "graduated_hand": 2
+        },
+        {
+          "target": "etcd",
+          "graduated": 0,
+          "graduated_hand": 0
+        },
+        {
+          "target": "delve",
+          "graduated": 2,
+          "graduated_hand": 2
+        },
+        {
+          "target": "chi",
+          "graduated": 0,
+          "graduated_hand": 0
+        },
+        {
+          "target": "goldmark",
+          "graduated": 0,
+          "graduated_hand": 0
+        },
+        {
+          "target": "pgx",
+          "graduated": 0,
+          "graduated_hand": 0
+        },
+        {
+          "target": "cel-go",
+          "graduated": 4,
+          "graduated_hand": 4
+        },
+        {
+          "target": "expr",
+          "graduated": 0,
+          "graduated_hand": 0
+        },
+        {
+          "target": "nats-server",
+          "graduated": 38,
+          "graduated_hand": 38
+        },
+        {
+          "target": "hugo",
+          "graduated": 8,
+          "graduated_hand": 8
+        }
+      ],
+      "warnings": [
+        "(*sync.Pool).Put (absent from 4 of 12 targets)"
+      ]
+    },
+    {
+      "name": "S1b-atomic-family",
+      "graduated": 163,
+      "graduated_hand": 163,
+      "coverage_delta_pp": "+0.49pp",
+      "per_target": [
+        {
+          "target": "grpc-go",
+          "graduated": 39,
+          "graduated_hand": 39
+        },
+        {
+          "target": "caddy",
+          "graduated": 13,
+          "graduated_hand": 13
+        },
+        {
+          "target": "prometheus",
+          "graduated": 4,
+          "graduated_hand": 4
+        },
+        {
+          "target": "etcd",
+          "graduated": 0,
+          "graduated_hand": 0
+        },
+        {
+          "target": "delve",
+          "graduated": 5,
+          "graduated_hand": 5
+        },
+        {
+          "target": "chi",
+          "graduated": 1,
+          "graduated_hand": 1
+        },
+        {
+          "target": "goldmark",
+          "graduated": 0,
+          "graduated_hand": 0
+        },
+        {
+          "target": "pgx",
+          "graduated": 0,
+          "graduated_hand": 0
+        },
+        {
+          "target": "cel-go",
+          "graduated": 9,
+          "graduated_hand": 9
+        },
+        {
+          "target": "expr",
+          "graduated": 0,
+          "graduated_hand": 0
+        },
+        {
+          "target": "nats-server",
+          "graduated": 72,
+          "graduated_hand": 72
+        },
+        {
+          "target": "hugo",
+          "graduated": 20,
+          "graduated_hand": 20
+        }
+      ],
+      "warnings": [
+        "(*sync/atomic.Int32).Load (absent from 2 of 12 targets)",
+        "(*sync/atomic.Int32).Store (absent from 2 of 12 targets)",
+        "(*sync/atomic.Int32).Swap (absent from 2 of 12 targets)",
+        "(*sync/atomic.Int32).CompareAndSwap (absent from 2 of 12 targets)",
+        "(*sync/atomic.Int32).Add (absent from 2 of 12 targets)",
+        "(*sync/atomic.Int32).And (absent from 2 of 12 targets)",
+        "(*sync/atomic.Int32).Or (absent from 2 of 12 targets)",
+        "(*sync/atomic.Int64).Load (absent from 4 of 12 targets)",
+        "(*sync/atomic.Int64).Store (absent from 4 of 12 targets)",
+        "(*sync/atomic.Int64).Swap (absent from 4 of 12 targets)",
+        "(*sync/atomic.Int64).CompareAndSwap (absent from 4 of 12 targets)",
+        "(*sync/atomic.Int64).Add (absent from 4 of 12 targets)",
+        "(*sync/atomic.Int64).And (absent from 4 of 12 targets)",
+        "(*sync/atomic.Int64).Or (absent from 4 of 12 targets)",
+        "(*sync/atomic.Uint32).Load (absent from 6 of 12 targets)",
+        "(*sync/atomic.Uint32).Store (absent from 6 of 12 targets)",
+        "(*sync/atomic.Uint32).Swap (absent from 6 of 12 targets)",
+        "(*sync/atomic.Uint32).CompareAndSwap (absent from 6 of 12 targets)",
+        "(*sync/atomic.Uint32).Add (absent from 6 of 12 targets)",
+        "(*sync/atomic.Uint32).And (absent from 6 of 12 targets)",
+        "(*sync/atomic.Uint32).Or (absent from 6 of 12 targets)",
+        "(*sync/atomic.Uint64).Load (absent from 2 of 12 targets)",
+        "(*sync/atomic.Uint64).Store (absent from 2 of 12 targets)",
+        "(*sync/atomic.Uint64).Swap (absent from 2 of 12 targets)",
+        "(*sync/atomic.Uint64).CompareAndSwap (absent from 2 of 12 targets)",
+        "(*sync/atomic.Uint64).Add (absent from 2 of 12 targets)",
+        "(*sync/atomic.Uint64).And (absent from 2 of 12 targets)",
+        "(*sync/atomic.Uint64).Or (absent from 2 of 12 targets)",
+        "(*sync.Pool).Put (absent from 4 of 12 targets)"
+      ]
+    }
+  ]
+}

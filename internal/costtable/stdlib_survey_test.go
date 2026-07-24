@@ -197,3 +197,83 @@ func f() (int, error) { return strconv.Atoi(g()) }`)
 		t.Errorf("cost = %q, want unverifiable — the argument's size is unknown", got)
 	}
 }
+
+// TestTypedAtomicPriced pins the typed sync/atomic API added 2026-07-24 after
+// the S1 truthfulness probe. Positive controls: every one of these compiles to
+// a single hardware instruction, so a regression to ⊤ is a silent capability
+// loss (the C5 lesson) and a regression to anything else is a wrong bound.
+func TestTypedAtomicPriced(t *testing.T) {
+	tests := []struct{ name, src string }{
+		{"Bool.Load", `package input
+import "sync/atomic"
+func f(b *atomic.Bool) bool { return b.Load() }`},
+
+		{"Int64.Add", `package input
+import "sync/atomic"
+func f(n *atomic.Int64) int64 { return n.Add(1) }`},
+
+		{"Uint32.CompareAndSwap", `package input
+import "sync/atomic"
+func f(n *atomic.Uint32) bool { return n.CompareAndSwap(1, 2) }`},
+
+		{"Int32.Or", `package input
+import "sync/atomic"
+func f(n *atomic.Int32) int32 { return n.Or(4) }`},
+
+		// The generic type: its key must resolve through Origin(), which is the
+		// one member of the family whose keying is not obvious.
+		{"Pointer.Load", `package input
+import "sync/atomic"
+type T struct{ x int }
+func f(p *atomic.Pointer[T]) *T { return p.Load() }`},
+
+		{"Pool.Put", `package input
+import "sync"
+func f(p *sync.Pool, x any) { p.Put(x) }`},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, ok := costOf(t, tt.src)
+			if !ok || got != "O(1)" {
+				t.Errorf("cost = %q (priced=%v), want O(1)", got, ok)
+			}
+		})
+	}
+}
+
+// TestAtomicAndPoolRefusalsStayTop is the no-fire half, and it is the one that
+// matters: each of these was refused for a written reason during the S1 probe,
+// and pricing any of them O(1) would be a wrong bound.
+func TestAtomicAndPoolRefusalsStayTop(t *testing.T) {
+	tests := []struct{ name, src string }{
+		// An empty pool calls p.New — a func-typed struct field, i.e. arbitrary
+		// user code — and getSlow loops over every P.
+		{"Pool.Get", `package input
+import "sync"
+func f(p *sync.Pool) any { return p.Get() }`},
+
+		// Store carries a spin loop for the first-store protocol; the family
+		// argument ("no loops in the typed API") deliberately excludes it.
+		{"atomic.Value.Store", `package input
+import "sync/atomic"
+func f(v *atomic.Value, x any) { v.Store(x) }`},
+
+		{"atomic.Value.Load", `package input
+import "sync/atomic"
+func f(v *atomic.Value) any { return v.Load() }`},
+
+		// Cost IS the callback's; it needs the parametric table, which cannot
+		// key a method today.
+		{"Once.Do", `package input
+import "sync"
+func f(o *sync.Once, g func()) { o.Do(g) }`},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, ok := costOf(t, tt.src)
+			if ok && got != "unverifiable" {
+				t.Errorf("cost = %q, want unverifiable — pricing this would be a wrong bound", got)
+			}
+		})
+	}
+}
