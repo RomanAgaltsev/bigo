@@ -4,9 +4,11 @@ package callsummary
 
 import (
 	"go/types"
+	"sort"
 
 	"golang.org/x/tools/go/ssa"
 
+	"github.com/RomanAgaltsev/bigo/internal/assume"
 	"github.com/RomanAgaltsev/bigo/internal/bound"
 	"github.com/RomanAgaltsev/bigo/internal/costtable"
 	"github.com/RomanAgaltsev/bigo/internal/engine"
@@ -22,6 +24,9 @@ type Resolver struct {
 	overrides   map[*ssa.Function]bound.Bound
 	methodCosts map[*types.Func]bound.Bound
 	paramMemo   map[*ssa.Function]ParamSummary
+
+	assume *assume.Set
+	shadow map[string]bool
 }
 
 // New returns a resolver. overrides maps functions to asserted summaries (from
@@ -50,6 +55,50 @@ func NewWithMethods(overrides map[*ssa.Function]bound.Bound, methodCosts map[*ty
 	return r
 }
 
+// UseAssumptions attaches an external assumption set (spec 2026-07-24). Nil
+// leaves behavior identical to a resolver without assumptions.
+func (r *Resolver) UseAssumptions(s *assume.Set) {
+	r.assume = s
+	r.shadow = map[string]bool{}
+}
+
+// AssumeWarnings returns shadowing warnings (an assumption whose target is
+// already answered by a directive or a curated entry), sorted and unique.
+// Silent shadowing is forbidden by the spec: it means the assumption is
+// redundant or contradicts something with higher provenance.
+func (r *Resolver) AssumeWarnings() []string {
+	out := make([]string, 0, len(r.shadow))
+	for w := range r.shadow {
+		out = append(out, w)
+	}
+	sort.Strings(out)
+	return out
+}
+
+func (r *Resolver) noteShadow(kind string, key string) {
+	if r.assume != nil && r.assume.Has(key) {
+		r.shadow["assumption for "+key+" is shadowed by a "+kind] = true
+	}
+}
+
+// assumeCost answers a call from the assumption set, in the same way the
+// methodCosts path answers an annotated interface method: normalized summary
+// substituted into caller size variables.
+func (r *Resolver) assumeCost(c *ssa.CallCommon, callee *ssa.Function) (bound.Bound, bool) {
+	if r.assume == nil {
+		return bound.Bound{}, false
+	}
+	key, ok := costtable.CalleeKey(c)
+	if !ok {
+		return bound.Bound{}, false
+	}
+	b, names, ok := r.assume.For(key, callee.Signature)
+	if !ok {
+		return bound.Bound{}, false
+	}
+	return substArgs(b, names, c.Args), true
+}
+
 // override returns the asserted summary for fn, looking through generic
 // instantiations to their origin (annotations sit on the origin declaration).
 func (r *Resolver) override(fn *ssa.Function) (bound.Bound, bool) {
@@ -67,7 +116,15 @@ func (r *Resolver) override(fn *ssa.Function) (bound.Bound, bool) {
 // CallCost resolves a call's cost: cost table first, then user-function summary,
 // else ⊤ (unverifiable).
 func (r *Resolver) CallCost(c *ssa.CallCommon) bound.Bound {
+	// Precedence (assumption spec §2): in-source directive > curated cost
+	// table > assumption > inference. The plain table outranks directives in
+	// this walk order, but their key spaces cannot collide (directives sit on
+	// user functions, the table on builtins/stdlib), so the observable order
+	// is the specified one.
 	if b, ok := costtable.Lookup(c); ok {
+		if key, kok := costtable.CalleeKey(c); kok {
+			r.noteShadow("curated cost-table entry", key)
+		}
 		return b
 	}
 	callee := c.StaticCallee()
@@ -88,6 +145,9 @@ func (r *Resolver) CallCost(c *ssa.CallCommon) bound.Bound {
 		return bound.Top() // closure / func value / unannotated interface
 	}
 	if _, ok := r.override(callee); ok {
+		if key, kok := costtable.FuncKey(callee); kok {
+			r.noteShadow("//bigo: directive", key)
+		}
 		return r.callUser(callee, c.Args) // summary() will return the override
 	}
 	// No body to analyze: external (declared from export data) or an
@@ -97,7 +157,13 @@ func (r *Resolver) CallCost(c *ssa.CallCommon) bound.Bound {
 		if b, ok := r.parametricTableCost(c); ok {
 			return b
 		}
+		if b, ok := r.assumeCost(c, callee); ok {
+			return b
+		}
 		return bound.Top()
+	}
+	if b, ok := r.assumeCost(c, callee); ok {
+		return b
 	}
 	if b, ok := r.parametricCallCost(callee, c); ok {
 		return b
