@@ -26,6 +26,31 @@ func TestMainWritesValidDocument(t *testing.T) {
 	}
 }
 
+func TestMainAssumeFlag(t *testing.T) {
+	out := filepath.Join(t.TempDir(), "doc.json")
+	code := Main("test", []string{"-C", "testdata/assumefix", "-assume", "testdata/assumefix/fix.assume", "-o", out})
+	if code != 0 {
+		t.Fatalf("exit = %d, want 0", code)
+	}
+	data, err := os.ReadFile(out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var doc Document
+	if err := json.Unmarshal(data, &doc); err != nil {
+		t.Fatal(err)
+	}
+	if len(doc.Assumptions) != 1 {
+		t.Fatalf("assumptions = %+v, want the os.Getenv entry", doc.Assumptions)
+	}
+}
+
+func TestMainAssumeFlagBadFileFails(t *testing.T) {
+	if code := Main("test", []string{"-C", "testdata/assumefix", "-assume", "testdata/assumefix/nosuch.assume"}); code != 1 {
+		t.Fatalf("exit = %d, want 1", code)
+	}
+}
+
 func TestMainBadDirFails(t *testing.T) {
 	if code := Main("test", []string{"-C", "testdata/nosuchdir", "./..."}); code != 1 {
 		t.Errorf("Main on missing dir = %d, want 1", code)

@@ -7,6 +7,8 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+
+	"github.com/RomanAgaltsev/bigo/internal/assume"
 )
 
 // Main runs the `bigo json` subcommand. Exit codes: 0 success (verdicts never
@@ -16,10 +18,21 @@ func Main(version string, args []string) int {
 	fs := flag.NewFlagSet("bigo json", flag.ContinueOnError)
 	dir := fs.String("C", ".", "analyze the module in this directory")
 	out := fs.String("o", "", "write the report to this file instead of stdout")
+	assumeFile := fs.String("assume", "", "load external assumptions from this file (path is process-relative, not -C-relative)")
 	if err := fs.Parse(args); err != nil {
 		return 2
 	}
-	doc, err := Collect(*dir, fs.Args(), Options{Version: version})
+	opts := Options{Version: version}
+	if *assumeFile != "" {
+		set, err := assume.Load(*assumeFile)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "bigo json:", err)
+			return 1
+		}
+		opts.Assume = set
+		opts.Warn = func(w string) { fmt.Fprintln(os.Stderr, "bigo json: warning:", w) }
+	}
+	doc, err := Collect(*dir, fs.Args(), opts)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "bigo json:", err)
 		return 1
