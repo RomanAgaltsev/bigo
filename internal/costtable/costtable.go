@@ -69,15 +69,24 @@ func calleeKey(c *ssa.CallCommon) (string, bool) {
 	if callee == nil {
 		return "", false
 	}
-	if orig := callee.Origin(); orig != nil {
-		callee = orig
+	return FuncKey(callee)
+}
+
+// CalleeKey is calleeKey for consumers outside the table (the assumption
+// mechanism keys its entries in exactly this vocabulary).
+func CalleeKey(c *ssa.CallCommon) (string, bool) { return calleeKey(c) }
+
+// FuncKey is the key of a function itself rather than of a call to it.
+func FuncKey(fn *ssa.Function) (string, bool) {
+	if orig := fn.Origin(); orig != nil {
+		fn = orig
 	}
-	if callee.Pkg == nil || callee.Pkg.Pkg == nil {
+	if fn.Pkg == nil || fn.Pkg.Pkg == nil {
 		return "", false
 	}
-	key := callee.Pkg.Pkg.Path() + "." + callee.Name()
-	if callee.Signature.Recv() != nil {
-		obj, ok := callee.Object().(*types.Func)
+	key := fn.Pkg.Pkg.Path() + "." + fn.Name()
+	if fn.Signature.Recv() != nil {
+		obj, ok := fn.Object().(*types.Func)
 		if !ok {
 			return "", false
 		}
