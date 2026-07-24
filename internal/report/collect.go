@@ -37,16 +37,27 @@ type Options struct {
 	Warn func(string)
 }
 
-// Collect analyzes the module at dir (patterns as for `go build`, default
-// ./...) and returns the report document. Analysis is the same InferTop /
-// SpaceOf pipeline the analyzer runs; Collect adds no inference of its own.
-func Collect(dir string, patterns []string, opts Options) (Document, error) {
+// Loaded is a parsed, type-checked, SSA-built module, ready to produce
+// documents. Splitting the load from the analysis lets a multi-pass consumer
+// (the what-if harness) build SSA once per target and run Document once per
+// candidate assumption set.
+//
+// Every piece of per-Document state — resolvers, warning dedup, the document
+// itself — is constructed inside Document. The only mutable state shared
+// across Document calls is costtable's stability memo, which is safe: field
+// stability is a pure CFG fact, independent of assumptions.
+type Loaded struct {
+	pkgs   []*packages.Package
+	prog   *ssa.Program
+	module string
+	root   string
+}
+
+// LoadModule loads and builds the module at dir (patterns as for `go build`,
+// default ./...).
+func LoadModule(dir string, patterns []string) (*Loaded, error) {
 	if len(patterns) == 0 {
 		patterns = []string{"./..."}
-	}
-	now := opts.Now
-	if now == nil {
-		now = time.Now
 	}
 	cfg := &packages.Config{
 		Mode: packages.NeedName | packages.NeedFiles | packages.NeedSyntax |
@@ -56,29 +67,52 @@ func Collect(dir string, patterns []string, opts Options) (Document, error) {
 	}
 	pkgs, err := packages.Load(cfg, patterns...)
 	if err != nil {
-		return Document{}, err
+		return nil, err
 	}
 	for _, p := range pkgs {
 		if len(p.Errors) > 0 {
-			return Document{}, fmt.Errorf("package %s: %v", p.PkgPath, p.Errors[0])
+			return nil, fmt.Errorf("package %s: %v", p.PkgPath, p.Errors[0])
 		}
 	}
 	prog, _ := ssautil.Packages(pkgs, ssa.BuilderMode(0))
 	prog.Build()
+	l := &Loaded{pkgs: pkgs, prog: prog}
+	for _, p := range pkgs {
+		if p.Module != nil {
+			l.module = p.Module.Path
+			l.root = p.Module.Dir
+			break
+		}
+	}
+	return l, nil
+}
+
+// Collect analyzes the module at dir (patterns as for `go build`, default
+// ./...) and returns the report document. Analysis is the same InferTop /
+// SpaceOf pipeline the analyzer runs; Collect adds no inference of its own.
+func Collect(dir string, patterns []string, opts Options) (Document, error) {
+	l, err := LoadModule(dir, patterns)
+	if err != nil {
+		return Document{}, err
+	}
+	return l.Document(opts)
+}
+
+// Document runs the analysis pipeline over the loaded module and returns one
+// report document.
+func (l *Loaded) Document(opts Options) (Document, error) {
+	now := opts.Now
+	if now == nil {
+		now = time.Now
+	}
+	pkgs, prog, root := l.pkgs, l.prog, l.root
 
 	doc := Document{
 		SchemaVersion: SchemaVersion,
 		BigoVersion:   opts.Version,
 		Generated:     now().UTC().Format(time.RFC3339),
 		Functions:     []Function{},
-	}
-	root := ""
-	for _, p := range pkgs {
-		if p.Module != nil {
-			doc.Module = p.Module.Path
-			root = p.Module.Dir
-			break
-		}
+		Module:        l.module,
 	}
 
 	if opts.Assume != nil {

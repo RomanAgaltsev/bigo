@@ -75,6 +75,46 @@ func TestCollectUnmatchedAssumptionKeyFails(t *testing.T) {
 	}
 }
 
+func TestLoadOnceDocumentTwice(t *testing.T) {
+	l, err := LoadModule("testdata/assumefix", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	base, err := l.Document(Options{Version: "test", Now: fixedNow})
+	if err != nil {
+		t.Fatal(err)
+	}
+	plain, err := Collect("testdata/assumefix", nil, Options{Version: "test", Now: fixedNow})
+	if err != nil {
+		t.Fatal(err)
+	}
+	bj, _ := json.Marshal(base)
+	pj, _ := json.Marshal(plain)
+	if string(bj) != string(pj) {
+		t.Fatal("Document over a shared load differs from a fresh Collect")
+	}
+	set, err := assume.Load("testdata/assumefix/fix.assume")
+	if err != nil {
+		t.Fatal(err)
+	}
+	withA, err := l.Document(Options{Version: "test", Now: fixedNow, Assume: set})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(withA.Assumptions) != 1 {
+		t.Fatal("assumption document missing its trust surface")
+	}
+	// The shared program must not leak assumption state back into a plain run.
+	again, err := l.Document(Options{Version: "test", Now: fixedNow})
+	if err != nil {
+		t.Fatal(err)
+	}
+	aj, _ := json.Marshal(again)
+	if string(aj) != string(pj) {
+		t.Fatal("plain Document after an assumption Document differs — state leaked through the shared SSA program")
+	}
+}
+
 func TestCollectInModuleAssumedTarget(t *testing.T) {
 	es, err := assume.ParseText("example.com/assumefix.Blocked O(1)\n")
 	if err != nil {
