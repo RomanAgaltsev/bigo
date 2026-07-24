@@ -135,9 +135,32 @@ func (s *Set) Err() error {
 
 // Validate checks every entry against the loaded program: each key must match
 // at least one function, and each matched entry must compile against its
-// signature. Hard errors both ways (spec §3) — the whole-module drivers call
+// signature. Hard errors both ways (spec §3) — the single-module drivers call
 // this before analysis so a broken set never produces numbers.
 func (s *Set) Validate(prog *ssa.Program) error {
+	unmatched, err := s.ValidateMatched(prog)
+	if err != nil {
+		return err
+	}
+	if len(unmatched) > 0 {
+		return fmt.Errorf("assumption keys match no function in the loaded module: %s", strings.Join(unmatched, ", "))
+	}
+	return nil
+}
+
+// ValidateMatched compiles every entry that matches a function in prog and
+// returns the keys that matched nothing, sorted. The error covers compilation
+// failures only.
+//
+// This is Validate's body with the unmatched-key verdict handed to the caller,
+// because the right verdict depends on the population. Over ONE module an
+// unmatched key is a hard error: it is almost always a typo, and a typo that
+// silently contributes zero produces a fake NO-GO. Over a MULTI-module sweep
+// the same key may be absent from one small module and central to the next —
+// there it contributes zero to that module by arithmetic, not by corruption,
+// and the sweep restores the protection by requiring each key to match
+// somewhere in the population.
+func (s *Set) ValidateMatched(prog *ssa.Program) (unmatched []string, err error) {
 	matched := map[string]bool{}
 	for fn := range ssautil.AllFunctions(prog) {
 		key, ok := costtable.FuncKey(fn)
@@ -147,19 +170,15 @@ func (s *Set) Validate(prog *ssa.Program) error {
 		matched[key] = true
 		s.For(key, fn.Signature) // compile eagerly; failure lands in firstErr
 	}
-	var missing []string
 	s.mu.Lock()
 	for _, key := range s.order {
 		if !matched[key] {
-			missing = append(missing, key)
+			unmatched = append(unmatched, key)
 		}
 	}
 	s.mu.Unlock()
-	if len(missing) > 0 {
-		sort.Strings(missing)
-		return fmt.Errorf("assumption keys match no function in the loaded module: %s", strings.Join(missing, ", "))
-	}
-	return s.Err()
+	sort.Strings(unmatched)
+	return unmatched, s.Err()
 }
 
 // Entries returns the entries in file order (the document's trust surface).

@@ -12,6 +12,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/RomanAgaltsev/bigo/internal/assume"
@@ -151,19 +153,29 @@ func compareDocs(base, cand report.Document, isGen func(string) bool) (grad, gra
 // the honest price of exactness is one analysis pass per (target, candidate),
 // never a graph shortcut (spec §5).
 //
-// A validation error on one target blocks the candidate rather than killing
-// the run: an assumption key may legitimately match nothing in one module
-// while matching in another, and the render makes the block visible.
+// Key absence is judged over the POPULATION, not per module: a key missing
+// from one module contributes zero to it by arithmetic, so it is warned about;
+// a key missing from every measured module never contributed at all, so it
+// blocks its candidate. Any other per-target failure blocks too, and the
+// render always makes a block visible.
 func RunWhatIf(cfg Config, wc WhatIfConfig, sets map[string]*assume.Set, version string, progress func(string, ...any)) WhatIfReport {
 	if progress == nil {
 		progress = func(string, ...any) {}
 	}
 	r := WhatIfReport{Generated: time.Now().UTC().Format("2006-01-02"), BigoVersion: version}
 	results := make(map[string]*CandidateResult, len(wc.Candidates))
+	unmatchedIn := make(map[string]map[string]int, len(wc.Candidates))
 	for _, c := range wc.Candidates {
 		results[c.Name] = &CandidateResult{Name: c.Name}
+		unmatchedIn[c.Name] = make(map[string]int, len(sets[c.Name].Entries()))
 	}
 	warnSeen := make(map[string]map[string]bool, len(wc.Candidates))
+	// unmatchedIn[candidate][key] counts targets where the key matched nothing
+	// (allocated per candidate above). A key unmatched in EVERY measured target
+	// is a typo or an inexpressible key and blocks its candidate; a key absent
+	// from some targets only is reported and tolerated (assume.ValidateMatched
+	// documents why).
+	measuredTargets := 0
 	for _, tc := range cfg.Targets {
 		if _, err := os.Stat(filepath.Clean(tc.Path)); err != nil {
 			progress("whatif: %s skipped (path not present)", tc.Name)
@@ -180,6 +192,7 @@ func RunWhatIf(cfg Config, wc WhatIfConfig, sets map[string]*assume.Set, version
 			progress("whatif: %s skipped (baseline failed: %v)", tc.Name, err)
 			continue
 		}
+		measuredTargets++
 		isGen := newGeneratedDetector(tc.Path).isGenerated
 		for _, f := range base.Functions {
 			if firstParty(f.Package, base.Module) {
@@ -197,7 +210,12 @@ func RunWhatIf(cfg Config, wc WhatIfConfig, sets map[string]*assume.Set, version
 			progress("whatif: %s × %s", tc.Name, c.Name)
 			var warns []string
 			cand, err := l.Document(report.Options{Version: version, Assume: sets[c.Name],
-				Warn: func(w string) { warns = append(warns, w) }})
+				Warn: func(w string) { warns = append(warns, w) },
+				AssumeUnmatchedKeys: func(keys []string) {
+					for _, k := range keys {
+						unmatchedIn[c.Name][k]++
+					}
+				}})
 			if err != nil {
 				res.Blocked = fmt.Sprintf("%s: %v", tc.Name, err)
 				res.Graduated, res.GraduatedHand, res.PerTarget = 0, 0, nil
@@ -225,6 +243,38 @@ func RunWhatIf(cfg Config, wc WhatIfConfig, sets map[string]*assume.Set, version
 	}
 	for _, c := range wc.Candidates {
 		res := results[c.Name]
+		// A key that matched nothing in ANY target never contributed to this
+		// candidate's number, so that number is not what it appears to be.
+		// This is the sweep's replacement for the single-module hard error,
+		// and it is the case the hard error actually exists to catch.
+		// Both walks go over the candidate's entries in FILE order rather than
+		// over the map: deterministic without a sort, and a key list reads back
+		// in the order its author wrote it.
+		um := unmatchedIn[c.Name]
+		if res.Blocked == "" && measuredTargets > 0 {
+			var nowhere []string
+			for _, e := range sets[c.Name].Entries() {
+				if um[e.Key] == measuredTargets {
+					nowhere = append(nowhere, e.Key)
+				}
+			}
+			if len(nowhere) > 0 {
+				res.Blocked = "keys matched no function in any of the " +
+					strconv.Itoa(measuredTargets) + " measured targets: " + strings.Join(nowhere, ", ")
+				res.Graduated, res.GraduatedHand, res.PerTarget = 0, 0, nil
+			}
+		}
+		// Keys absent from some targets but present in others are reported,
+		// never silent: the count is real but the population it came from is
+		// smaller than the candidate file implies.
+		if res.Blocked == "" {
+			for _, e := range sets[c.Name].Entries() {
+				if n := um[e.Key]; n > 0 {
+					res.Warnings = append(res.Warnings,
+						fmt.Sprintf("%s (absent from %d of %d targets)", e.Key, n, measuredTargets))
+				}
+			}
+		}
 		if res.Blocked == "" && r.BaselineFunctions > 0 {
 			res.DeltaPP = fmt.Sprintf("+%.2fpp", 100*float64(res.Graduated)/float64(r.BaselineFunctions))
 		}
