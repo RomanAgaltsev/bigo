@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.40.0](https://github.com/RomanAgaltsev/bigo/compare/v1.39.1...v1.40.0) (2026-07-24)
+
+
+### Features
+
+* **costtable:** price the typed sync/atomic API and sync.Pool.Put ([#125](https://github.com/RomanAgaltsev/bigo/issues/125)) ([07f48a7](https://github.com/RomanAgaltsev/bigo/commit/07f48a7fd051f7a060468f572c74d7e6dfe7b0d3))
+
 ## [1.39.1](https://github.com/RomanAgaltsev/bigo/compare/v1.39.0...v1.39.1) (2026-07-24)
 
 
