@@ -1,0 +1,6 @@
+{
+  "_comment": "Gate B, the calibration run (thresholds note §2, §7). S3 alone: fmt's truthful answer is already measured at 298 priceable functions against 744 sole-blockers, so the sweep number over the same all-first-party population yields the ceiling/truth ratio every other candidate is read against. Above 3x fires the kill switch against the instrument.",
+  "candidates": [
+    {"name": "S3-fmt-calib", "file": "s3-fmt-calibration.assume"}
+  ]
+}

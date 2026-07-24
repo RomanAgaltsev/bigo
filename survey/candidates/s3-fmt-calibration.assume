@@ -1,0 +1,14 @@
+# S3 — fmt. THE CALIBRATION CANDIDATE (Gate B), not a work candidate.
+# Campaign 1, frozen 2026-07-24 (§2, §4).
+#
+# The truthful answer for this class is already measured: 298 priceable
+# functions against 744 sole-blockers (2026-07-20 fmt probe, v1.37.0
+# population). Running it through the sweep yields the ceiling/truth ratio that
+# every other candidate's number is read against. Above 3x fires the kill
+# switch against the instrument itself.
+#
+# fmt is pinned unverifiable in the real cost table on purpose: formatting cost
+# depends on the VALUES, not the format string. O(1) here is deliberately
+# false.
+fmt.Sprintf O(1)
+fmt.Errorf O(1)

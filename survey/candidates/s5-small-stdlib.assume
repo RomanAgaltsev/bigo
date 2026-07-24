@@ -1,0 +1,5 @@
+# S5 — small stdlib. Campaign 1, frozen 2026-07-24 (§4).
+# WriteString is amortized O(len(s)); Uint16 genuinely is O(1). O(1) for both
+# is the ceiling-maximizing choice.
+(*strings.Builder).WriteString O(1)
+(encoding/binary.bigEndian).Uint16 O(1)

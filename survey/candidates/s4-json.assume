@@ -1,0 +1,6 @@
+# S4 — encoding/json. Campaign 1, frozen 2026-07-24 (§4).
+# Both are pinned unverifiable in the real cost table (cost depends on the
+# value graph, and Marshal runs user MarshalJSON methods). O(1) is the
+# ceiling-maximizing assumption, not a claim.
+encoding/json.Marshal O(1)
+encoding/json.Unmarshal O(1)
