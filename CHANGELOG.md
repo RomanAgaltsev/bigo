@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.41.0](https://github.com/RomanAgaltsev/bigo/compare/v1.40.0...v1.41.0) (2026-08-11)
+
+
+### Features
+
+* assumption shadowing, ParamSummary taint, and the rest of the package-level atomic API ([#128](https://github.com/RomanAgaltsev/bigo/issues/128)) ([65a8156](https://github.com/RomanAgaltsev/bigo/commit/65a81562f82c22097538c0ed7faf53bc516fdc70))
+
 ## [1.40.0](https://github.com/RomanAgaltsev/bigo/compare/v1.39.1...v1.40.0) (2026-07-24)
 
 
