@@ -4,6 +4,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/RomanAgaltsev/bigo/internal/frontier"
+
 	"github.com/RomanAgaltsev/bigo/internal/report"
 )
 
@@ -82,8 +84,8 @@ func TestFirstPartyBoundary(t *testing.T) {
 		{"anything", "", true}, // no module recorded: cannot filter
 	}
 	for _, c := range cases {
-		if got := firstParty(c.pkg, c.module); got != c.want {
-			t.Errorf("firstParty(%q, %q) = %v, want %v", c.pkg, c.module, got, c.want)
+		if got := frontier.FirstParty(c.pkg, c.module); got != c.want {
+			t.Errorf("frontier.FirstParty(%q, %q) = %v, want %v", c.pkg, c.module, got, c.want)
 		}
 	}
 }
@@ -178,9 +180,9 @@ func TestSummarizeSplitsGeneratedFromHandWritten(t *testing.T) {
 		Module: "example.com/m",
 		Functions: []report.Function{
 			fn("example.com/m", "HandBounded", false),
-			fn("example.com/m", "HandTop", true, cause("call", costPrefix+"fmt.Errorf")),
+			fn("example.com/m", "HandTop", true, cause("call", frontier.CostPrefix+"fmt.Errorf")),
 			genFn("example.com/m", "GenBounded", false),
-			genFn("example.com/m", "GenTop", true, cause("call", costPrefix+"sync.Once.Do")),
+			genFn("example.com/m", "GenTop", true, cause("call", frontier.CostPrefix+"sync.Once.Do")),
 		},
 	}
 	got, _, _, _ := Summarize(doc, byFile)
@@ -212,25 +214,25 @@ func TestSummarizeTablesExcludeGenerated(t *testing.T) {
 	doc := report.Document{
 		Module: "example.com/m",
 		Functions: []report.Function{
-			fn("example.com/m", "Hand", true, cause("call", costPrefix+"fmt.Errorf")),
-			genFn("example.com/m", "Gen", true, cause("call", costPrefix+"sync.Once.Do")),
+			fn("example.com/m", "Hand", true, cause("call", frontier.CostPrefix+"fmt.Errorf")),
+			genFn("example.com/m", "Gen", true, cause("call", frontier.CostPrefix+"sync.Once.Do")),
 		},
 	}
 	_, byCause, byDetail, sole := Summarize(doc, byFile)
 
-	if byDetail[costPrefix+"sync.Once.Do"] != 0 {
+	if byDetail[frontier.CostPrefix+"sync.Once.Do"] != 0 {
 		t.Errorf("generated code must not appear in the sites table: %v", byDetail)
 	}
-	if byDetail[costPrefix+"fmt.Errorf"] != 1 {
+	if byDetail[frontier.CostPrefix+"fmt.Errorf"] != 1 {
 		t.Errorf("hand-written code must appear in the sites table: %v", byDetail)
 	}
 	if byCause["call"] != 1 {
 		t.Errorf("cause table must count hand-written only, got %v", byCause)
 	}
-	if sole[costPrefix+"sync.Once.Do"] != 0 {
+	if sole[frontier.CostPrefix+"sync.Once.Do"] != 0 {
 		t.Errorf("generated code must not appear in the graduation table: %v", sole)
 	}
-	if sole[costPrefix+"fmt.Errorf"] != 1 {
+	if sole[frontier.CostPrefix+"fmt.Errorf"] != 1 {
 		t.Errorf("hand-written graduation count wrong: %v", sole)
 	}
 }

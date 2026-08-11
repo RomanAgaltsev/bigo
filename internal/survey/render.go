@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
+
+	"github.com/RomanAgaltsev/bigo/internal/frontier"
 )
 
 // detailTop bounds the rendered detail histogram. The full histogram is in the
@@ -52,7 +54,7 @@ func distanceOrder(h map[string]int) []string {
 	keys := make([]string, 0, len(h))
 	deep := false
 	for k := range h {
-		if k == deepBucket {
+		if k == frontier.DeepBucket {
 			deep = true
 			continue
 		}
@@ -64,7 +66,7 @@ func distanceOrder(h map[string]int) []string {
 		return a < b
 	})
 	if deep {
-		keys = append(keys, deepBucket)
+		keys = append(keys, frontier.DeepBucket)
 	}
 	return keys
 }
@@ -115,7 +117,7 @@ func (r Report) Markdown() []byte {
 		"(`fmt`: 744 sole-blocker functions, 298 actually priceable; function values: 573, "+
 		"zero reachable).\n\n",
 		r.Aggregate.NearFrontier, r.Aggregate.Top,
-		pct(r.Aggregate.NearFrontier, r.Aggregate.Top), nearDistance, r.Aggregate.CeilingPct)
+		pct(r.Aggregate.NearFrontier, r.Aggregate.Top), frontier.NearDistance, r.Aggregate.CeilingPct)
 
 	b.WriteString("## Per target\n\n")
 	b.WriteString("| Target | Module | Commit | Functions | Bounded | Coverage | Generated | Hand | Hand cov | Near | Ceiling |\n")
