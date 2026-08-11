@@ -663,6 +663,98 @@ var stdlib = map[string]func(args []ssa.Value) bound.Bound{
 	//     the call sites. Worth revisiting WITH argument-size resolution, not
 	//     before.
 
+	// --- math/bits, added 2026-08-11 ---
+	//
+	// Found by running `bigo trust init` against repositories the survey has
+	// never analysed. It was the largest STDLIB blocker in that population — 71
+	// functions across them, 60 in jaeger alone — and bigo priced none of it.
+	//
+	// ONE argument covers all 49, and it is about the OPERANDS rather than the
+	// bodies: every exported function here takes and returns FIXED-WIDTH
+	// integers, so no cost in this package can depend on a program size
+	// variable. Two apparent loops are inside COMMENTS (OnesCount64's Hacker's
+	// Delight derivation, Sub64's pointer to Sub32); Div64 has two real
+	// correction loops, and they iterate a number of times bounded by the word
+	// width — a machine constant, not an input size, exactly as GOMAXPROCS is
+	// for (*sync.Pool).Put.
+	//
+	// Enumerated from the package's own type information rather than typed out,
+	// and pinned against it by TestMathBitsMatchesStdlib, so a Go release adding
+	// a function fails the build instead of going silently unpriced.
+	"math/bits.Add":             constCost,
+	"math/bits.Add32":           constCost,
+	"math/bits.Add64":           constCost,
+	"math/bits.Div":             constCost,
+	"math/bits.Div32":           constCost,
+	"math/bits.Div64":           constCost,
+	"math/bits.LeadingZeros":    constCost,
+	"math/bits.LeadingZeros16":  constCost,
+	"math/bits.LeadingZeros32":  constCost,
+	"math/bits.LeadingZeros64":  constCost,
+	"math/bits.LeadingZeros8":   constCost,
+	"math/bits.Len":             constCost,
+	"math/bits.Len16":           constCost,
+	"math/bits.Len32":           constCost,
+	"math/bits.Len64":           constCost,
+	"math/bits.Len8":            constCost,
+	"math/bits.Mul":             constCost,
+	"math/bits.Mul32":           constCost,
+	"math/bits.Mul64":           constCost,
+	"math/bits.OnesCount":       constCost,
+	"math/bits.OnesCount16":     constCost,
+	"math/bits.OnesCount32":     constCost,
+	"math/bits.OnesCount64":     constCost,
+	"math/bits.OnesCount8":      constCost,
+	"math/bits.Rem":             constCost,
+	"math/bits.Rem32":           constCost,
+	"math/bits.Rem64":           constCost,
+	"math/bits.Reverse":         constCost,
+	"math/bits.Reverse16":       constCost,
+	"math/bits.Reverse32":       constCost,
+	"math/bits.Reverse64":       constCost,
+	"math/bits.Reverse8":        constCost,
+	"math/bits.ReverseBytes":    constCost,
+	"math/bits.ReverseBytes16":  constCost,
+	"math/bits.ReverseBytes32":  constCost,
+	"math/bits.ReverseBytes64":  constCost,
+	"math/bits.RotateLeft":      constCost,
+	"math/bits.RotateLeft16":    constCost,
+	"math/bits.RotateLeft32":    constCost,
+	"math/bits.RotateLeft64":    constCost,
+	"math/bits.RotateLeft8":     constCost,
+	"math/bits.Sub":             constCost,
+	"math/bits.Sub32":           constCost,
+	"math/bits.Sub64":           constCost,
+	"math/bits.TrailingZeros":   constCost,
+	"math/bits.TrailingZeros16": constCost,
+	"math/bits.TrailingZeros32": constCost,
+	"math/bits.TrailingZeros64": constCost,
+	"math/bits.TrailingZeros8":  constCost,
+
+	// --- Other stdlib gaps the blind run surfaced, each read on its own ---
+	//
+	// container/list.New is new(List).Init(), which sets three fields.
+	"container/list.New": constCost,
+	// (time.Time).UTC sets the location pointer and returns the value; Before,
+	// After and Equal compare two fixed-width fields.
+	"(time.Time).UTC":    constCost,
+	"(time.Time).Before": constCost,
+	"(time.Time).After":  constCost,
+	"(time.Time).Equal":  constCost,
+	// Duration accessors are integer conversions on a single int64.
+	"(time.Duration).Nanoseconds":  constCost,
+	"(time.Duration).Microseconds": constCost,
+	"(time.Duration).Milliseconds": constCost,
+	"(time.Duration).Seconds":      constCost,
+	// maps.Copy ranges over SRC — argument 1, not the destination.
+	"maps.Copy": func(a []ssa.Value) bound.Bound { return linear(a, 1) },
+	// maps.Clone copies every entry of m.
+	"maps.Clone": func(a []ssa.Value) bound.Bound { return linear(a, 0) },
+	// strings.Compare stops at the shorter operand, so O(min) ≤ O(len(a)) —
+	// the slices.Equal precedent, and checked against the body rather than
+	// assumed from it.
+	"strings.Compare": func(a []ssa.Value) bound.Bound { return linear(a, 0) },
+
 	// Does not return.
 	"os.Exit": constCost,
 
