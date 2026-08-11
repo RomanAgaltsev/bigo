@@ -1,12 +1,14 @@
 package trust
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/RomanAgaltsev/bigo/internal/assume"
+	"github.com/RomanAgaltsev/bigo/internal/report"
 )
 
 // TestTrustInitRanksByGraduationCount: the number beside each key is the count
@@ -152,4 +154,78 @@ func TestTrustInitOmitsAlreadyCuratedKeys(t *testing.T) {
 	if !strings.Contains(out, "os.Getenv") {
 		t.Errorf("output no longer offers os.Getenv, which is genuinely unpriced:\n%s", out)
 	}
+}
+
+// TestTrustInitCountsAreMeasuredNotPredicted pins the property the whole
+// measurement pass exists to establish: the number beside a key equals what
+// asserting that key actually delivers.
+//
+// It is checked by doing the thing the user would do — assert the key, count
+// what became verifiable — and comparing against what the generator advertised.
+// First contact found the predicted number overstating reality by a third on
+// the largest real row (goldmark's bytes.Repeat, advertised 19, delivers 13).
+func TestTrustInitCountsAreMeasuredNotPredicted(t *testing.T) {
+	const dir = "../report/testdata/trustinit"
+
+	out, err := trustInit(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	advertised := countFor(t, out, "os.Getenv")
+	if advertised == 0 {
+		t.Fatalf("os.Getenv not advertised:\n%s", out)
+	}
+
+	// Now do what the user would do, independently of the generator.
+	l, err := report.LoadModule(dir, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	base, err := l.Document(report.Options{Version: "t"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	es, err := assume.ParseText("os.Getenv O(1)\n")
+	if err != nil {
+		t.Fatal(err)
+	}
+	head, err := l.Document(report.Options{Version: "t", Assume: assume.NewSet(es)})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	wasTop := map[string]bool{}
+	for _, f := range base.Functions {
+		if f.Time.Top {
+			wasTop[f.Package+f.File+f.Func] = true
+		}
+	}
+	delivered := 0
+	for _, f := range head.Functions {
+		if !f.Time.Top && wasTop[f.Package+f.File+f.Func] {
+			delivered++
+		}
+	}
+
+	if advertised != delivered {
+		t.Errorf("generator advertised %d, asserting the key delivers %d — the count must be measured, not predicted",
+			advertised, delivered)
+	}
+}
+
+// countFor extracts the advertised count for a key from generated output.
+func countFor(t *testing.T, out, key string) int {
+	t.Helper()
+	lines := strings.Split(out, "\n")
+	for i, line := range lines {
+		if !strings.HasPrefix(line, "# "+key+" O(") {
+			continue
+		}
+		var n int
+		if _, err := fmt.Sscanf(lines[i-1], "# %d of your functions", &n); err != nil {
+			t.Fatalf("could not read the count above %q: %v", key, err)
+		}
+		return n
+	}
+	return 0
 }

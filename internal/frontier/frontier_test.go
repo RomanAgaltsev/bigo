@@ -328,3 +328,34 @@ func TestSoleBlockerCalleeCountsOnlyKeyedBlockers(t *testing.T) {
 		t.Errorf("SoleBlocker for the unkeyed blocker = %d, want 1", got)
 	}
 }
+
+// TestSoleBlockerIndexAttributesByPosition pins the per-function form used to
+// attribute a graduation to the blocker that caused it. Position identity
+// matters: two same-named functions in one package are legal Go, and a
+// name-keyed index would collapse them.
+func TestSoleBlockerIndexAttributesByPosition(t *testing.T) {
+	a := fn("m", "init", true, keyedCause("os.Getenv"))
+	a.File, a.Line = "a.go", 1
+	b := fn("m", "init", true, keyedCause("os.Setenv"))
+	b.File, b.Line = "a.go", 9
+	// Two blockers: attributed to neither.
+	c := fn("m", "C", true, keyedCause("os.Getenv"), cause("loop", "loop with unrecognized trip count"))
+	c.File, c.Line = "a.go", 20
+
+	idx := SoleBlockerIndex(report.Document{Module: "m", Functions: []report.Function{a, b, c}})
+	if got := idx[PositionKey(a)]; got != "os.Getenv" {
+		t.Errorf("first init attributed to %q, want os.Getenv", got)
+	}
+	if got := idx[PositionKey(b)]; got != "os.Setenv" {
+		t.Errorf("second init attributed to %q, want os.Setenv — same name, different position", got)
+	}
+	if _, ok := idx[PositionKey(c)]; ok {
+		t.Error("a two-blocker function must not be attributed to either")
+	}
+}
+
+func keyedCause(callee string) report.CauseJSON {
+	c := cause("call", CostPrefix+callee)
+	c.Callee = callee
+	return c
+}

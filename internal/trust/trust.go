@@ -35,6 +35,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/RomanAgaltsev/bigo/internal/assume"
 	"github.com/RomanAgaltsev/bigo/internal/costtable"
 	"github.com/RomanAgaltsev/bigo/internal/frontier"
 	"github.com/RomanAgaltsev/bigo/internal/report"
@@ -81,10 +82,6 @@ func trustInit(dir string) (string, error) {
 	}
 	fr := frontier.Of(doc)
 
-	type candidate struct {
-		key   string
-		count int
-	}
 	cands := make([]candidate, 0, len(fr.SoleBlockerCallee))
 	for k, n := range fr.SoleBlockerCallee {
 		// A key the curated table already answers cannot be helped by a trust
@@ -97,8 +94,18 @@ func trustInit(dir string) (string, error) {
 		}
 		cands = append(cands, candidate{k, n})
 	}
-	// Descending by graduation count, ties broken by key: determinism is a
-	// tested property, so a regenerated file diffs cleanly rather than churning.
+	// Replace the PREDICTED count with a MEASURED one wherever the probe pass
+	// succeeds. First contact measured the prediction as optimistic — goldmark
+	// promised 29 and delivered 23 even with the best possible bound — and the
+	// registered response to that was to redesign what is ranked, not to
+	// document the discrepancy.
+	measured, ok := measureCandidates(l, doc, cands)
+	if ok {
+		cands = measured
+	}
+
+	// Descending by count, ties broken by key: determinism is a tested
+	// property, so a regenerated file diffs cleanly rather than churning.
 	sort.Slice(cands, func(i, j int) bool {
 		if cands[i].count != cands[j].count {
 			return cands[i].count > cands[j].count
@@ -147,4 +154,82 @@ func InitMain(args []string) int {
 		return 1
 	}
 	return 0
+}
+
+// candidate is one suggestion: a cost-table key and the number of the user's
+// functions it would unblock.
+type candidate struct {
+	key   string
+	count int
+}
+
+// measureCandidates replaces each candidate's PREDICTED count with a MEASURED
+// one, by re-analysing the module once with every candidate asserted O(1) and
+// attributing each newly-bounded function to the blocker it had been waiting on.
+//
+// Why a constant: it is the best case. A user's honest bound is a constant or it
+// is not, and if it is not, the caller additionally needs the argument's size to
+// resolve at the call site. So this number is an UPPER BOUND on what any bound
+// can deliver — which is exactly what the old predicted count silently claimed
+// to be and was not.
+//
+// The O(1) probe set is untruthful ON PURPOSE and never leaves this function: it
+// produces a count, never a bound, and no document built from it is shown to
+// anyone or written anywhere.
+//
+// Attribution by baseline sole-blocker is sound because cross-blocker
+// interaction was measured at exactly zero, twice, in what-if campaign 1.
+//
+// ok=false means the probe could not run — an unmatched key, a load failure —
+// and the caller keeps the predicted counts rather than failing the command.
+// Scaffolding a file is worth doing with a worse number; it is not worth
+// refusing to do.
+func measureCandidates(l *report.Loaded, base report.Document, cands []candidate) ([]candidate, bool) {
+	if len(cands) == 0 {
+		return cands, false
+	}
+	var b strings.Builder
+	for _, c := range cands {
+		fmt.Fprintf(&b, "%s O(1)\n", c.key)
+	}
+	entries, err := assume.ParseText(b.String())
+	if err != nil {
+		return nil, false
+	}
+	probe, err := l.Document(report.Options{Version: "trust-init", Assume: assume.NewSet(entries)})
+	if err != nil {
+		return nil, false
+	}
+
+	attributed := frontier.SoleBlockerIndex(base)
+	wasTop := make(map[string]bool, len(base.Functions))
+	for _, f := range base.Functions {
+		if f.Time.Top {
+			wasTop[frontier.PositionKey(f)] = true
+		}
+	}
+
+	delivered := map[string]int{}
+	for _, f := range probe.Functions {
+		if f.Time.Top {
+			continue
+		}
+		pos := frontier.PositionKey(f)
+		if !wasTop[pos] {
+			continue // already bounded before the probe
+		}
+		if key := attributed[pos]; key != "" {
+			delivered[key]++
+		}
+	}
+
+	out := make([]candidate, 0, len(cands))
+	for _, c := range cands {
+		// A candidate that delivers nothing is dropped rather than listed with a
+		// zero: the file is a list of things worth doing.
+		if n := delivered[c.key]; n > 0 {
+			out = append(out, candidate{c.key, n})
+		}
+	}
+	return out, true
 }

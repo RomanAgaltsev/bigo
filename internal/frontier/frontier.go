@@ -217,3 +217,49 @@ func FirstParty(pkg, module string) bool {
 	}
 	return pkg == module || strings.HasPrefix(pkg, module+"/")
 }
+
+// PositionKey identifies a function by position rather than by name.
+//
+// Name is not unique in Go — several same-named functions in one package is
+// legal, most commonly init() — and joining documents on a name collapses them,
+// which is how `bigo diff` once invented regressions and masked real ones.
+// Position is unique by construction.
+func PositionKey(f report.Function) string {
+	return f.Package + "\x00" + f.File + "\x00" + strconv.Itoa(f.Line)
+}
+
+// SoleBlockerIndex maps each ⊤ function that has exactly ONE leaf blocker, and
+// whose blocker carries a cost-table key, to that key.
+//
+// It is the per-function form of SoleBlockerCallee's aggregate counts, and it
+// exists so a caller can attribute a graduation to the blocker that caused it:
+// re-analyse with that blocker priced, then look up what each newly-bounded
+// function had been waiting on. Attribution is sound because cross-blocker
+// interaction was measured at exactly zero (what-if campaign 1, twice).
+func SoleBlockerIndex(doc report.Document) map[string]string {
+	byKey := make(map[string][]int, len(doc.Functions))
+	for i, f := range doc.Functions {
+		byKey[funcKey(f)] = append(byKey[funcKey(f)], i)
+	}
+	// Sized by the document, not by the loop bound bigo's own SM6 suggests: the
+	// result holds one entry per SOLE-BLOCKED function, which is a fraction of
+	// the functions walked. The document length is the only bound available
+	// here and it over-allocates on purpose rather than growing.
+	out := make(map[string]string, len(doc.Functions))
+	for i, f := range doc.Functions {
+		if !FirstParty(f.Package, doc.Module) || !f.Time.Top {
+			continue
+		}
+		leaves := map[string]string{}
+		leafSet(i, doc.Functions, byKey, map[int]bool{}, leaves)
+		if len(leaves) != 1 {
+			continue
+		}
+		for _, callee := range leaves {
+			if callee != "" {
+				out[PositionKey(f)] = callee
+			}
+		}
+	}
+	return out
+}
