@@ -171,3 +171,36 @@ func f(xs []int) { sort.Ints(xs) }`
 		t.Fatalf("warnings = %v, want one curated-shadow warning", warns)
 	}
 }
+
+// TestAssumptionShadowedByParametricEntryWarns pins the THIRD precedence
+// holder. The plain table and //bigo: directives already warn; the parametric
+// table returns first in CallCost's no-body branch and warned about nothing,
+// so an assumption on sort.Slice contributed nothing and said nothing — a
+// silent skip, which this package's doc forbids because it under-counts a
+// what-if measurement into a fake NO-GO (2026-08-11 review F1).
+func TestAssumptionShadowedByParametricEntryWarns(t *testing.T) {
+	src := `package input
+import "sort"
+func f(xs []int) { sort.Slice(xs, func(i, j int) bool { return xs[i] < xs[j] }) }`
+
+	got, r := inferWith(t, src, "sort.Slice O(1)\n")
+
+	// The curated parametric entry still WINS — precedence is unchanged, and
+	// this half is the positive control: a fix that let the assumption through
+	// would break the documented precedence order instead of adding a warning.
+	if got != "O(len(xs) log(len(xs)))" {
+		t.Errorf("bound = %q, want the parametric entry to still outrank the assumption", got)
+	}
+
+	warns := r.AssumeWarnings()
+	want := "assumption for sort.Slice is shadowed by a parametric cost-table entry"
+	found := false
+	for _, w := range warns {
+		if w == want {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("warnings = %q, want one naming the shadowed key: %q", warns, want)
+	}
+}
