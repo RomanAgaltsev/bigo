@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.43.1](https://github.com/RomanAgaltsev/bigo/compare/v1.43.0...v1.43.1) (2026-08-11)
+
+
+### Bug Fixes
+
+* **trust:** do not offer keys the curated table already answers ([#134](https://github.com/RomanAgaltsev/bigo/issues/134)) ([65bd525](https://github.com/RomanAgaltsev/bigo/commit/65bd525bc7b5797ebf3c33fe824cdb6a7f9ad738))
+
 ## [1.43.0](https://github.com/RomanAgaltsev/bigo/compare/v1.42.0...v1.43.0) (2026-08-11)
 
 
