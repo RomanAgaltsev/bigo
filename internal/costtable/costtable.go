@@ -95,6 +95,27 @@ func FuncKey(fn *ssa.Function) (string, bool) {
 	return key, true
 }
 
+// Curated reports whether the curated tables already answer this cost-table
+// key — both the plain table and the parametric one.
+//
+// It exists for consumers deciding whether a key is worth ASSERTING. Precedence
+// puts both curated tables above an external assumption, so a trust entry for a
+// curated key is shadowed: it warns, changes no verdict, and wastes the
+// reasoning someone did to write it. `bigo trust init` filters on this.
+//
+// Asking the table is deliberate, rather than parsing the cause text. A cause
+// reading "unresolved ARGUMENT SIZE at call to X" means X is priced and only the
+// argument's size is unknown, which is exactly the unhelpful case — but reading
+// that from prose is what the callee key was added to avoid, and a table-driven
+// answer stays correct as entries are added.
+func Curated(key string) bool {
+	if _, ok := stdlib[key]; ok {
+		return true
+	}
+	_, ok := parametric[key]
+	return ok
+}
+
 // Priced reports whether the callee has an entry that can cost this call. The
 // engine uses it to distinguish "the callee has no cost" from "the callee is
 // priced but the ARGUMENT SIZE is unresolved" — misreported as the former

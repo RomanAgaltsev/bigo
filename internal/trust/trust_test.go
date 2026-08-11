@@ -126,3 +126,30 @@ func TestInitMainRefusesToClobber(t *testing.T) {
 		t.Error("-force did not overwrite")
 	}
 }
+
+// TestTrustInitOmitsAlreadyCuratedKeys is the defect found the first time this
+// generator was pointed at real repositories, hours after it shipped.
+//
+// A blocker reads "unresolved ARGUMENT SIZE at call to strconv.Atoi" when the
+// curated table already prices the callee and only the argument's size is
+// unknown. The key is real, so the generator offered it — but the plain table
+// outranks a trust entry, so writing one is shadowed and contributes nothing.
+// The user gets a warning and no verdict change, for a line they reasoned about.
+//
+// Filtering asks the cost table whether it already answers the key, rather than
+// parsing the cause sentence: parsing prose is what the callee key was added to
+// avoid, and a table-driven answer stays correct as entries are added.
+func TestTrustInitOmitsAlreadyCuratedKeys(t *testing.T) {
+	out, err := trustInit("../report/testdata/trustinit")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(out, "strconv.Atoi") {
+		t.Errorf("output offers strconv.Atoi, which the curated table already prices — a trust entry for it is shadowed:\n%s", out)
+	}
+	// The control: an UNPRICED callee is still offered, so the filter cannot be
+	// satisfied by suppressing everything.
+	if !strings.Contains(out, "os.Getenv") {
+		t.Errorf("output no longer offers os.Getenv, which is genuinely unpriced:\n%s", out)
+	}
+}

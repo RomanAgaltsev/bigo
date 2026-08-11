@@ -101,3 +101,26 @@ func f(once *sync.Once, g func()) { once.Do(g) }`, "O(1)", false},
 		})
 	}
 }
+
+// TestCurated covers both curated tables and the negative case. It matters
+// because `bigo trust init` filters on it: a false negative offers the user a
+// line that is silently shadowed, and a false positive hides a key they need.
+func TestCurated(t *testing.T) {
+	cases := []struct {
+		key  string
+		want bool
+	}{
+		{"strconv.Atoi", true},              // plain table
+		{"bytes.Equal", true},               // plain table
+		{"(*sync/atomic.Value).Load", true}, // plain table, method key
+		{"sort.Slice", true},                // PARAMETRIC table — also shadows
+		{"os.Getenv", false},                // genuinely unpriced
+		{"bytes.Repeat", false},             // genuinely unpriced
+		{"example.com/x.Whatever", false},
+	}
+	for _, c := range cases {
+		if got := Curated(c.key); got != c.want {
+			t.Errorf("Curated(%q) = %v, want %v", c.key, got, c.want)
+		}
+	}
+}
