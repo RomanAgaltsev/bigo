@@ -577,6 +577,92 @@ var stdlib = map[string]func(args []ssa.Value) bound.Bound{
 	"(*sync/atomic.Value).Store": constCost,
 	"(*sync/atomic.Value).Swap":  constCost,
 
+	// --- First-contact entries, added 2026-08-11 ---
+	//
+	// `bigo trust init` was run against four real repositories and most of what
+	// it offered users to assert turned out to be bigo's OWN unfilled table: 17
+	// of the 39 keys examined were soundly priceable here, for everyone, in one
+	// line each. These are those.
+	//
+	// The lane is deliberately weighted to CONSTANTS, and the reason is
+	// measured rather than aesthetic: constant entries delivered ~93% of their
+	// graduation count (pgx, 27 of 29) while a size-dependent one delivered 6%
+	// (goldmark, 2 of 32), because the argument size does not resolve at most
+	// real call sites. A linear entry is still correct and still worth having;
+	// it just buys less until argument-size resolution improves.
+	//
+	// Each entry is priced from its own implementation. Where one delegates,
+	// that is said explicitly rather than left as an analogy.
+
+	// Allocates one valueCtx and checks the key is comparable via a type
+	// descriptor lookup. No traversal of the parent chain — Value() walks, this
+	// does not.
+	"context.WithValue": constCost,
+
+	// Two word comparisons on the receiver (t.wall == 0 && t.ext == 0).
+	"(time.Time).IsZero": constCost,
+
+	// Allocates a Logger and assigns three fields behind a mutex.
+	"log.New": constCost,
+
+	// Straight-line bit arithmetic on a fixed-width address; no loop, and the
+	// v6 path masks a 128-bit value rather than iterating it.
+	"(net/netip.Prefix).Contains": constCost,
+
+	// The encoding/binary fixed-width family. ONE argument covers all of them:
+	// the whole littleEndian/bigEndian block contains NO LOOP, and every method
+	// reads or writes a constant number of bytes at fixed offsets. Append*
+	// additionally rides append's documented-primitive amortization, appending
+	// a constant number of bytes per call.
+	"(encoding/binary.littleEndian).Uint16":       constCost,
+	"(encoding/binary.littleEndian).Uint32":       constCost,
+	"(encoding/binary.littleEndian).Uint64":       constCost,
+	"(encoding/binary.littleEndian).PutUint16":    constCost,
+	"(encoding/binary.littleEndian).PutUint32":    constCost,
+	"(encoding/binary.littleEndian).PutUint64":    constCost,
+	"(encoding/binary.littleEndian).AppendUint16": constCost,
+	"(encoding/binary.littleEndian).AppendUint32": constCost,
+	"(encoding/binary.littleEndian).AppendUint64": constCost,
+	"(encoding/binary.bigEndian).Uint16":          constCost,
+	"(encoding/binary.bigEndian).Uint32":          constCost,
+	"(encoding/binary.bigEndian).Uint64":          constCost,
+	"(encoding/binary.bigEndian).PutUint16":       constCost,
+	"(encoding/binary.bigEndian).PutUint32":       constCost,
+	"(encoding/binary.bigEndian).PutUint64":       constCost,
+	"(encoding/binary.bigEndian).AppendUint16":    constCost,
+	"(encoding/binary.bigEndian).AppendUint32":    constCost,
+	"(encoding/binary.bigEndian).AppendUint64":    constCost,
+
+	// strings.Cut is Index(s, sep) plus two slice expressions. Its cost IS
+	// strings.Index's, read from Cut's body rather than inherited from a
+	// neighbour — which also means this entry is exactly as sound as
+	// strings.Index's above, no more and no less.
+	"strings.Cut": func(a []ssa.Value) bound.Bound { return linear(a, 0) },
+
+	// bytealg.IndexByte scans b once for a single byte.
+	"bytes.IndexByte": func(a []ssa.Value) bound.Bound { return linear(a, 0) },
+
+	// textproto.CanonicalMIMEHeaderKey walks s a constant number of times.
+	"net/http.CanonicalHeaderKey": func(a []ssa.Value) bound.Bound { return linear(a, 0) },
+
+	// ParsePrefix splits s at the last '/' and parses each half; every step is
+	// a linear scan of s. MustParsePrefix is ParsePrefix plus a panic.
+	"net/netip.ParsePrefix":     func(a []ssa.Value) bound.Bound { return linear(a, 0) },
+	"net/netip.MustParsePrefix": func(a []ssa.Value) bound.Bound { return linear(a, 0) },
+
+	// Deliberately ABSENT, with reasons, so nobody re-derives them:
+	//
+	//   - unicode.Is: is16/is32 scan the RANGE TABLE linearly for small tables
+	//     and binary search it otherwise, so the cost depends on rangeTab — an
+	//     argument other than the one an O(1) entry would be sized by. Fifth
+	//     instance of that shape. Pinned by TestUnicodeIsStaysTop.
+	//   - bytes.Repeat: genuinely O(len(b)·count), which needs a product of a
+	//     length and a numeric argument that no helper here expresses yet. It
+	//     was goldmark's largest row (19 functions) and first contact measured
+	//     it delivering ~nothing anyway, because neither operand resolves at
+	//     the call sites. Worth revisiting WITH argument-size resolution, not
+	//     before.
+
 	// Does not return.
 	"os.Exit": constCost,
 
