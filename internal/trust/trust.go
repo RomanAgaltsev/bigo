@@ -8,9 +8,20 @@
 //
 // Candidates are ranked by GRADUATION count — how many of the user's functions
 // a key alone would unblock — never by call sites, because clearing one blocker
-// usually reveals the next. A blocker with no cost-table key (interface
-// dispatch, function values) cannot be written into a trust file at all and is
-// absent by construction rather than by a separate exclusion list.
+// usually reveals the next.
+//
+// Two kinds of blocker are filtered out, and both filters ask an authority
+// rather than a string:
+//
+//   - no cost-table key at all (interface dispatch, function values, builtins)
+//     means no trust entry can name it, and the key's absence says so.
+//   - a key the curated table ALREADY answers cannot be helped either: the
+//     curated tables outrank an assumption, so the entry would be shadowed. This
+//     is the "unresolved ARGUMENT SIZE at call to X" shape, where X is priced
+//     and only the argument's size is unknown.
+//
+// The second filter was missing when this shipped, and the first real run
+// against outside repositories offered keys that could do nothing.
 //
 // This package sits between report and frontier rather than inside either: it
 // needs report to build the document and frontier to rank it, and frontier
@@ -24,6 +35,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/RomanAgaltsev/bigo/internal/costtable"
 	"github.com/RomanAgaltsev/bigo/internal/frontier"
 	"github.com/RomanAgaltsev/bigo/internal/report"
 )
@@ -75,6 +87,14 @@ func trustInit(dir string) (string, error) {
 	}
 	cands := make([]candidate, 0, len(fr.SoleBlockerCallee))
 	for k, n := range fr.SoleBlockerCallee {
+		// A key the curated table already answers cannot be helped by a trust
+		// entry: both curated tables outrank an assumption, so the entry is
+		// shadowed, warns, and changes no verdict. Such a blocker is real — the
+		// argument's size is unknown — but it is not addressable here, and
+		// offering it spends the user's reasoning on a line that does nothing.
+		if costtable.Curated(k) {
+			continue
+		}
 		cands = append(cands, candidate{k, n})
 	}
 	// Descending by graduation count, ties broken by key: determinism is a

@@ -2,7 +2,10 @@
 // be named as a trust key and one that cannot.
 package trustinit
 
-import "os"
+import (
+	"os"
+	"strconv"
+)
 
 // Reader is here only to produce an interface-dispatch cause.
 type Reader interface{ Read() int }
@@ -21,3 +24,11 @@ func AlsoBlockedByStatic(k string) string { return os.Getenv(k) + "x" }
 
 // Clean is the control: it needs no trust at all.
 func Clean(xs []int) int { return len(xs) }
+
+// mystery returns a string whose length bigo cannot resolve at the call site.
+func mystery() string { return "x" }
+
+// BlockedByArgSize is blocked by an ARGUMENT SIZE, not by a missing entry:
+// strconv.Atoi is already priced, so the curated table answers this key and a
+// trust entry for it would be shadowed and contribute nothing.
+func BlockedByArgSize() (int, error) { return strconv.Atoi(mystery()) }
