@@ -111,8 +111,15 @@ func TestWhatIf(t *testing.T) {
 	}
 }
 
-// version reads the released version from .release-please-manifest.json so the
-// record is stamped with something meaningful rather than "dev".
+// version reads the LAST RELEASED version from .release-please-manifest.json,
+// which is exactly what that file holds: the bump lands in the release PR, so
+// a survey run made on a feature branch — the normal case, since a lane
+// regenerates the survey before it merges — stamps the PREVIOUS tag. v1.40.0's
+// run is the worked example: its numbers are v1.40.0's and its stamp reads
+// 1.39.1.
+//
+// Documented rather than "fixed", because the alternative is stamping a
+// version that does not exist yet. Compare runs by the per-target commit.
 func version(t *testing.T, root string) string {
 	t.Helper()
 	b, err := os.ReadFile(filepath.Join(root, ".release-please-manifest.json"))

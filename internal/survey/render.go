@@ -78,7 +78,14 @@ func (r Report) Markdown() []byte {
 	b.WriteString("contents and CI never runs it. Its targets are repositories that exist on one\n")
 	b.WriteString("machine at whatever commit they happen to sit, so these numbers are a record\n")
 	b.WriteString("of one run — compare across runs only via the per-target commit below.\n\n")
-	fmt.Fprintf(&b, "Run %s with bigo %s.\n\n", r.Generated, r.BigoVersion)
+	// The version is the last RELEASED one at run time, not necessarily the one
+	// that ships these numbers: release-please bumps the manifest in the release
+	// PR, so a run made on a feature branch stamps the previous tag. Saying so
+	// here is the fix — the alternative is stamping a version that does not
+	// exist yet (2026-08-11 review).
+	fmt.Fprintf(&b, "Run %s with bigo %s — the last RELEASED version at run time. "+
+		"A run made before its own release stamps the previous tag, so compare runs "+
+		"by the per-target commit below, never by this line.\n\n", r.Generated, r.BigoVersion)
 
 	fmt.Fprintf(&b, "**Aggregate: %s%%** — %d of %d first-party functions bounded",
 		r.Aggregate.CoveragePct, r.Aggregate.Bounded, r.Aggregate.Functions)
