@@ -11,6 +11,7 @@ import (
 
 	"github.com/RomanAgaltsev/bigo/analyzer"
 	"github.com/RomanAgaltsev/bigo/internal/report"
+	"github.com/RomanAgaltsev/bigo/internal/trust"
 )
 
 // version is injected by GoReleaser via -X main.version; "dev" locally.
@@ -81,6 +82,15 @@ func main() {
 	// diff compares two documents; it analyzes nothing, so it takes no version.
 	if len(os.Args) >= 2 && os.Args[1] == "diff" {
 		os.Exit(report.DiffMain(os.Args[2:]))
+	}
+	// trust init scaffolds a trust file for the module in -C: the keys blocking
+	// the most of your functions, commented out, for you to fill in.
+	if len(os.Args) >= 3 && os.Args[1] == "trust" && os.Args[2] == "init" {
+		os.Exit(trust.InitMain(os.Args[3:]))
+	}
+	if len(os.Args) >= 2 && os.Args[1] == "trust" {
+		fmt.Fprintln(os.Stderr, "usage: bigo trust init [-C dir] [-o file] [-force]")
+		os.Exit(2)
 	}
 	// -C dir makes ./... resolve against a target module. The subcommands above
 	// take their own -C (they own their flag sets); this one is the driver's.
