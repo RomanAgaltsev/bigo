@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.44.2](https://github.com/RomanAgaltsev/bigo/compare/v1.44.1...v1.44.2) (2026-08-11)
+
+
+### Bug Fixes
+
+* **trust:** put the measured caveat in the generated header ([#140](https://github.com/RomanAgaltsev/bigo/issues/140)) ([f4961ab](https://github.com/RomanAgaltsev/bigo/commit/f4961ab2f6a3b43a5ac0a32fd280d249db7241e8))
+
 ## [1.44.1](https://github.com/RomanAgaltsev/bigo/compare/v1.44.0...v1.44.1) (2026-08-11)
 
 
