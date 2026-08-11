@@ -74,6 +74,9 @@ func (r *Resolver) paramSummaryOf(fn *ssa.Function) (ParamSummary, bool) {
 		return ParamSummary{}, false
 	}
 	if ps, ok := r.paramMemo[fn]; ok {
+		if r.taint[fn] {
+			r.markTaint() // a memoized tainted param summary taints its consumer
+		}
 		return ps, true
 	}
 	if r.onStack[fn] {
@@ -81,6 +84,13 @@ func (r *Resolver) paramSummaryOf(fn *ssa.Function) (ParamSummary, bool) {
 	}
 	r.onStack[fn] = true
 	defer func() { r.onStack[fn] = false }()
+	// Push fn so assumption consults raised while computing ITS summary are
+	// attributed to fn rather than to whichever consumer happened to be on top.
+	// Without this the memo guard above reads a taint bit that is only ever set
+	// incidentally, by fn's own InferTop — which never runs when fn lives in
+	// another package. Both halves or neither (2026-08-11 review F2).
+	r.pushInfer(fn)
+	defer r.popInfer(fn)
 
 	forest := loopnest.Build(fn)
 	if forest.UncoveredCycle(fn) {

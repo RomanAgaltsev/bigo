@@ -204,3 +204,61 @@ func f(xs []int) { sort.Slice(xs, func(i, j int) bool { return xs[i] < xs[j] }) 
 		t.Errorf("warnings = %q, want one naming the shadowed key: %q", warns, want)
 	}
 }
+
+// taintOfPair infers two top-level functions on ONE resolver, in the given
+// order, and reports whether each ended up tainted.
+func taintOfPair(t *testing.T, src, assumptions, first, second string) (bool, bool) {
+	t.Helper()
+	pkg, _, err := ssasupport.Build(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	r := New(nil)
+	es, err := assume.ParseText(assumptions)
+	if err != nil {
+		t.Fatal(err)
+	}
+	r.UseAssumptions(assume.NewSet(es))
+
+	fa, fb := ssasupport.Func(pkg, first), ssasupport.Func(pkg, second)
+	if fa == nil || fb == nil {
+		t.Fatalf("fixture functions %q/%q not found", first, second)
+	}
+	r.InferTop(fa)
+	r.InferTop(fb)
+	return r.Tainted(fa), r.Tainted(fb)
+}
+
+// TestParamSummaryTaintIsOrderIndependent is a DIFFERENTIAL PAIR and must stay
+// one: the defect it pins (2026-08-11 review F2) tainted only whichever
+// consumer ran first, so pinning a single order passes throughout the defect's
+// life.
+//
+// Run has a func-typed parameter, so its cost goes through paramSummaryOf,
+// whose memo cached the VALUE without the taint that produced it.
+func TestParamSummaryTaintIsOrderIndependent(t *testing.T) {
+	src := `package input
+func slow(m map[int]int, k int) int {
+	for k != 0 {
+		k = m[k]
+	}
+	return k
+}
+func Run(f func(), m map[int]int) {
+	slow(m, 1)
+	f()
+}
+func A(m map[int]int) { Run(func() {}, m) }
+func B(m map[int]int) { Run(func() {}, m) }`
+
+	const assumptions = "input.slow O(1)\n"
+
+	ta, tb := taintOfPair(t, src, assumptions, "A", "B")
+	if !ta || !tb {
+		t.Errorf("A-then-B: tainted A=%v B=%v, want both true", ta, tb)
+	}
+	tb2, ta2 := taintOfPair(t, src, assumptions, "B", "A")
+	if !tb2 || !ta2 {
+		t.Errorf("B-then-A: tainted B=%v A=%v, want both true", tb2, ta2)
+	}
+}

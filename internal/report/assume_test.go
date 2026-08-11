@@ -162,3 +162,35 @@ func TestUnmatchedKeysReportedWhenCallbackSet(t *testing.T) {
 		}
 	}
 }
+
+// TestCrossPackageParamSummaryTaint is the half of review F2 that the
+// same-package unit pin cannot cover. Here the parametric function lives in
+// another package, so this resolver never runs InferTop on it and taint[Run]
+// is never set — a memo-hit guard alone would leave B untainted forever.
+func TestCrossPackageParamSummaryTaint(t *testing.T) {
+	set, err := assume.Load("testdata/paramtaint/fix.assume")
+	if err != nil {
+		t.Fatal(err)
+	}
+	doc, err := Collect("testdata/paramtaint", nil, Options{Version: "test", Now: fixedNow, Assume: set})
+	if err != nil {
+		t.Fatal(err)
+	}
+	byName := map[string]Function{}
+	for _, f := range doc.Functions {
+		byName[f.Func] = f
+	}
+	for _, name := range []string{"A", "B"} {
+		f, ok := byName[name]
+		if !ok {
+			t.Fatalf("%s missing from document", name)
+		}
+		if f.Time.Top {
+			t.Errorf("%s is top; the assumption should have graduated it", name)
+		}
+		if f.Provenance != ProvenanceTainted {
+			t.Errorf("%s provenance = %q, want %q — taint must not depend on which consumer ran first",
+				name, f.Provenance, ProvenanceTainted)
+		}
+	}
+}
