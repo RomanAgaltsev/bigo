@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.43.0](https://github.com/RomanAgaltsev/bigo/compare/v1.42.0...v1.43.0) (2026-08-11)
+
+
+### Features
+
+* trust files, and the callee key that makes them discoverable ([#132](https://github.com/RomanAgaltsev/bigo/issues/132)) ([02f6e82](https://github.com/RomanAgaltsev/bigo/commit/02f6e82d4c344968c46350eb3d0d0766ec71ffde))
+
 ## [1.42.0](https://github.com/RomanAgaltsev/bigo/compare/v1.41.0...v1.42.0) (2026-08-11)
 
 
