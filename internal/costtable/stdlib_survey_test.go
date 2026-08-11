@@ -368,3 +368,87 @@ func f(v *atomic.Value, x any) any { return v.Swap(x) }`},
 		})
 	}
 }
+
+// TestFirstContactEntries covers the lane added 2026-08-11, after
+// `bigo trust init` was run against four real repositories and most of what it
+// offered users turned out to be bigo's own unfilled table.
+//
+// The lane is deliberately weighted to CONSTANTS. First contact measured the
+// split: constant entries delivered ~93% of their graduation count (pgx, 27 of
+// 29), while a size-dependent one delivered 6% (goldmark, 2 of 32), because the
+// argument size does not resolve at most real call sites.
+func TestFirstContactEntries(t *testing.T) {
+	tests := []struct{ name, src, want string }{
+		{"context.WithValue", `package input
+import "context"
+func f(ctx context.Context, k, v any) context.Context { return context.WithValue(ctx, k, v) }`, "O(1)"},
+
+		{"time.Time.IsZero", `package input
+import "time"
+func f(t time.Time) bool { return t.IsZero() }`, "O(1)"},
+
+		{"log.New", `package input
+import (
+	"io"
+	"log"
+)
+func f(w io.Writer) *log.Logger { return log.New(w, "p", 0) }`, "O(1)"},
+
+		{"netip.Prefix.Contains", `package input
+import "net/netip"
+func f(p netip.Prefix, a netip.Addr) bool { return p.Contains(a) }`, "O(1)"},
+
+		{"binary.BigEndian.Uint32", `package input
+import "encoding/binary"
+func f(b []byte) uint32 { return binary.BigEndian.Uint32(b) }`, "O(1)"},
+
+		{"binary.LittleEndian.Uint64", `package input
+import "encoding/binary"
+func f(b []byte) uint64 { return binary.LittleEndian.Uint64(b) }`, "O(1)"},
+
+		{"binary.BigEndian.PutUint16", `package input
+import "encoding/binary"
+func f(b []byte) { binary.BigEndian.PutUint16(b, 7) }`, "O(1)"},
+
+		{"strings.Cut", `package input
+import "strings"
+func f(s, sep string) (string, string, bool) { return strings.Cut(s, sep) }`, "O(len(s))"},
+
+		{"bytes.IndexByte", `package input
+import "bytes"
+func f(b []byte) int { return bytes.IndexByte(b, 'x') }`, "O(len(b))"},
+
+		{"http.CanonicalHeaderKey", `package input
+import "net/http"
+func f(s string) string { return http.CanonicalHeaderKey(s) }`, "O(len(s))"},
+
+		{"netip.MustParsePrefix", `package input
+import "net/netip"
+func f(s string) netip.Prefix { return netip.MustParsePrefix(s) }`, "O(len(s))"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, ok := costOf(t, tt.src)
+			if !ok || got != tt.want {
+				t.Errorf("cost = %q (priced=%v), want %q", got, ok, tt.want)
+			}
+		})
+	}
+}
+
+// TestUnicodeIsStaysTop is the refusal this lane earned by reading rather than
+// assuming. The first-contact note listed unicode.Is as bigo-priceable; it is
+// not. is16/is32 scan the RANGE TABLE linearly for small tables and binary
+// search it otherwise, so the cost depends on rangeTab — an argument other than
+// the one an O(1) entry would be sized by.
+//
+// Fifth instance of that shape, after clear on maps, min/max on strings, the
+// Trim cutset, and (*sync/atomic.Value).CompareAndSwap.
+func TestUnicodeIsStaysTop(t *testing.T) {
+	got, ok := costOf(t, `package input
+import "unicode"
+func f(r rune) bool { return unicode.Is(unicode.Latin, r) }`)
+	if ok && got != "unverifiable" {
+		t.Errorf("cost = %q, want unverifiable — the cost depends on the range table", got)
+	}
+}
