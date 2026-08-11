@@ -77,6 +77,19 @@ type Cause struct {
 	Pos  token.Pos
 	Kind CauseKind
 	What string
+
+	// Callee is the cost-table key of the callee, for call and defer causes
+	// with a static callee; empty otherwise.
+	//
+	// It is NOT a parse of What. What renders the callee with calleeName
+	// (RelString), while this is costtable.CalleeKey, which resolves a generic
+	// instantiation to its origin — so the two differ on generic code and must
+	// never be joined against each other.
+	//
+	// Empty for interface dispatch and function values, which are exactly the
+	// blockers no trust file can express, so consumers filter on presence
+	// rather than keeping a second list of what is inexpressible.
+	Callee string
 }
 
 // Infer returns the function's intraprocedural time bound, delegating call
@@ -144,13 +157,17 @@ func blockCost(b *ssa.BasicBlock, model CostModel) (bound.Bound, []Cause) {
 		case *ssa.Call:
 			c := model.CallCost(&v.Call)
 			if c.IsTop() {
-				causes = append(causes, Cause{Pos: v.Pos(), Kind: CauseCall, What: causeText(&v.Call, false)})
+				// The blank is deliberate: no key means the callee cannot be
+				// named, which is the empty string, which is the signal.
+				key, _ := costtable.CalleeKey(&v.Call)
+				causes = append(causes, Cause{Pos: v.Pos(), Kind: CauseCall, What: causeText(&v.Call, false), Callee: key})
 			}
 			cost = cost.Join(c)
 		case *ssa.Defer:
 			c := model.CallCost(&v.Call)
 			if c.IsTop() {
-				causes = append(causes, Cause{Pos: v.Pos(), Kind: CauseDefer, What: causeText(&v.Call, true)})
+				key, _ := costtable.CalleeKey(&v.Call)
+				causes = append(causes, Cause{Pos: v.Pos(), Kind: CauseDefer, What: causeText(&v.Call, true), Callee: key})
 			}
 			cost = cost.Join(c)
 		case *ssa.Go:
