@@ -229,3 +229,26 @@ func countFor(t *testing.T, out, key string) int {
 	}
 	return 0
 }
+
+// TestHeaderCarriesTheMeasuredCaveat pins the two things the header must tell a
+// user about the number beside each key: that it is measured, and that it is an
+// upper bound only a constant bound reaches.
+//
+// It exists because the header did NOT say either for one release. The edit
+// that was supposed to add them was scripted, matched nothing, and reported
+// success — gofmt and the compiler were both happy, no test looked at the text,
+// and the claim shipped in a PR description instead of in the file.
+//
+// Prose that carries a measured caveat is load-bearing, so it gets a test.
+func TestHeaderCarriesTheMeasuredCaveat(t *testing.T) {
+	for _, want := range []string{
+		"MEASURED, not predicted",
+		"UPPER BOUND",
+		"CONSTANT bound",
+		"resolve at the call site",
+	} {
+		if !strings.Contains(trustHeader, want) {
+			t.Errorf("header does not mention %q:\n%s", want, trustHeader)
+		}
+	}
+}
