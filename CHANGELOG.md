@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.44.0](https://github.com/RomanAgaltsev/bigo/compare/v1.43.1...v1.44.0) (2026-08-11)
+
+
+### Features
+
+* **costtable:** price the cheap certain entries first contact found ([#136](https://github.com/RomanAgaltsev/bigo/issues/136)) ([ea866a6](https://github.com/RomanAgaltsev/bigo/commit/ea866a639307bdc020526aacb60775a15ef2f5ce))
+
 ## [1.43.1](https://github.com/RomanAgaltsev/bigo/compare/v1.43.0...v1.43.1) (2026-08-11)
 
 
