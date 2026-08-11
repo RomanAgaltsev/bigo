@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.45.0](https://github.com/RomanAgaltsev/bigo/compare/v1.44.2...v1.45.0) (2026-08-11)
+
+
+### Features
+
+* **costtable:** price math/bits and other gaps found in unseen repos ([#142](https://github.com/RomanAgaltsev/bigo/issues/142)) ([53c6272](https://github.com/RomanAgaltsev/bigo/commit/53c62722a012eb3bf083a3b1f537a69e26a10970))
+
 ## [1.44.2](https://github.com/RomanAgaltsev/bigo/compare/v1.44.1...v1.44.2) (2026-08-11)
 
 
