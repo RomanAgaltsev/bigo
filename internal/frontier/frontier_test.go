@@ -293,3 +293,38 @@ func TestSkipFiltersPopulationNotWalk(t *testing.T) {
 		t.Errorf("SoleBlocker = %d, want 1 — the walk must still recurse THROUGH Gen to reach its leaf", got)
 	}
 }
+
+// TestSoleBlockerCalleeCountsOnlyKeyedBlockers pins the map trust init reads.
+// It is keyed by the cost-table key, not by the human cause sentence, and a
+// blocker with no key contributes to SoleBlocker but never to this map —
+// because no trust entry could address it.
+func TestSoleBlockerCalleeCountsOnlyKeyedBlockers(t *testing.T) {
+	keyed := func(callee string) report.CauseJSON {
+		c := cause("call", CostPrefix+callee)
+		c.Callee = callee
+		return c
+	}
+	doc := report.Document{
+		Module: "m",
+		Functions: []report.Function{
+			fn("m", "A", true, keyed("os.Getenv")),
+			fn("m", "B", true, keyed("os.Getenv")),
+			// No key: an interface method. Counts in SoleBlocker, not here.
+			fn("m", "C", true, cause("call", CostPrefix+"(m.R).Read")),
+			// Two distinct blockers: sole-blocker for neither.
+			fn("m", "D", true, keyed("os.Getenv"), cause("loop", "loop with unrecognized trip count")),
+		},
+	}
+	fr := Of(doc)
+
+	if got := fr.SoleBlockerCallee["os.Getenv"]; got != 2 {
+		t.Errorf("SoleBlockerCallee[os.Getenv] = %d, want 2 — D has two blockers and counts for neither", got)
+	}
+	if got := len(fr.SoleBlockerCallee); got != 1 {
+		t.Errorf("SoleBlockerCallee has %d keys, want 1 — an unkeyed blocker must not appear", got)
+	}
+	// The existing detail-keyed map is unchanged by this addition.
+	if got := fr.SoleBlocker[CostPrefix+"(m.R).Read"]; got != 1 {
+		t.Errorf("SoleBlocker for the unkeyed blocker = %d, want 1", got)
+	}
+}

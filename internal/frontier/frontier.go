@@ -26,9 +26,9 @@ import (
 // CostPrefix is the engine's cause text for a call whose cost did not resolve.
 // The frontier walk parses it to tell PROPAGATION (the callee is itself ⊤, so
 // this is a hop) from a real LEAF blocker.
-// CostPrefix is the engine cause text for a call whose cost did not resolve.
-// Exported because fixtures elsewhere must build the SAME string the walk keys
-// on; a hand-copied literal could drift from it silently.
+//
+// Exported because fixtures in other packages must build the SAME string the
+// walk keys on; a hand-copied literal could drift from it silently.
 const CostPrefix = "unresolved cost at call to "
 
 // DeepBucket collapses the tail of the distance histogram. A function ten
@@ -58,6 +58,16 @@ type Frontier struct {
 	// "github.com" and merged every third-party callee into one bucket of 527.
 	// Under-counting a class is safe; inventing one is not.
 	SoleBlocker map[string]int
+
+	// SoleBlockerCallee is SoleBlocker keyed by the COST-TABLE KEY instead of
+	// the cause sentence, for the subset of blockers that have one. This is
+	// what `bigo trust init` ranks: a blocker with no key cannot be addressed
+	// by a trust entry, so it is absent here BY CONSTRUCTION rather than by a
+	// second exclusion list that could drift from the first.
+	//
+	// SoleBlocker keeps its own keying because the survey ranks by it and its
+	// numbers must not move; this is strictly additive.
+	SoleBlockerCallee map[string]int
 }
 
 // funcKey renders a function the way a cause detail names its callee, so the
@@ -84,7 +94,12 @@ func funcKey(f report.Function) string {
 //   - an AMBIGUOUS callee key resolves to nothing and stays a leaf. Several
 //     same-named functions in one package is legal Go (the `bigo diff` F1
 //     shape); picking one arbitrarily would fabricate a chain.
-func leafSet(idx int, funcs []report.Function, byKey map[string][]int, seen map[int]bool, out map[string]bool) {
+//
+// out maps the leaf's cause DETAIL to its cost-table key, empty when the cause
+// has none. Keying on the detail keeps the dedup semantics the distance measure
+// has always had; the value is carried alongside so a caller can also count by
+// key without a second walk.
+func leafSet(idx int, funcs []report.Function, byKey map[string][]int, seen map[int]bool, out map[string]string) {
 	if seen[idx] {
 		return
 	}
@@ -96,7 +111,7 @@ func leafSet(idx int, funcs []report.Function, byKey map[string][]int, seen map[
 				continue
 			}
 		}
-		out[c.Detail] = true
+		out[c.Detail] = c.Callee
 	}
 }
 
@@ -130,7 +145,7 @@ func Of(doc report.Document) Frontier {
 // population, while a hand-written caller of a generated ⊤ function keeps the
 // leaf it actually waits on.
 func Excluding(doc report.Document, skip func(report.Function) bool) Frontier {
-	fr := Frontier{Hist: map[string]int{}, SoleBlocker: map[string]int{}}
+	fr := Frontier{Hist: map[string]int{}, SoleBlocker: map[string]int{}, SoleBlockerCallee: map[string]int{}}
 
 	byKey := make(map[string][]int, len(doc.Functions))
 	for i, f := range doc.Functions {
@@ -146,7 +161,7 @@ func Excluding(doc report.Document, skip func(report.Function) bool) Frontier {
 		}
 		fr.Top++
 
-		leaves := map[string]bool{}
+		leaves := map[string]string{}
 		leafSet(i, doc.Functions, byKey, map[int]bool{}, leaves)
 
 		d := len(leaves)
@@ -155,8 +170,13 @@ func Excluding(doc report.Document, skip func(report.Function) bool) Frontier {
 			fr.Near++
 		}
 		if d == 1 {
-			for detail := range leaves {
+			for detail, callee := range leaves {
 				fr.SoleBlocker[detail]++
+				// A blocker with no key cannot be named in a trust file, so it
+				// is absent here rather than excluded by a separate list.
+				if callee != "" {
+					fr.SoleBlockerCallee[callee]++
+				}
 			}
 		}
 	}
