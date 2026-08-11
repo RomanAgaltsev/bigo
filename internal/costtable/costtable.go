@@ -431,6 +431,38 @@ var stdlib = map[string]func(args []ssa.Value) bound.Bound{
 	"sync/atomic.CompareAndSwapUint64":  constCost,
 	"sync/atomic.CompareAndSwapPointer": constCost,
 
+	// The rest of the package-level API, added 2026-08-11 (review F4). The 22
+	// entries above were chosen from a callee-name histogram, so whatever the
+	// survey population did not happen to call was never considered — leaving
+	// the package-level API 22 of 39 while the typed API it backs is complete,
+	// i.e. (*atomic.Pointer[T]).Store was O(1) and StorePointer, the function
+	// it is a one-line delegation to, was ⊤.
+	//
+	// All 39 are declared with NO Go body in doc.go / doc_32.go / doc_64.go and
+	// implemented in assembly — read from those files, not inherited from the
+	// neighbours above (the Trim rule). Where a machine lowers And/Or to a CAS
+	// retry, that is contention, and the sync block above already records that
+	// contention is wall-clock rather than work.
+	//
+	// Yield is UNMEASURED: a consistency fix, not a coverage claim.
+	"sync/atomic.AddUintptr":            constCost,
+	"sync/atomic.AndInt32":              constCost,
+	"sync/atomic.AndInt64":              constCost,
+	"sync/atomic.AndUint32":             constCost,
+	"sync/atomic.AndUint64":             constCost,
+	"sync/atomic.AndUintptr":            constCost,
+	"sync/atomic.CompareAndSwapUintptr": constCost,
+	"sync/atomic.LoadUintptr":           constCost,
+	"sync/atomic.OrInt32":               constCost,
+	"sync/atomic.OrInt64":               constCost,
+	"sync/atomic.OrUint32":              constCost,
+	"sync/atomic.OrUint64":              constCost,
+	"sync/atomic.OrUintptr":             constCost,
+	"sync/atomic.StorePointer":          constCost,
+	"sync/atomic.StoreUintptr":          constCost,
+	"sync/atomic.SwapPointer":           constCost,
+	"sync/atomic.SwapUintptr":           constCost,
+
 	// The TYPED atomic API, added 2026-07-24 after the S1 truthfulness probe
 	// measured 163 hand-written graduations across the survey targets.
 	//

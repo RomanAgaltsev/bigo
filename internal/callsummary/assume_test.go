@@ -171,3 +171,94 @@ func f(xs []int) { sort.Ints(xs) }`
 		t.Fatalf("warnings = %v, want one curated-shadow warning", warns)
 	}
 }
+
+// TestAssumptionShadowedByParametricEntryWarns pins the THIRD precedence
+// holder. The plain table and //bigo: directives already warn; the parametric
+// table returns first in CallCost's no-body branch and warned about nothing,
+// so an assumption on sort.Slice contributed nothing and said nothing — a
+// silent skip, which this package's doc forbids because it under-counts a
+// what-if measurement into a fake NO-GO (2026-08-11 review F1).
+func TestAssumptionShadowedByParametricEntryWarns(t *testing.T) {
+	src := `package input
+import "sort"
+func f(xs []int) { sort.Slice(xs, func(i, j int) bool { return xs[i] < xs[j] }) }`
+
+	got, r := inferWith(t, src, "sort.Slice O(1)\n")
+
+	// The curated parametric entry still WINS — precedence is unchanged, and
+	// this half is the positive control: a fix that let the assumption through
+	// would break the documented precedence order instead of adding a warning.
+	if got != "O(len(xs) log(len(xs)))" {
+		t.Errorf("bound = %q, want the parametric entry to still outrank the assumption", got)
+	}
+
+	warns := r.AssumeWarnings()
+	want := "assumption for sort.Slice is shadowed by a parametric cost-table entry"
+	found := false
+	for _, w := range warns {
+		if w == want {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("warnings = %q, want one naming the shadowed key: %q", warns, want)
+	}
+}
+
+// taintOfPair infers two top-level functions on ONE resolver, in the given
+// order, and reports whether each ended up tainted.
+func taintOfPair(t *testing.T, src, assumptions, first, second string) (bool, bool) {
+	t.Helper()
+	pkg, _, err := ssasupport.Build(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	r := New(nil)
+	es, err := assume.ParseText(assumptions)
+	if err != nil {
+		t.Fatal(err)
+	}
+	r.UseAssumptions(assume.NewSet(es))
+
+	fa, fb := ssasupport.Func(pkg, first), ssasupport.Func(pkg, second)
+	if fa == nil || fb == nil {
+		t.Fatalf("fixture functions %q/%q not found", first, second)
+	}
+	r.InferTop(fa)
+	r.InferTop(fb)
+	return r.Tainted(fa), r.Tainted(fb)
+}
+
+// TestParamSummaryTaintIsOrderIndependent is a DIFFERENTIAL PAIR and must stay
+// one: the defect it pins (2026-08-11 review F2) tainted only whichever
+// consumer ran first, so pinning a single order passes throughout the defect's
+// life.
+//
+// Run has a func-typed parameter, so its cost goes through paramSummaryOf,
+// whose memo cached the VALUE without the taint that produced it.
+func TestParamSummaryTaintIsOrderIndependent(t *testing.T) {
+	src := `package input
+func slow(m map[int]int, k int) int {
+	for k != 0 {
+		k = m[k]
+	}
+	return k
+}
+func Run(f func(), m map[int]int) {
+	slow(m, 1)
+	f()
+}
+func A(m map[int]int) { Run(func() {}, m) }
+func B(m map[int]int) { Run(func() {}, m) }`
+
+	const assumptions = "input.slow O(1)\n"
+
+	ta, tb := taintOfPair(t, src, assumptions, "A", "B")
+	if !ta || !tb {
+		t.Errorf("A-then-B: tainted A=%v B=%v, want both true", ta, tb)
+	}
+	tb2, ta2 := taintOfPair(t, src, assumptions, "B", "A")
+	if !tb2 || !ta2 {
+		t.Errorf("B-then-A: tainted B=%v A=%v, want both true", tb2, ta2)
+	}
+}

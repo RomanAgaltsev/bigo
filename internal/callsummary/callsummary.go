@@ -181,6 +181,16 @@ func (r *Resolver) CallCost(c *ssa.CallCommon) bound.Bound {
 	// a nil Pkg, and imported functions have a non-nil Pkg with no blocks.
 	if len(callee.Blocks) == 0 {
 		if b, ok := r.parametricTableCost(c); ok {
+			// The parametric table is the third precedence holder and must
+			// report shadowing exactly as the plain table does — a silently
+			// dropped assumption corrupts a what-if measurement (see the
+			// assume package doc; 2026-08-11 review F1). CalleeKey is the right
+			// key even though LookupParametric still hand-rolls its own: the
+			// two agree on every current entry (all package-level), and
+			// CalleeKey is the vocabulary the assumption file is written in.
+			if key, kok := costtable.CalleeKey(c); kok {
+				r.noteShadow("parametric cost-table entry", key)
+			}
 			return b
 		}
 		if b, ok := r.assumeCost(c, callee); ok {

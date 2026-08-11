@@ -6,6 +6,12 @@
 //
 // Malformed or unresolvable entries are hard errors, never skips: a silently
 // dropped assumption corrupts a what-if measurement (spec §3).
+//
+// Three limits are measured, not theoretical: interface methods and builtins
+// cannot be named at all (campaign 1, proven on a fixture), and a key is
+// separated from its bound at the first " O(" so that keys containing spaces —
+// a method on a generic type with two or more type parameters — stay
+// expressible (2026-08-11 review F5).
 package assume
 
 import (
@@ -50,9 +56,18 @@ func parse(name string, r io.Reader) ([]Entry, error) {
 		if line == "" || strings.HasPrefix(line, "#") {
 			continue
 		}
-		key, expr, ok := strings.Cut(line, " ")
-		expr = strings.TrimSpace(expr)
-		if !ok || expr == "" {
+		// Split at the first " O(" rather than the first space: a KEY may
+		// contain spaces (types.Func.FullName renders multiple type parameters
+		// comma-space separated, e.g. "(*pkg.Pair[K, V]).Get"), while every
+		// bound goes through parseBigO, which requires a literal "O(" — so this
+		// separator is total where a space is not (2026-08-11 review F5).
+		i := strings.Index(line, " O(")
+		if i < 0 {
+			return nil, fmt.Errorf("%s: line %d: want '<key> O(<expr>)', got %q", name, n, line)
+		}
+		key := strings.TrimSpace(line[:i])
+		expr := strings.TrimSpace(line[i+1:])
+		if key == "" {
 			return nil, fmt.Errorf("%s: line %d: want '<key> O(<expr>)', got %q", name, n, line)
 		}
 		dir, err := annotation.Parse("//bigo:cost " + expr)

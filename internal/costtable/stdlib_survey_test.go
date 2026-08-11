@@ -277,3 +277,57 @@ func f(o *sync.Once, g func()) { o.Do(g) }`},
 		})
 	}
 }
+
+// TestPackageLevelAtomicPriced closes the mirror image of the hole v1.40.0
+// existed to fix (2026-08-11 review F4): the typed API was priced completely
+// while the package-level API it delegates to was not, so
+// (*atomic.Pointer[T]).Store was O(1) and atomic.StorePointer was ⊤.
+//
+// All 39 are assembly-implemented intrinsics declared with no Go body in
+// doc.go / doc_32.go / doc_64.go, which is the whole soundness argument — read
+// from those files, not inherited from the 22 entries added in v1.35.0.
+func TestPackageLevelAtomicPriced(t *testing.T) {
+	tests := []struct{ name, src string }{
+		{"AndInt32", `package input
+import "sync/atomic"
+func f(p *int32) int32 { return atomic.AndInt32(p, 3) }`},
+
+		{"OrUint64", `package input
+import "sync/atomic"
+func f(p *uint64) uint64 { return atomic.OrUint64(p, 3) }`},
+
+		{"AddUintptr", `package input
+import "sync/atomic"
+func f(p *uintptr) uintptr { return atomic.AddUintptr(p, 1) }`},
+
+		{"LoadUintptr", `package input
+import "sync/atomic"
+func f(p *uintptr) uintptr { return atomic.LoadUintptr(p) }`},
+
+		{"CompareAndSwapUintptr", `package input
+import "sync/atomic"
+func f(p *uintptr) bool { return atomic.CompareAndSwapUintptr(p, 1, 2) }`},
+
+		{"StorePointer", `package input
+import (
+	"sync/atomic"
+	"unsafe"
+)
+func f(p *unsafe.Pointer, v unsafe.Pointer) { atomic.StorePointer(p, v) }`},
+
+		{"SwapPointer", `package input
+import (
+	"sync/atomic"
+	"unsafe"
+)
+func f(p *unsafe.Pointer, v unsafe.Pointer) unsafe.Pointer { return atomic.SwapPointer(p, v) }`},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, ok := costOf(t, tt.src)
+			if !ok || got != "O(1)" {
+				t.Errorf("cost = %q (priced=%v), want O(1)", got, ok)
+			}
+		})
+	}
+}
