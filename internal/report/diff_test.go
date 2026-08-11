@@ -301,3 +301,83 @@ func TestDiffIncompatibleDocumentsError(t *testing.T) {
 		t.Error("Diff across modules = nil error, want error")
 	}
 }
+
+// trustedFn is a document function with a provenance marking, built with the
+// same bound serialization the rest of these tests use — a bare Str with no
+// Terms is deliberately NOT a bound (see boundOf).
+func trustedFn(name string, b bound.Bound, provenance string) Function {
+	return Function{
+		Package: "example.com/m", Func: name, File: "a.go", Line: 1,
+		Time: bj(b), Provenance: provenance,
+	}
+}
+
+// TestDiffIdenticalTrustBehavesAsBefore is the gate on the whole feature: when
+// the trust surfaces match, provenance plays NO role and diff classifies
+// exactly as it did before trust existed. The v1.33.0 review found this command
+// silently masking regressions through its join key; a fix for one hazard must
+// not introduce another.
+func TestDiffIdenticalTrustBehavesAsBefore(t *testing.T) {
+	trust := []AssumptionJSON{{Key: "os.Getenv", Bound: "O(1)"}}
+	base := doc(trustedFn("A", bound.Constant(), ProvenanceTainted))
+	base.Assumptions = trust
+	head := doc(trustedFn("A", bound.Top(), ProvenanceTainted))
+	head.Assumptions = trust
+
+	findings, _, err := Diff(base, head)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(findings) != 1 || findings[0].Class != NewTop {
+		t.Fatalf("findings = %+v, want one NewTop — identical trust must not change classification", findings)
+	}
+}
+
+// TestDiffTrustChangeIsItsOwnClassAndCannotMaskARegression is a DIFFERENTIAL
+// PAIR and must stay one. In a single run where the trust surface changed: the
+// tainted function's move is TrustChanged, and the UNTAINTED function's
+// regression is still reported. Asserting only the first would pass even if a
+// trust edit swallowed every real finding.
+func TestDiffTrustChangeIsItsOwnClassAndCannotMaskARegression(t *testing.T) {
+	base := doc(
+		trustedFn("Trusted", bound.Top(), ""),
+		trustedFn("Plain", bound.Constant(), ""),
+	)
+	head := doc(
+		trustedFn("Trusted", bound.Constant(), ProvenanceTainted),
+		trustedFn("Plain", bound.Top(), ""),
+	)
+	head.Assumptions = []AssumptionJSON{{Key: "os.Getenv", Bound: "O(1)"}}
+
+	findings, _, err := Diff(base, head)
+	if err != nil {
+		t.Fatal(err)
+	}
+	byFunc := map[string]Class{}
+	for _, f := range findings {
+		byFunc[f.Key] = f.Class
+	}
+	if got, ok := byFunc["example.com/m.Trusted"]; !ok || got != TrustChanged {
+		t.Errorf("Trusted = %v (present=%v), want TrustChanged — a trust-driven move is not an improvement", got, ok)
+	}
+	if got, ok := byFunc["example.com/m.Plain"]; !ok || got != NewTop {
+		t.Errorf("Plain = %v (present=%v), want NewTop — a trust edit must never mask a regression in untainted code", got, ok)
+	}
+}
+
+// TestDiffWarnsWhenTrustSurfaceMoves: a reader must learn the INPUT changed
+// before reading any verdict, and the warning names the entries rather than
+// merely asserting that something moved.
+func TestDiffWarnsWhenTrustSurfaceMoves(t *testing.T) {
+	base := doc(trustedFn("A", bound.Top(), ""))
+	head := doc(trustedFn("A", bound.Constant(), ProvenanceTainted))
+	head.Assumptions = []AssumptionJSON{{Key: "os.Getenv", Bound: "O(1)"}}
+
+	_, warn, err := Diff(base, head)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(warn, "trust surface differs") || !strings.Contains(warn, "added os.Getenv") {
+		t.Errorf("warning = %q, want it to name the added entry", warn)
+	}
+}

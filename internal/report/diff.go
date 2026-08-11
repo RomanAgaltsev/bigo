@@ -82,6 +82,14 @@ const (
 	NewFuncBreak
 	// Improvement - exceeds→within, a tightened bound, or ⊤→proven
 	Improvement
+	// TrustChanged - the verdict moved under a CHANGED TRUST SURFACE and this
+	// function's bound rests on an assertion. Never an improvement and never a
+	// regression: a trusted bound is the user's claim, so attributing its
+	// effect to the code would be exactly the conflation this class prevents.
+	//
+	// Appended last on purpose: the values above are compared in tests and
+	// rendered by name, so inserting would renumber them.
+	TrustChanged
 )
 
 func (c Class) String() string {
@@ -96,6 +104,8 @@ func (c Class) String() string {
 		return "new function over budget"
 	case Improvement:
 		return "improvement"
+	case TrustChanged:
+		return "trust changed"
 	default:
 		return "unknown"
 	}
@@ -194,13 +204,42 @@ func Diff(base, head Document) ([]Finding, string, error) {
 	for i, f := range base.Functions {
 		prior[baseKeys[i]] = f
 	}
+	// When both documents were produced under the same trust, provenance plays
+	// no role at all and everything below classifies exactly as it did before
+	// trust files existed. That is deliberate: the shipped CI gate keeps its
+	// meaning for the overwhelmingly common case, and the v1.33.0 review's
+	// lesson — that a fix to this command can silently mask regressions —
+	// argues for changing as little as possible.
+	trustMoved := trustSurfacesDiffer(base, head)
+	if trustMoved {
+		// Carried on the existing warning channel, which both renderers already
+		// print above the findings: a reader must learn the INPUT changed before
+		// they read a single verdict.
+		note := "trust surface differs between base and head: " + trustDelta(base, head) +
+			" — verdicts resting on an assertion are reported as trust changed, not as improvements"
+		if warn == "" {
+			warn = note
+		} else {
+			warn += "; " + note
+		}
+	}
+
 	var out []Finding
 	headKeys := keysOf(head.Functions)
 	for i, h := range head.Functions {
 		b, existed := prior[headKeys[i]]
-		if f, ok := classify(b, h, existed, headKeys[i]); ok {
-			out = append(out, f)
+		f, ok := classify(b, h, existed, headKeys[i])
+		if !ok {
+			continue
 		}
+		// Only a MATCHED pair can have moved under trust; a newly added
+		// function has no earlier verdict for trust to have changed.
+		if trustMoved && existed && trusted(b, h) {
+			f.Class = TrustChanged
+			f.Message = fmt.Sprintf("%s changed under a changed trust surface: %s → %s",
+				funcName(h), boundStr(b.Time), boundStr(h.Time))
+		}
+		out = append(out, f)
 	}
 	sort.Slice(out, func(i, j int) bool {
 		if out[i].Class != out[j].Class {
@@ -325,4 +364,87 @@ func causeSuffix(h Function) string {
 		return ": " + c.Detail
 	}
 	return fmt.Sprintf(": %s at %s:%d", c.Detail, c.File, c.Line)
+}
+
+// trustSurfacesDiffer reports whether the two documents were produced under
+// different trust. When they match, provenance plays no role in Diff at all.
+func trustSurfacesDiffer(base, head Document) bool {
+	if len(base.Assumptions) != len(head.Assumptions) {
+		return true
+	}
+	seen := make(map[string]string, len(base.Assumptions))
+	for _, a := range base.Assumptions {
+		seen[a.Key] = a.Bound
+	}
+	for _, a := range head.Assumptions {
+		if b, ok := seen[a.Key]; !ok || b != a.Bound {
+			return true
+		}
+	}
+	return false
+}
+
+// trusted reports whether either side of a matched pair rests on an assertion.
+// Either side, not both: a function that stops being tainted moved because
+// trust was REMOVED, which is just as much a trust-driven change.
+func trusted(a, b Function) bool {
+	for _, p := range []string{a.Provenance, b.Provenance} {
+		if p == ProvenanceAssumed || p == ProvenanceTainted {
+			return true
+		}
+	}
+	return false
+}
+
+// funcName renders a function the way classify's messages do.
+func funcName(f Function) string {
+	if f.Receiver != "" {
+		return "(" + f.Receiver + ")." + f.Func
+	}
+	return f.Func
+}
+
+// trustDelta renders how the trust surface moved, so the warning names the
+// entries rather than merely asserting that something changed.
+func trustDelta(base, head Document) string {
+	b := make(map[string]string, len(base.Assumptions))
+	for _, a := range base.Assumptions {
+		b[a.Key] = a.Bound
+	}
+	h := make(map[string]string, len(head.Assumptions))
+	for _, a := range head.Assumptions {
+		h[a.Key] = a.Bound
+	}
+	var added, removed, changed []string
+	for k, hv := range h {
+		bv, ok := b[k]
+		switch {
+		case !ok:
+			added = append(added, k)
+		case bv != hv:
+			changed = append(changed, k)
+		}
+	}
+	for k := range b {
+		if _, ok := h[k]; !ok {
+			removed = append(removed, k)
+		}
+	}
+	sort.Strings(added)
+	sort.Strings(removed)
+	sort.Strings(changed)
+
+	var parts []string
+	for _, p := range []struct {
+		label string
+		keys  []string
+	}{{"added", added}, {"removed", removed}, {"changed", changed}} {
+		if len(p.keys) > 0 {
+			parts = append(parts, p.label+" "+strings.Join(p.keys, ", "))
+		}
+	}
+	if len(parts) == 0 {
+		return "entries reordered"
+	}
+	return strings.Join(parts, "; ")
 }
