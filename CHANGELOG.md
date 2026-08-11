@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.44.1](https://github.com/RomanAgaltsev/bigo/compare/v1.44.0...v1.44.1) (2026-08-11)
+
+
+### Bug Fixes
+
+* **trust:** measure the graduation count instead of predicting it ([#138](https://github.com/RomanAgaltsev/bigo/issues/138)) ([e461378](https://github.com/RomanAgaltsev/bigo/commit/e46137888812f4c0153e56f101da406937fb1093))
+
 ## [1.44.0](https://github.com/RomanAgaltsev/bigo/compare/v1.43.1...v1.44.0) (2026-08-11)
 
 
