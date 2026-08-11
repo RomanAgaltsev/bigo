@@ -2,6 +2,7 @@
 package analyzer
 
 import (
+	"errors"
 	"fmt"
 	"go/ast"
 	"go/types"
@@ -28,7 +29,10 @@ var reportMode bool
 
 var smellsFlag string
 
-var assumeFile string
+var (
+	assumeFile string
+	trustFile  string
+)
 
 // Analyzer is the bigo complexity analyzer.
 var Analyzer = newAnalyzer()
@@ -44,6 +48,8 @@ func newAnalyzer() *analysis.Analyzer {
 	a.Flags.StringVar(&smellsFlag, "smells", "all", "smell rules to run: all, none, or comma-separated (SM1..SM8)")
 	a.Flags.StringVar(&assumeFile, "assume", "",
 		"load external assumptions from this file (whole-module key validation runs only under `bigo json`/survey)")
+	a.Flags.StringVar(&trustFile, "trust", "",
+		"load a trust file: bounds you assert for code you cannot edit (whole-module key validation runs only under `bigo json`/survey)")
 	return a
 }
 
@@ -62,8 +68,19 @@ var (
 
 func loadAssumptions() (*assume.Set, error) {
 	assumeOnce.Do(func() {
-		if assumeFile != "" {
-			assumeSet, assumeErr = assume.Load(assumeFile)
+		// One mechanism, two intents: -assume is hypothetical (the what-if
+		// harness), -trust is a claim the user stands behind. Unioning them
+		// silently would erase that distinction, so passing both is an error.
+		if assumeFile != "" && trustFile != "" {
+			assumeErr = errors.New("-trust and -assume are the same mechanism with different intent; pass one")
+			return
+		}
+		path := assumeFile
+		if trustFile != "" {
+			path = trustFile
+		}
+		if path != "" {
+			assumeSet, assumeErr = assume.Load(path)
 		}
 	})
 	return assumeSet, assumeErr

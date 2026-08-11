@@ -62,3 +62,49 @@ func TestMainBadFlagFails(t *testing.T) {
 		t.Errorf("Main with bad flag = %d, want 2", code)
 	}
 }
+
+// TestTrustFlagLoadsLikeAssume: -trust is the product entry point for the same
+// loader. Same mechanism, different epistemic status — an assumption is
+// hypothetical, a trust entry is a claim the user stands behind — so they get
+// different names and one code path.
+//
+// The path is process-relative, not -C-relative, like -assume.
+func TestTrustFlagLoadsLikeAssume(t *testing.T) {
+	out := filepath.Join(t.TempDir(), "out.json")
+	if code := Main("test", []string{"-C", "testdata/assumefix", "-trust", "testdata/assumefix/fix.assume", "-o", out}); code != 0 {
+		t.Fatalf("exit = %d, want 0", code)
+	}
+	raw, err := os.ReadFile(out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var doc Document
+	if err := json.Unmarshal(raw, &doc); err != nil {
+		t.Fatal(err)
+	}
+	if len(doc.Assumptions) != 1 {
+		t.Fatalf("trust surface = %+v, want the one entry", doc.Assumptions)
+	}
+	var tainted int
+	for _, f := range doc.Functions {
+		if f.Provenance == ProvenanceTainted {
+			tainted++
+		}
+	}
+	if tainted == 0 {
+		t.Error("no tainted verdict — the trust file was not applied")
+	}
+}
+
+// TestTrustAndAssumeTogetherIsAUsageError: silently unioning them would erase
+// the distinction the flag exists to make.
+func TestTrustAndAssumeTogetherIsAUsageError(t *testing.T) {
+	code := Main("test", []string{
+		"-C", "testdata/assumefix",
+		"-trust", "testdata/assumefix/fix.assume",
+		"-assume", "testdata/assumefix/fix.assume",
+	})
+	if code != 2 {
+		t.Errorf("exit = %d, want 2 (usage error)", code)
+	}
+}
