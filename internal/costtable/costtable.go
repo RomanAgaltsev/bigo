@@ -468,14 +468,16 @@ var stdlib = map[string]func(args []ssa.Value) bound.Bound{
 	//
 	// Priced from sync/atomic/type.go, NOT by analogy with the package-level
 	// entries above (the Trim rule forbids inheriting a precedent): every
-	// method there is a one-line delegation to a compiler intrinsic, and the
-	// package's non-test sources contain NO loop anywhere in this API. That
-	// absence is what makes one argument cover all of them.
+	// method there is a one-line delegation to a compiler intrinsic, and
+	// TYPE.GO CONTAINS NO LOOP. That absence is what makes one argument cover
+	// all of them.
 	//
-	// atomic.Value is deliberately ABSENT: its Store carries a spin loop for
-	// the first-store protocol. Arguably wall-clock rather than work, but ⊤ is
-	// the safe answer and excluding one type keeps the argument above true as
-	// written.
+	// Scope narrowed 2026-08-11: this argument is about type.go's seven struct
+	// types only. atomic.Value lives in value.go, is NOT covered by it, and is
+	// priced below under a different argument — the previous wording said "the
+	// package's non-test sources contain no loop anywhere in this API", which
+	// is false of value.go and would have to be re-read every time someone
+	// checked it.
 	"(*sync/atomic.Bool).Load":                 constCost,
 	"(*sync/atomic.Bool).Store":                constCost,
 	"(*sync/atomic.Bool).Swap":                 constCost,
@@ -519,6 +521,40 @@ var stdlib = map[string]func(args []ssa.Value) bound.Bound{
 	"(*sync/atomic.Pointer[T]).Store":          constCost,
 	"(*sync/atomic.Pointer[T]).Swap":           constCost,
 	"(*sync/atomic.Pointer[T]).CompareAndSwap": constCost,
+
+	// atomic.Value (value.go), added 2026-08-11 (review F3). v1.40.0 excluded
+	// the WHOLE TYPE with one sentence about Store's spin loop. Read against
+	// the source that reason is wrong twice over, and the second half of that
+	// is the dangerous half:
+	//
+	//  1. Load has NO LOOP AT ALL — two LoadPointers, a sentinel comparison and
+	//     two word writes. It was refused by a criterion it does not meet, and
+	//     the refusal was pinned, so the pin preserved the capability loss (the
+	//     C5 lesson: a precondition stricter than soundness requires is a
+	//     silent capability loss).
+	//
+	//  2. Store's and Swap's loops are PURE CONTENTION: the only two continues
+	//     fire when another goroutine won the first-store CAS, or when a first
+	//     store is mid-flight (the stdlib comments call it an active spin
+	//     wait). No iteration count depends on any input size. That is the same
+	//     doctrine the sync block above already applies to (*sync.Mutex).Lock,
+	//     whose lockSlow spins too — so "it has a loop" was never this table's
+	//     operative criterion, and leaving it written that way invited someone
+	//     to notice the inconsistency and price ALL FOUR.
+	//
+	// Which would have been a wrong bound, because CompareAndSwap is NOT a
+	// contention question and stays ⊤ on its own merits: it compares the stored
+	// value with `i != old`, a RUNTIME INTERFACE EQUALITY check, and the stdlib
+	// comment says that is deliberate — "This allows value types to be
+	// compared, something not offered by the package functions." If the dynamic
+	// type contains a string, that comparison costs O(len(string)); if it
+	// contains an array, O(len of the array). Neither is nameable at the call
+	// site. Same shape as min/max on strings (v1.30.1) and as Trim's cutset
+	// (v1.38.1): the cost depends on something other than what the entry is
+	// sized by, so it must not be priced.
+	"(*sync/atomic.Value).Load":  constCost,
+	"(*sync/atomic.Value).Store": constCost,
+	"(*sync/atomic.Value).Swap":  constCost,
 
 	// Does not return.
 	"os.Exit": constCost,
