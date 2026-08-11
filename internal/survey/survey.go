@@ -24,6 +24,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/RomanAgaltsev/bigo/internal/frontier"
 	"github.com/RomanAgaltsev/bigo/internal/report"
 )
 
@@ -44,7 +45,7 @@ type Config struct {
 //
 // Functions counts FIRST-PARTY functions only; Seen counts every function in
 // the document. Both are reported so the size of what was excluded is visible
-// rather than assumed — see firstParty.
+// rather than assumed — see frontier.FirstParty.
 type Totals struct {
 	Functions   int    `json:"functions"`
 	Bounded     int    `json:"bounded"`
@@ -118,24 +119,6 @@ type Report struct {
 	AggSoleBlocker map[string]int `json:"aggregate_sole_blocker"`
 }
 
-// firstParty reports whether pkg belongs to module — the correctness crux of
-// this harness.
-//
-// An ad-hoc survey run over prometheus counted `pb33f/libopenapi` symbols,
-// which are somebody else's code; any coverage number computed over those
-// measures the wrong thing. Dependencies reach the document because Collect
-// loads with NeedDeps, so the filter is not optional.
-//
-// The test is exact, not heuristic: the package path must equal the module path
-// or sit beneath it. Note the boundary — "example.com/m" must not match
-// "example.com/mtools".
-func firstParty(pkg, module string) bool {
-	if module == "" {
-		return true // no module recorded: cannot filter, count everything
-	}
-	return pkg == module || strings.HasPrefix(pkg, module+"/")
-}
-
 // pct renders a coverage percentage with one decimal. Zero functions yields
 // "0.0" rather than dividing by zero — an empty or fully-filtered target is a
 // legitimate outcome, not a crash.
@@ -167,7 +150,7 @@ func Summarize(doc report.Document, isGen func(string) bool) (Totals, map[string
 	byDetail := make(map[string]int, 256)
 	t := Totals{Seen: len(doc.Functions)}
 	for _, f := range doc.Functions {
-		if !firstParty(f.Package, doc.Module) {
+		if !frontier.FirstParty(f.Package, doc.Module) {
 			continue
 		}
 		t.Functions++
@@ -195,15 +178,15 @@ func Summarize(doc report.Document, isGen func(string) bool) (Totals, map[string
 	t.CoveragePct = pct(t.Bounded, t.Functions)
 	t.Hand.CoveragePct = pct(t.Hand.Bounded, t.Hand.Functions)
 
-	fr := frontierOf(doc)
+	fr := frontier.Of(doc)
 	t.Top, t.NearFrontier, t.DistanceHist = fr.Top, fr.Near, fr.Hist
-	t.CeilingPct = ceilingPct(t.Bounded, fr.Near, t.Functions)
+	t.CeilingPct = frontier.CeilingPct(t.Bounded, fr.Near, t.Functions)
 
 	// The hand-written frontier: same walk, smaller population. Its SoleBlocker
 	// map is what ranks work, so it is the one returned.
-	hfr := frontierExcluding(doc, func(f report.Function) bool { return isGen(f.File) })
+	hfr := frontier.Excluding(doc, func(f report.Function) bool { return isGen(f.File) })
 	t.Hand.Top, t.Hand.NearFrontier = hfr.Top, hfr.Near
-	t.Hand.CeilingPct = ceilingPct(t.Hand.Bounded, hfr.Near, t.Hand.Functions)
+	t.Hand.CeilingPct = frontier.CeilingPct(t.Hand.Bounded, hfr.Near, t.Hand.Functions)
 
 	return t, byCause, byDetail, hfr.SoleBlocker
 }
@@ -281,9 +264,9 @@ func Run(cfg Config, version string, progress func(string, ...any)) Report {
 		r.Targets = append(r.Targets, t)
 	}
 	r.Aggregate.CoveragePct = pct(r.Aggregate.Bounded, r.Aggregate.Functions)
-	r.Aggregate.CeilingPct = ceilingPct(r.Aggregate.Bounded, r.Aggregate.NearFrontier, r.Aggregate.Functions)
+	r.Aggregate.CeilingPct = frontier.CeilingPct(r.Aggregate.Bounded, r.Aggregate.NearFrontier, r.Aggregate.Functions)
 	r.Aggregate.Hand.CoveragePct = pct(r.Aggregate.Hand.Bounded, r.Aggregate.Hand.Functions)
-	r.Aggregate.Hand.CeilingPct = ceilingPct(r.Aggregate.Hand.Bounded,
+	r.Aggregate.Hand.CeilingPct = frontier.CeilingPct(r.Aggregate.Hand.Bounded,
 		r.Aggregate.Hand.NearFrontier, r.Aggregate.Hand.Functions)
 	return r
 }

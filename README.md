@@ -69,10 +69,88 @@ field is not mutated between function entry and the loop:
 func (s *S) Sum() int { ... }
 ```
 
-## Assumption files (`-assume`)
+## Trust files (`-trust`)
 
-An assumption file prices functions you cannot annotate — dependencies,
-stdlib gaps — without touching their source:
+Most of a real repository is unverifiable because of code you cannot edit. A
+trust file is where you assert bounds for that code, so your own functions get
+verdicts and your budgets become enforceable.
+
+### Finding out what to write
+
+```
+bigo trust init -o bigo.trust
+```
+
+This writes a starter file: the keys blocking the most of your functions,
+ranked, every line commented out. **bigo suggests keys, never bounds** — the
+placeholder does not parse, so an unedited line fails loudly rather than
+asserting something nobody chose.
+
+```
+# 47 of your functions are blocked only by this.
+# fmt.Sprintf O(...)
+```
+
+The count is the number of your functions that key **alone** unblocks — not
+call sites. Clearing one blocker usually reveals the next, so the totals do not
+add up and are not a forecast. Only single blockers are listed; a function
+waiting on two keys needs both trusted at once and is not shown. The file is a
+starting point, not an inventory.
+
+Regenerating over an existing file needs `-force`, because your justifications
+live there.
+
+### Choosing a bound
+
+Read the callee's implementation. That is the whole method, and it is not
+advice — it is the rule this project pays for when it forgets:
+
+> A cost is read from the implementation, never inherited from a neighbouring
+> entry's precedent.
+
+bigo has shipped seven wrong bounds, and the most recent came from pricing
+`strings.Trim` by analogy with `strings.HasPrefix`. `HasPrefix` compares two
+sequences and stops at the shorter; `Trim` tests membership of every rune of
+its first argument in its second, so the lengths multiply. The analogy looked
+sound and was wrong.
+
+Write down why, next to the entry. An entry with no justification is a bound
+nobody has reasoned about:
+
+```
+# os.Getenv is O(1): it reads a pre-parsed environ slice, no scan.
+os.Getenv O(1)
+```
+
+### Using it
+
+```
+bigo json -trust bigo.trust          # the document
+bigo -trust bigo.trust ./...         # the linter, budgets enforced
+```
+
+**A trusted bound is your claim, not bigo's inference.** Every influenced entry
+in the report carries `provenance` (`assumed` on a trust entry's own target,
+`assumption-tainted` downstream) and the document lists the whole trust surface,
+so an auditor can find every verdict resting on an assertion. Trusted bounds
+satisfy `//bigo:max` budgets — that is the point — and `bigo diff` reports a
+verdict that moved because trust changed as `trust changed`, never as an
+improvement.
+
+### What cannot be trusted
+
+Interface methods and builtins cannot be named in a trust file at all; the
+format has no key for them. `bigo trust init` never offers them, because it
+filters on whether the blocker has a key rather than on a list someone has to
+maintain.
+
+### The honest limit
+
+A trust entry is worth about one blocker. Functions sitting many blockers deep
+are not reachable this way, and no file you are willing to write will change
+that. This feature exists to make verdicts usable, not to raise a percentage.
+
+### File format
 
 ```
 # one entry per line: <key> <bound>; '#' starts a comment
@@ -82,20 +160,23 @@ example.com/dep.Work O(n) where n=len(xs)
 ```
 
 Keys are package-qualified (receiver-qualified for methods, e.g.
-`(*sync.Once).Do`); bounds use the `//bigo:cost` grammar, and `where`
-bindings refer to the target's parameters by name. Load one with
-`bigo json -assume assumptions.txt` or `bigo -assume assumptions.txt ./...`.
+`(*sync.Once).Do`, with generic instantiations resolved to their origin, e.g.
+`(*sync/atomic.Pointer[T]).Load`); bounds use the `//bigo:cost` grammar, and
+`where` bindings refer to the target's parameters by name.
 
-**An assumed bound is your claim, not bigo's inference.** Precedence is:
-in-source directive, then the curated cost table, then assumptions, then
-inference — and every influenced entry in the report document carries
-`provenance` (`assumed` on an assumption's own target, `assumption-tainted`
-downstream), so no consumer can mistake a trusted claim for a discovered
-bound. A shadowed entry (one a directive or curated entry already answers)
-warns; a malformed entry, an unparseable bound, or a key matching nothing in
-the module is a hard error, never a skip (`bigo json` validates keys
-module-wide; the analyzer driver validates syntax and compilation only).
-Space bounds are not yet supported in assumption files.
+Precedence is: in-source directive, then the curated cost table, then trust
+entries, then inference. A shadowed entry — one a directive or a curated entry
+already answers — warns. A malformed entry, an unparseable bound, or a key
+matching nothing in the module is a hard error, never a skip (`bigo json`
+validates keys module-wide; the analyzer driver validates syntax and
+compilation only). Space bounds are not yet supported.
+
+### `-assume`: the same mechanism, a different claim
+
+`-assume` loads the identical format through the identical code path, and exists
+for the what-if harness, which asks *what would this pricing buy?* rather than
+asserting anything. Use `-trust` for claims you stand behind; passing both is an
+error, because silently merging them would erase the distinction.
 
 ## Machine-readable reports
 

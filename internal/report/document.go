@@ -19,8 +19,9 @@ import (
 
 // SchemaVersion is the version of the document format.
 // 1.1.0 added the top-level smells array. 1.2.0 added provenance and the
-// top-level assumptions array (additive; earlier documents remain valid).
-const SchemaVersion = "1.2.0"
+// top-level assumptions array. 1.3.0 added cause.callee (all additive; earlier
+// documents remain valid).
+const SchemaVersion = "1.3.0"
 
 // Provenance values. Absence means "inferred" — the field is omitted for
 // every function no assumption influenced, which is what keeps documents
@@ -96,6 +97,16 @@ type CauseJSON struct {
 	Detail string `json:"detail"`
 	File   string `json:"file,omitempty"`
 	Line   int    `json:"line,omitempty"`
+
+	// Callee is the cost-table key of the blocking callee, when it has one:
+	// package-qualified, receiver-qualified for methods, generic instantiations
+	// resolved to their origin. It is the vocabulary a trust file is written in.
+	//
+	// Absent for loops, goroutines, interface dispatch and function values —
+	// and that absence is the signal that no trust-file entry can address this
+	// blocker. Detail is prose for humans and is never a substitute: the two
+	// render a callee differently. Added in schema 1.3.0.
+	Callee string `json:"callee,omitempty"`
 }
 
 // BudgetJSON is a declared budget and its verdict. Verdict vocabulary:

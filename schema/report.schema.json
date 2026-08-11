@@ -135,7 +135,11 @@
         },
         "detail": { "type": "string", "description": "Human-readable description. Presentation text — never dispatch on it." },
         "file": { "type": "string", "description": "Module-relative position of the blocker, when known." },
-        "line": { "type": "integer" }
+        "line": { "type": "integer" },
+        "callee": {
+          "type": "string",
+          "description": "Cost-table key of the blocking callee: package-qualified, receiver-qualified for methods, generic instantiations resolved to their origin. This is the vocabulary a trust file is written in, and it is NOT a parse of detail — the two render a callee differently. Present only for call and defer causes with a static callee; ABSENT for loops, goroutines, interface dispatch and function values, and that absence is the signal that no trust-file entry can address this blocker. Added in schema 1.3.0."
+        }
       }
     },
     "budget": {

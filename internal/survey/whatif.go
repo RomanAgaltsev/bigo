@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/RomanAgaltsev/bigo/internal/assume"
+	"github.com/RomanAgaltsev/bigo/internal/frontier"
 	"github.com/RomanAgaltsev/bigo/internal/report"
 )
 
@@ -115,13 +116,13 @@ func whatifKey(f report.Function) string {
 func compareDocs(base, cand report.Document, isGen func(string) bool) (grad, gradHand int, blocked string) {
 	bm := make(map[string]report.Function, len(base.Functions))
 	for _, f := range base.Functions {
-		if firstParty(f.Package, base.Module) {
+		if frontier.FirstParty(f.Package, base.Module) {
 			bm[whatifKey(f)] = f
 		}
 	}
 	seen, unattributed := 0, 0
 	for _, f := range cand.Functions {
-		if !firstParty(f.Package, cand.Module) {
+		if !frontier.FirstParty(f.Package, cand.Module) {
 			continue
 		}
 		bf, ok := bm[whatifKey(f)]
@@ -202,7 +203,7 @@ func RunWhatIf(cfg Config, wc WhatIfConfig, sets map[string]*assume.Set, version
 		measuredTargets++
 		isGen := newGeneratedDetector(tc.Path).isGenerated
 		for _, f := range base.Functions {
-			if firstParty(f.Package, base.Module) {
+			if frontier.FirstParty(f.Package, base.Module) {
 				r.BaselineFunctions++
 				if !f.Time.Top {
 					r.BaselineBounded++

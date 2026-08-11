@@ -21,8 +21,8 @@ func TestCollectWithAssumptions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if doc.SchemaVersion != "1.2.0" {
-		t.Errorf("schema = %s, want 1.2.0", doc.SchemaVersion)
+	if doc.SchemaVersion != "1.3.0" {
+		t.Errorf("schema = %s, want 1.3.0", doc.SchemaVersion)
 	}
 	byName := map[string]Function{}
 	for _, f := range doc.Functions {
@@ -192,5 +192,47 @@ func TestCrossPackageParamSummaryTaint(t *testing.T) {
 			t.Errorf("%s provenance = %q, want %q — taint must not depend on which consumer ran first",
 				name, f.Provenance, ProvenanceTainted)
 		}
+	}
+}
+
+// TestCauseCarriesCalleeKey pins schema 1.3.0's callee field. Without it
+// `bigo trust init` would have to parse the human cause sentence to name a
+// trust key, which the near-frontier design forbids: that parser was written
+// once, during the fmt probe, and got it wrong.
+//
+// The ABSENCE of the field is equally load-bearing — see the interface case
+// below. CalleeKey fails exactly for interface dispatch and function values,
+// which are exactly the blockers a trust file cannot express, so the generator
+// filters on presence and needs no second list of what is inexpressible.
+func TestCauseCarriesCalleeKey(t *testing.T) {
+	doc, err := Collect("testdata/trustinit", nil, Options{Version: "test", Now: fixedNow})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if doc.SchemaVersion != "1.3.0" {
+		t.Errorf("schema_version = %q, want 1.3.0", doc.SchemaVersion)
+	}
+	byName := map[string]Function{}
+	for _, f := range doc.Functions {
+		byName[f.Func] = f
+	}
+
+	// A static call to an unpriced stdlib function: the key is nameable.
+	static := byName["BlockedByStatic"]
+	if len(static.Causes) == 0 {
+		t.Fatal("BlockedByStatic has no causes")
+	}
+	if got := static.Causes[0].Callee; got != "os.Getenv" {
+		t.Errorf("callee = %q, want %q", got, "os.Getenv")
+	}
+
+	// An interface method call: no static callee, so no key, so no trust entry
+	// is possible and the field must be absent.
+	iface := byName["BlockedByInterface"]
+	if len(iface.Causes) == 0 {
+		t.Fatal("BlockedByInterface has no causes")
+	}
+	if got := iface.Causes[0].Callee; got != "" {
+		t.Errorf("callee = %q, want empty — an interface method cannot be keyed", got)
 	}
 }

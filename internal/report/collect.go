@@ -201,7 +201,7 @@ func (l *Loaded) Document(opts Options) (Document, error) {
 			}
 			if inferred.IsTop() {
 				for _, c := range causes {
-					cj := CauseJSON{Kind: c.Kind.String(), Detail: c.What}
+					cj := CauseJSON{Kind: c.Kind.String(), Detail: c.What, Callee: c.Callee}
 					if c.Pos.IsValid() {
 						cp := p.Fset.Position(c.Pos)
 						cj.File = relPath(root, cp.Filename)

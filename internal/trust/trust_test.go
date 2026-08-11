@@ -1,0 +1,128 @@
+package trust
+
+import (
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	"github.com/RomanAgaltsev/bigo/internal/assume"
+)
+
+// TestTrustInitRanksByGraduationCount: the number beside each key is the count
+// of the user's functions that key ALONE unblocks — not call sites. This is
+// ROADMAP §1's most-repeated principle at the point a user reads a number:
+// fmt was 8,367 sites, 744 sole-blocker functions, 298 truthfully priceable.
+func TestTrustInitRanksByGraduationCount(t *testing.T) {
+	out, err := trustInit("../report/testdata/trustinit")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out, "os.Getenv") {
+		t.Errorf("output does not offer os.Getenv:\n%s", out)
+	}
+	if !strings.Contains(out, "2 of your functions") {
+		t.Errorf("output does not report the graduation count of 2:\n%s", out)
+	}
+}
+
+// TestTrustInitOmitsUnkeyableBlockers: an interface method cannot be named in a
+// trust file, so it must not be offered. The generator filters on the presence
+// of the callee key rather than on a hand-maintained list.
+func TestTrustInitOmitsUnkeyableBlockers(t *testing.T) {
+	out, err := trustInit("../report/testdata/trustinit")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(out, ").Read") {
+		t.Errorf("output offers an interface method, which no trust file can express:\n%s", out)
+	}
+}
+
+// TestTrustInitProposesNoBound: bigo suggests KEYS. A tool that guessed bounds
+// would be inventing the thing it exists to check, so the placeholder must not
+// parse if someone uncomments a line without editing it.
+func TestTrustInitProposesNoBound(t *testing.T) {
+	out, err := trustInit("../report/testdata/trustinit")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out, "O(...)") {
+		t.Fatalf("no placeholder in output:\n%s", out)
+	}
+	if _, err := assume.ParseText("os.Getenv O(...)\n"); err == nil {
+		t.Error("the placeholder parses as a bound; it must fail loudly if left unedited")
+	}
+}
+
+// TestTrustInitRoundTrips is the property that stops the generator ever
+// emitting something its own loader rejects: uncomment everything, fill in any
+// bound, and the result must parse.
+func TestTrustInitRoundTrips(t *testing.T) {
+	out, err := trustInit("../report/testdata/trustinit")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var filled []string
+	for _, line := range strings.Split(out, "\n") {
+		rest, ok := strings.CutPrefix(line, "# ")
+		if !ok || !strings.Contains(rest, "O(...)") {
+			continue
+		}
+		filled = append(filled, strings.Replace(rest, "O(...)", "O(1)", 1))
+	}
+	if len(filled) == 0 {
+		t.Fatal("no candidate lines found to round-trip")
+	}
+	if _, err := assume.ParseText(strings.Join(filled, "\n") + "\n"); err != nil {
+		t.Errorf("generated file does not round-trip: %v\ninput:\n%s", err, strings.Join(filled, "\n"))
+	}
+}
+
+// TestTrustInitIsDeterministic: two runs over one module are byte-identical, so
+// a regenerated file produces a reviewable diff rather than noise.
+func TestTrustInitIsDeterministic(t *testing.T) {
+	a, err := trustInit("../report/testdata/trustinit")
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, err := trustInit("../report/testdata/trustinit")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if a != b {
+		t.Error("two runs differ")
+	}
+}
+
+// TestInitMainRefusesToClobber: a trust file is hand-curated and carries the
+// justifications someone reasoned out. Regenerating over it would destroy
+// exactly the part that took thought, so overwriting needs -force.
+func TestInitMainRefusesToClobber(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "bigo.trust")
+	const curated = "# os.Getenv is O(1): it reads a preparsed environ slice.\nos.Getenv O(1)\n"
+	if err := os.WriteFile(path, []byte(curated), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if code := InitMain([]string{"-C", "../report/testdata/trustinit", "-o", path}); code != 1 {
+		t.Errorf("exit = %d, want 1 — an existing file must not be clobbered", code)
+	}
+	got, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(got) != curated {
+		t.Error("the curated file was overwritten")
+	}
+	if code := InitMain([]string{"-C", "../report/testdata/trustinit", "-o", path, "-force"}); code != 0 {
+		t.Errorf("exit = %d with -force, want 0", code)
+	}
+	got, err = os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(got) == curated {
+		t.Error("-force did not overwrite")
+	}
+}

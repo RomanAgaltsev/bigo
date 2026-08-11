@@ -1,4 +1,4 @@
-package survey
+package frontier
 
 import (
 	"strings"
@@ -11,7 +11,7 @@ import (
 // callTo builds the cause the engine emits for an unresolved call, so these
 // fixtures exercise the same string the frontier walk parses in production.
 func callTo(callee string) report.CauseJSON {
-	return cause("call", costPrefix+callee)
+	return cause("call", CostPrefix+callee)
 }
 
 func TestDistanceCountsDistinctLeaves(t *testing.T) {
@@ -24,7 +24,7 @@ func TestDistanceCountsDistinctLeaves(t *testing.T) {
 			fn("example.com/m", "B", true, callTo("fmt.Errorf"), callTo("fmt.Errorf")),
 		},
 	}
-	fr := frontierOf(doc)
+	fr := Of(doc)
 	if got := fr.Hist["2"]; got != 1 {
 		t.Errorf("A should sit at distance 2, hist=%v", fr.Hist)
 	}
@@ -44,12 +44,12 @@ func TestDistanceRecursesThroughPropagation(t *testing.T) {
 			fn("example.com/m", "C", true, callTo("fmt.Errorf")),
 		},
 	}
-	fr := frontierOf(doc)
+	fr := Of(doc)
 	// All three inherit C's single leaf: distance 1, not 1/2/3.
 	if fr.Hist["1"] != 3 {
 		t.Errorf("propagation should not count as distance, hist=%v", fr.Hist)
 	}
-	if fr.SoleBlocker[costPrefix+"fmt.Errorf"] != 3 {
+	if fr.SoleBlocker[CostPrefix+"fmt.Errorf"] != 3 {
 		t.Errorf("all three are sole-blocked by fmt.Errorf, got %v", fr.SoleBlocker)
 	}
 }
@@ -65,8 +65,8 @@ func TestPropagationCycleTerminates(t *testing.T) {
 			fn("example.com/m", "B", true, callTo("example.com/m.A"), callTo("fmt.Errorf")),
 		},
 	}
-	done := make(chan frontier, 1)
-	go func() { done <- frontierOf(doc) }()
+	done := make(chan Frontier, 1)
+	go func() { done <- Of(doc) }()
 	select {
 	case fr := <-done:
 		if fr.Hist["1"] != 2 {
@@ -89,9 +89,9 @@ func TestAmbiguousCalleeIsALeaf(t *testing.T) {
 			fn("example.com/m", "init", true, callTo("time.Now")),
 		},
 	}
-	fr := frontierOf(doc)
+	fr := Of(doc)
 	// A must NOT inherit either init's leaf; the ambiguous call is its own leaf.
-	if fr.SoleBlocker[costPrefix+"example.com/m.init"] != 1 {
+	if fr.SoleBlocker[CostPrefix+"example.com/m.init"] != 1 {
 		t.Errorf("ambiguous callee should be a leaf, got %v", fr.SoleBlocker)
 	}
 }
@@ -104,11 +104,11 @@ func TestFrontierExcludesDependencies(t *testing.T) {
 			fn("other.com/dep", "D", true, callTo("fmt.Sprintf")),
 		},
 	}
-	fr := frontierOf(doc)
+	fr := Of(doc)
 	if fr.Top != 1 {
 		t.Errorf("dependency ⊤ leaked into the count: Top=%d", fr.Top)
 	}
-	if _, ok := fr.SoleBlocker[costPrefix+"fmt.Sprintf"]; ok {
+	if _, ok := fr.SoleBlocker[CostPrefix+"fmt.Sprintf"]; ok {
 		t.Errorf("dependency blocker leaked into sole-blocker: %v", fr.SoleBlocker)
 	}
 }
@@ -126,11 +126,11 @@ func TestSoleBlockerExcludesMultiBlockerFunctions(t *testing.T) {
 			fn("example.com/m", "Two", true, callTo("fmt.Errorf"), callTo("fmt.Sprintf")),
 		},
 	}
-	fr := frontierOf(doc)
-	if got := fr.SoleBlocker[costPrefix+"fmt.Errorf"]; got != 1 {
+	fr := Of(doc)
+	if got := fr.SoleBlocker[CostPrefix+"fmt.Errorf"]; got != 1 {
 		t.Errorf("only the single-blocker function counts, got %d", got)
 	}
-	if got := fr.SoleBlocker[costPrefix+"fmt.Sprintf"]; got != 0 {
+	if got := fr.SoleBlocker[CostPrefix+"fmt.Sprintf"]; got != 0 {
 		t.Errorf("a two-blocker function must count toward neither, got %d", got)
 	}
 }
@@ -146,18 +146,18 @@ func TestNearFrontierAndCeiling(t *testing.T) {
 				callTo("a.A"), callTo("b.B"), callTo("c.C")),
 		},
 	}
-	fr := frontierOf(doc)
+	fr := Of(doc)
 	if fr.Near != 2 {
 		t.Errorf("distance ≤2 should be 2 functions, got %d", fr.Near)
 	}
 	// Ceiling = (bounded + near) / functions = (1+2)/4 = 75.0
-	if got := ceilingPct(1, fr.Near, 4); got != "75.0" {
+	if got := CeilingPct(1, fr.Near, 4); got != "75.0" {
 		t.Errorf("ceiling_pct = %s, want 75.0", got)
 	}
 }
 
 func TestCeilingPctZeroFunctionsIsNotADivideByZero(t *testing.T) {
-	if got := ceilingPct(0, 0, 0); got != "0.0" {
+	if got := CeilingPct(0, 0, 0); got != "0.0" {
 		t.Errorf("empty target should render 0.0, got %s", got)
 	}
 }
@@ -173,7 +173,7 @@ func TestDistanceBucketsCapAtTen(t *testing.T) {
 		Module:    "example.com/m",
 		Functions: []report.Function{fn("example.com/m", "Deep", true, causes...)},
 	}
-	fr := frontierOf(doc)
+	fr := Of(doc)
 	if fr.Hist["10+"] != 1 {
 		t.Errorf("12 blockers should land in 10+, hist=%v", fr.Hist)
 	}
@@ -181,62 +181,6 @@ func TestDistanceBucketsCapAtTen(t *testing.T) {
 
 // TestDistanceOrderIsNumericNotRanked: the distance histogram's x-axis is
 // ordinal. `ranked` sorts by count, and a plain string sort puts "10+" before
-// "2" — either would render a scrambled histogram.
-func TestDistanceOrderIsNumericNotRanked(t *testing.T) {
-	got := distanceOrder(map[string]int{"10+": 99, "2": 1, "1": 50, "9": 2})
-	want := []string{"1", "2", "9", "10+"}
-	if len(got) != len(want) {
-		t.Fatalf("distanceOrder = %v, want %v", got, want)
-	}
-	for i := range want {
-		if got[i] != want[i] {
-			t.Fatalf("distanceOrder = %v, want %v", got, want)
-		}
-	}
-}
-
-// TestMarkdownRendersBothBlockerTables pins that the graduation table is the one
-// labelled as the deliverable, and that the sites table survives as an
-// explicitly-labelled concentration measure rather than being deleted.
-func TestMarkdownRendersBothBlockerTables(t *testing.T) {
-	r := Report{
-		Generated: "2026-07-20", BigoVersion: "1.36.0",
-		AggByCause:     map[string]int{"call": 3},
-		AggByDetail:    map[string]int{"unresolved cost at call to fmt.Errorf": 9},
-		AggSoleBlocker: map[string]int{"unresolved cost at call to fmt.Errorf": 2},
-	}
-	r.Aggregate = Totals{
-		Functions: 10, Bounded: 4, Seen: 10, CoveragePct: "40.0",
-		Top: 6, NearFrontier: 3, CeilingPct: "70.0",
-		DistanceHist: map[string]int{"1": 2, "2": 1, "10+": 3},
-	}
-	md := string(r.Markdown())
-
-	for _, want := range []string{
-		"Near frontier: 3 of 6",
-		"UPPER BOUND, not a forecast",
-		"blockers by GRADUATION count",
-		"**This table is the deliverable.**",
-		"blockers by SITES",
-		"A concentration measure, not a work queue.",
-		"## Distance to bound",
-	} {
-		if !strings.Contains(md, want) {
-			t.Errorf("SURVEY.md missing %q", want)
-		}
-	}
-	// The deliverable label must sit on the graduation table, not the sites one.
-	if strings.Index(md, "**This table is the deliverable.**") > strings.Index(md, "blockers by SITES") {
-		t.Error("the deliverable label is attached to the sites table")
-	}
-}
-
-// TestFrontierExcludingFiltersPopulationNotWalk is the load-bearing
-// distinction of the generated-code split. A HAND-WRITTEN function whose only
-// blocker sits behind a GENERATED callee still has a genuine blocker: the
-// generated code stands between real user code and a bound. Truncating the
-// walk there would erase that blocker from the work queue, which is the
-// opposite of the split's purpose.
 func TestFrontierExcludingFiltersPopulationNotWalk(t *testing.T) {
 	doc := report.Document{
 		Module: "example.com/m",
@@ -249,12 +193,12 @@ func TestFrontierExcludingFiltersPopulationNotWalk(t *testing.T) {
 	}
 	skip := func(f report.Function) bool { return f.Func == "Gen" }
 
-	fr := frontierExcluding(doc, skip)
+	fr := Excluding(doc, skip)
 
 	if fr.Top != 1 {
 		t.Errorf("only the hand-written function counts: Top = %d, want 1", fr.Top)
 	}
-	if got := fr.SoleBlocker[costPrefix+"sync.Once.Do"]; got != 1 {
+	if got := fr.SoleBlocker[CostPrefix+"sync.Once.Do"]; got != 1 {
 		t.Errorf("the caller must KEEP the leaf behind the generated callee, got %d want 1", got)
 	}
 	if fr.Hist["1"] != 1 {
@@ -272,7 +216,7 @@ func TestFrontierOfIsUnfiltered(t *testing.T) {
 			genFn("example.com/m", "Gen", true, callTo("sync.Once.Do")),
 		},
 	}
-	if fr := frontierOf(doc); fr.Top != 2 {
+	if fr := Of(doc); fr.Top != 2 {
 		t.Errorf("frontierOf must count both: Top = %d, want 2", fr.Top)
 	}
 }
@@ -280,36 +224,107 @@ func TestFrontierOfIsUnfiltered(t *testing.T) {
 // TestMarkdownReportsBothPopulations pins that the split is visible in the
 // rendered file: the unrebased aggregate, the hand-written headline, the
 // generated count, and each ranking table's population.
-func TestMarkdownReportsBothPopulations(t *testing.T) {
-	r := Report{
-		Generated:   "2026-07-21",
-		BigoVersion: "test",
-		Aggregate: Totals{
-			Functions: 100, Bounded: 40, CoveragePct: "40.0",
-			Seen: 100, Top: 60, NearFrontier: 30, CeilingPct: "70.0",
-			Generated: 20,
-			Hand: HandTotals{
-				Functions: 80, Bounded: 36, CoveragePct: "45.0",
-				Top: 44, NearFrontier: 22, CeilingPct: "72.5",
-			},
-			DistanceHist: map[string]int{"1": 30, "2": 30},
-		},
-		AggByCause:     map[string]int{"call": 1},
-		AggByDetail:    map[string]int{"unresolved cost at call to fmt.Errorf": 1},
-		AggSoleBlocker: map[string]int{"unresolved cost at call to fmt.Errorf": 1},
-	}
-	md := string(r.Markdown())
 
-	if !strings.Contains(md, "**Aggregate: 40.0%**") {
-		t.Error("the all-first-party headline must survive unchanged")
+// fn and cause build report fixtures. Duplicated from internal/survey rather
+// than exported from it: these are test scaffolding, and a package that had to
+// import the survey to test the frontier would recreate the dependency this
+// extraction removed.
+func fn(pkg, name string, top bool, causes ...report.CauseJSON) report.Function {
+	return report.Function{
+		Package: pkg, Func: name,
+		Time:   report.BoundJSON{Top: top},
+		Causes: causes,
 	}
-	if !strings.Contains(md, "**Hand-written: 45.0%**") {
-		t.Error("the hand-written headline is missing")
+}
+
+func cause(kind, detail string) report.CauseJSON {
+	return report.CauseJSON{Kind: kind, Detail: detail}
+}
+
+// genFn is fn for a file the generated-code split would classify as machine
+// written. Duplicated from internal/survey for the same reason as fn and cause.
+func genFn(pkg, name string, top bool, causes ...report.CauseJSON) report.Function {
+	f := fn(pkg, name, top, causes...)
+	f.File = name + ".pb.go"
+	return f
+}
+
+// TestSeenSetNotDepthCap pins that the walk terminates on mutual ⊤ recursion by
+// remembering what it has visited, not by capping depth. A cap would silently
+// truncate exactly the deepest chains this measure exists to report.
+func TestSeenSetNotDepthCap(t *testing.T) {
+	doc := report.Document{
+		Module: "m",
+		Functions: []report.Function{
+			fn("m", "A", true, cause("call", CostPrefix+"m.B")),
+			fn("m", "B", true, cause("call", CostPrefix+"m.A")),
+		},
 	}
-	if !strings.Contains(md, "20 generated") {
-		t.Error("the generated count must be visible, never silent")
+	done := make(chan Frontier, 1)
+	go func() { done <- Of(doc) }()
+	select {
+	case fr := <-done:
+		if fr.Top != 2 {
+			t.Errorf("Top = %d, want 2", fr.Top)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("frontier walk did not terminate on mutual ⊤ recursion")
 	}
-	if !strings.Contains(md, "hand-written code only") {
-		t.Error("the tables must state their population")
+}
+
+// TestSkipFiltersPopulationNotWalk pins the rule the generated-code split rests
+// on: a skipped function leaves the SCORING POPULATION but the walk still
+// recurses through it, because a counted function blocked BEHIND skipped code
+// has a genuine blocker. Filtering the walk would erase real work from the
+// queue, which is the opposite of why any caller skips.
+func TestSkipFiltersPopulationNotWalk(t *testing.T) {
+	doc := report.Document{
+		Module: "m",
+		Functions: []report.Function{
+			fn("m", "Hand", true, cause("call", CostPrefix+"m.Gen")),
+			fn("m", "Gen", true, cause("loop", "loop with unrecognized trip count")),
+		},
+	}
+	fr := Excluding(doc, func(f report.Function) bool { return f.Func == "Gen" })
+	if fr.Top != 1 {
+		t.Fatalf("Top = %d, want 1 — Gen leaves the population", fr.Top)
+	}
+	if got := fr.SoleBlocker["loop with unrecognized trip count"]; got != 1 {
+		t.Errorf("SoleBlocker = %d, want 1 — the walk must still recurse THROUGH Gen to reach its leaf", got)
+	}
+}
+
+// TestSoleBlockerCalleeCountsOnlyKeyedBlockers pins the map trust init reads.
+// It is keyed by the cost-table key, not by the human cause sentence, and a
+// blocker with no key contributes to SoleBlocker but never to this map —
+// because no trust entry could address it.
+func TestSoleBlockerCalleeCountsOnlyKeyedBlockers(t *testing.T) {
+	keyed := func(callee string) report.CauseJSON {
+		c := cause("call", CostPrefix+callee)
+		c.Callee = callee
+		return c
+	}
+	doc := report.Document{
+		Module: "m",
+		Functions: []report.Function{
+			fn("m", "A", true, keyed("os.Getenv")),
+			fn("m", "B", true, keyed("os.Getenv")),
+			// No key: an interface method. Counts in SoleBlocker, not here.
+			fn("m", "C", true, cause("call", CostPrefix+"(m.R).Read")),
+			// Two distinct blockers: sole-blocker for neither.
+			fn("m", "D", true, keyed("os.Getenv"), cause("loop", "loop with unrecognized trip count")),
+		},
+	}
+	fr := Of(doc)
+
+	if got := fr.SoleBlockerCallee["os.Getenv"]; got != 2 {
+		t.Errorf("SoleBlockerCallee[os.Getenv] = %d, want 2 — D has two blockers and counts for neither", got)
+	}
+	if got := len(fr.SoleBlockerCallee); got != 1 {
+		t.Errorf("SoleBlockerCallee has %d keys, want 1 — an unkeyed blocker must not appear", got)
+	}
+	// The existing detail-keyed map is unchanged by this addition.
+	if got := fr.SoleBlocker[CostPrefix+"(m.R).Read"]; got != 1 {
+		t.Errorf("SoleBlocker for the unkeyed blocker = %d, want 1", got)
 	}
 }

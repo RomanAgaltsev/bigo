@@ -19,8 +19,21 @@ func Main(version string, args []string) int {
 	dir := fs.String("C", ".", "analyze the module in this directory")
 	out := fs.String("o", "", "write the report to this file instead of stdout")
 	assumeFile := fs.String("assume", "", "load external assumptions from this file (path is process-relative, not -C-relative)")
+	trustFile := fs.String("trust", "", "load a trust file: bounds you assert for code you cannot edit (path is process-relative, not -C-relative)")
 	if err := fs.Parse(args); err != nil {
 		return 2
+	}
+	// -trust and -assume are one mechanism with two intents: an assumption is
+	// hypothetical (the what-if harness asks what a pricing WOULD buy), a trust
+	// entry is a claim the user stands behind and wants enforced. Unioning them
+	// silently would erase exactly that distinction, so passing both is a usage
+	// error rather than a merge.
+	if *trustFile != "" && *assumeFile != "" {
+		fmt.Fprintln(os.Stderr, "bigo json: -trust and -assume are the same mechanism with different intent; pass one")
+		return 2
+	}
+	if *trustFile != "" {
+		*assumeFile = *trustFile
 	}
 	opts := Options{Version: version}
 	if *assumeFile != "" {
