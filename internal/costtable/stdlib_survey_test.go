@@ -452,3 +452,60 @@ func f(r rune) bool { return unicode.Is(unicode.Latin, r) }`)
 		t.Errorf("cost = %q, want unverifiable — the cost depends on the range table", got)
 	}
 }
+
+// TestBlindRepoEntries covers the lane found by running `bigo trust init`
+// against repositories the survey has never analysed — the same discovery
+// method that produced the first-contact lane, applied to an unseen population.
+func TestBlindRepoEntries(t *testing.T) {
+	tests := []struct{ name, src, want string }{
+		{"bits.Len64", `package input
+import "math/bits"
+func f(x uint64) int { return bits.Len64(x) }`, "O(1)"},
+
+		{"bits.OnesCount64", `package input
+import "math/bits"
+func f(x uint64) int { return bits.OnesCount64(x) }`, "O(1)"},
+
+		// Div64 has two real correction loops, bounded by the word width.
+		{"bits.Div64", `package input
+import "math/bits"
+func f(hi, lo, y uint64) (uint64, uint64) { return bits.Div64(hi, lo, y) }`, "O(1)"},
+
+		{"list.New", `package input
+import "container/list"
+func f() *list.List { return list.New() }`, "O(1)"},
+
+		{"time.Time.UTC", `package input
+import "time"
+func f(t time.Time) time.Time { return t.UTC() }`, "O(1)"},
+
+		{"time.Time.Before", `package input
+import "time"
+func f(a, b time.Time) bool { return a.Before(b) }`, "O(1)"},
+
+		{"time.Duration.Seconds", `package input
+import "time"
+func f(d time.Duration) float64 { return d.Seconds() }`, "O(1)"},
+
+		// maps.Copy ranges over SRC, so the bound names argument 1.
+		{"maps.Copy", `package input
+import "maps"
+func f(dst, src map[string]int) { maps.Copy(dst, src) }`, "O(len(src))"},
+
+		{"maps.Clone", `package input
+import "maps"
+func f(m map[string]int) map[string]int { return maps.Clone(m) }`, "O(len(m))"},
+
+		{"strings.Compare", `package input
+import "strings"
+func f(a, b string) int { return strings.Compare(a, b) }`, "O(len(a))"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, ok := costOf(t, tt.src)
+			if !ok || got != tt.want {
+				t.Errorf("cost = %q (priced=%v), want %q", got, ok, tt.want)
+			}
+		})
+	}
+}

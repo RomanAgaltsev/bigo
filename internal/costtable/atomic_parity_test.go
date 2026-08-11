@@ -102,3 +102,45 @@ func sortedKeys(m map[string]bool) []string {
 	sort.Strings(out)
 	return out
 }
+
+// TestMathBitsMatchesStdlib pins the math/bits key set against the real
+// package, for the same reason the sync/atomic parity test exists: a dead key
+// never fires and Priced simply answers false, so nothing else would notice,
+// and a function the stdlib adds would go silently unpriced.
+//
+// The whole package is priced, so unlike atomic there are no declared
+// refusals — every exported function takes fixed-width integers.
+func TestMathBitsMatchesStdlib(t *testing.T) {
+	pkgs, err := packages.Load(&packages.Config{
+		Mode: packages.NeedTypes | packages.NeedName,
+	}, "math/bits")
+	if err != nil {
+		t.Fatalf("load math/bits: %v", err)
+	}
+	if len(pkgs) != 1 || pkgs[0].Types == nil {
+		t.Fatalf("want exactly one typed package, got %d", len(pkgs))
+	}
+	want := map[string]bool{}
+	scope := pkgs[0].Types.Scope()
+	for _, name := range scope.Names() {
+		if o, ok := scope.Lookup(name).(*types.Func); ok && o.Exported() {
+			want["math/bits."+o.Name()] = true
+		}
+	}
+	got := map[string]bool{}
+	for key := range stdlib {
+		if strings.HasPrefix(key, "math/bits.") {
+			got[key] = true
+		}
+	}
+	for _, k := range sortedKeys(want) {
+		if !got[k] {
+			t.Errorf("stdlib exports %s and the table does not price it", k)
+		}
+	}
+	for _, k := range sortedKeys(got) {
+		if !want[k] {
+			t.Errorf("table prices %s, which the stdlib does not export — a dead key never fires", k)
+		}
+	}
+}
