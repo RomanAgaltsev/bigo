@@ -1,6 +1,6 @@
 {
   "generated": "2026-08-11",
-  "bigo_version": "1.41.0",
+  "bigo_version": "1.42.0",
   "targets": [
     {
       "name": "grpc-go",

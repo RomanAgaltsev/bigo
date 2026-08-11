@@ -7,7 +7,7 @@ contents and CI never runs it. Its targets are repositories that exist on one
 machine at whatever commit they happen to sit, so these numbers are a record
 of one run — compare across runs only via the per-target commit below.
 
-Run 2026-08-11 with bigo 1.41.0 — the last RELEASED version at run time. A run made before its own release stamps the previous tag, so compare runs by the per-target commit below, never by this line.
+Run 2026-08-11 with bigo 1.42.0 — the last RELEASED version at run time. A run made before its own release stamps the previous tag, so compare runs by the per-target commit below, never by this line.
 
 **Aggregate: 32.1%** — 10743 of 33504 first-party functions bounded.
 
