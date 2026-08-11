@@ -9,16 +9,16 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-// atomicValueMethods are the deliberate refusals: atomic.Value's Store, Swap
-// and CompareAndSwap carry a spin loop for the first-store protocol, and Load
-// is excluded with them pending a measurement (2026-08-11 review F3, a
-// standing debt row). Listing them HERE rather than omitting them silently is
-// the point: the parity check below then has no unexplained gap, and dropping
-// one from this list is how the F3 fix will announce itself.
+// atomicValueMethods is the deliberate refusal, now down to one. Load, Store
+// and Swap were priced in the F3 fix; CompareAndSwap stays out because it
+// compares the stored value with a runtime interface equality check, which
+// costs O(len) on a string- or array-bearing dynamic type — not a contention
+// question and not soundly priceable. See the entry comment in costtable.go.
+//
+// Listing it HERE rather than omitting it silently is the point: the parity
+// check below then has no unexplained gap, and shrinking this list is how a
+// change of mind about a refusal announces itself.
 var atomicValueMethods = map[string]bool{
-	"(*sync/atomic.Value).Load":           true,
-	"(*sync/atomic.Value).Store":          true,
-	"(*sync/atomic.Value).Swap":           true,
 	"(*sync/atomic.Value).CompareAndSwap": true,
 }
 

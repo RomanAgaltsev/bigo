@@ -252,15 +252,16 @@ func TestAtomicAndPoolRefusalsStayTop(t *testing.T) {
 import "sync"
 func f(p *sync.Pool) any { return p.Get() }`},
 
-		// Store carries a spin loop for the first-store protocol; the family
-		// argument ("no loops in the typed API") deliberately excludes it.
-		{"atomic.Value.Store", `package input
+		// (*atomic.Value).CompareAndSwap compares the stored value with `i !=
+		// old`, a RUNTIME INTERFACE EQUALITY check, and the stdlib comment says
+		// that is deliberate: "This allows value types to be compared". If the
+		// dynamic type contains a string, that comparison is O(len(string)) and
+		// no length is nameable at the call site — the same shape as min/max on
+		// strings (v1.30.1). This is NOT a contention question, and it is the
+		// one member of Value that must never be priced (2026-08-11 review F3).
+		{"atomic.Value.CompareAndSwap", `package input
 import "sync/atomic"
-func f(v *atomic.Value, x any) { v.Store(x) }`},
-
-		{"atomic.Value.Load", `package input
-import "sync/atomic"
-func f(v *atomic.Value) any { return v.Load() }`},
+func f(v *atomic.Value, a, b any) bool { return v.CompareAndSwap(a, b) }`},
 
 		// Cost IS the callback's; it needs the parametric table, which cannot
 		// key a method today.
@@ -321,6 +322,42 @@ import (
 	"unsafe"
 )
 func f(p *unsafe.Pointer, v unsafe.Pointer) unsafe.Pointer { return atomic.SwapPointer(p, v) }`},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, ok := costOf(t, tt.src)
+			if !ok || got != "O(1)" {
+				t.Errorf("cost = %q (priced=%v), want O(1)", got, ok)
+			}
+		})
+	}
+}
+
+// TestAtomicValuePriced is the positive-control half of review F3. Load, Store
+// and Swap were refused with the WHOLE TYPE for a reason that describes only
+// Store's loop, and Load has no loop at all — a precondition stricter than
+// soundness requires is a silent capability loss (the C5 lesson), and this one
+// had been pinned, so the pin preserved the loss.
+//
+// Store and Swap are priced under the SAME doctrine the sync block above
+// already applies to (*sync.Mutex).Lock, whose lockSlow also spins: their loops
+// continue only when another goroutine won the first-store CAS or is mid first
+// store, so no iteration count depends on any input size.
+//
+// CompareAndSwap is deliberately NOT here — see the refusal test above.
+func TestAtomicValuePriced(t *testing.T) {
+	tests := []struct{ name, src string }{
+		{"Value.Load", `package input
+import "sync/atomic"
+func f(v *atomic.Value) any { return v.Load() }`},
+
+		{"Value.Store", `package input
+import "sync/atomic"
+func f(v *atomic.Value, x any) { v.Store(x) }`},
+
+		{"Value.Swap", `package input
+import "sync/atomic"
+func f(v *atomic.Value, x any) any { return v.Swap(x) }`},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
