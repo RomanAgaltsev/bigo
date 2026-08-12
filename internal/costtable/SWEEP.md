@@ -140,10 +140,26 @@ entries.
 | `slices.BinarySearch` | fine — `O(log n)` comparisons, same axiom |
 | `strings.Repeat` | already `prodOf(0, 1)` — the entry that shows the table always knew this shape |
 
-## E — element content: DECIDED, unchanged, now written down
+## E — element content: DECIDED, unchanged, and SETTLED by measurement
 
-`slices.Contains`, `slices.Index`, `slices.Max`, `slices.Min`, `slices.Equal`,
-`sort.Strings`, `slices.Sort`, `slices.BinarySearch`, `maps.Clone`, `maps.Copy`.
+**Corrected 2026-08-12.** This section originally listed ten entries. Reading
+the implementations while building the type-directed probe's watch set showed
+**it over-listed by four**. The class is operations that **compare or hash** an
+element, never operations that **move** one:
+
+| Not in the class | Why |
+|---|---|
+| `slices.Clone` | `append(S{}, s...)` copies element-sized **headers**; cloning a `[]string` never touches a byte of any string |
+| `slices.Reverse` | swaps headers |
+| `maps.Clone` | delegates to a runtime clone that copies **buckets without rehashing** — unlike `maps.Copy`, which re-inserts and therefore re-hashes |
+| `copy` builtin | `memmove` over element-sized slots |
+
+`sort.Ints` and `sort.Float64s` are fixed-width by signature and can never be in
+the class either.
+
+**The class, corrected:** `slices.Contains`, `slices.Index`, `slices.Equal`,
+`slices.Max`, `slices.Min`, `slices.Sort`, `slices.SortFunc`,
+`slices.BinarySearch`, `sort.Strings`, `maps.Copy`.
 
 For a `[]string`, each element comparison costs `O(len(element))`, so the true
 cost of `slices.Contains(xs, target)` is `O(len(xs) · len(target))` — and unlike
@@ -171,7 +187,30 @@ being sized**; it does not cover a **separate, nameable argument**. `Trim`'s
 cutset, `Join`'s separator, `Replace`'s replacement and the search family's
 needle are all the second kind.
 
-**Recorded as the open question this decision does not close:** a type-directed
-element cost is the only route to pricing `slices.Contains` over a `[]string`
-honestly *and* keeping `[]int` bounded. Nobody has measured what it would buy.
-It needs a probe with pre-registered bars before it needs a spec.
+**MEASURED 2026-08-12 — the type-directed alternative is a NO-GO and this
+decision is now SETTLED** (`bigo/investigations/2026-08-12-type-directed-element-cost-{thresholds,results}.md`).
+
+Over the twelve survey targets: **205 first-party functions** touch a
+content-dependent entry with a variable-width element type — so the axiom does
+bite, and the Stage 1 bar of 200 passed. **But 65.9% of them are
+INEXPRESSIBLE**, against a Stage 2 bar of under 50%, so the change would correct
+about 70 bounds and **destroy about 135**.
+
+**`sort.Strings` is the whole case, and it is measured at 55 functions.** Its
+signature is `func Strings(x []string)`, so it is variable-width *always* and no
+argument names the content — under a type-directed model it becomes ⊤. A model
+that cannot bound sorting a list of strings is not a better model; it is a more
+literal one, and nobody reading `O(n log n)` there is misled, because that is
+what the literature says and what the canonical corpus pins.
+
+**Reopening requires evidence of a different KIND, not a re-count** — the argsize
+precedent.
+
+**Left open, as a candidate and not a plan:** `Contains`, `Index` and
+`BinarySearch` take the element as a nameable argument, so a product could be
+written for those three alone — 75 functions, no capability loss, since the
+fixed-width case would collapse through the same constant arm
+`productUnlessConst` already uses. **Do not take it on this evidence.** It would
+make bigo stricter about the cheap operation than about the expensive one, and
+the durable finding here is that *a soundness improvement applicable to only
+part of a class can leave the model less coherent than the axiom it replaced.*
