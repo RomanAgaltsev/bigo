@@ -97,6 +97,24 @@ add up and are not a forecast. Only single blockers are listed; a function
 waiting on two keys needs both trusted at once and is not shown. The file is a
 starting point, not an inventory.
 
+**The counts are measured, not predicted.** bigo re-analyses your module with
+each candidate priced and counts what actually became verifiable, so the number
+beside a key is what asserting it delivers rather than what it looks like it
+should. If that pass cannot run, the file says so at the top and the command
+warns on stderr.
+
+**Each count is an upper bound, and only a constant bound reaches it.** The
+probe prices each candidate `O(1)`, which is the best case. If your honest
+bound is in terms of an argument's size, the caller also needs that size to
+resolve at the call site, and often it does not — measured on real
+repositories, a truthful constant delivered 93% of its advertised count while a
+truthful size-dependent one delivered 6%.
+
+**Generated code counts.** Machine-written files in your module are scored like
+any other, so a protobuf- or mock-heavy module can rank a key highly on the
+strength of code nobody reads. Check what a key's callers actually are before
+you spend reasoning on it.
+
 Regenerating over an existing file needs `-force`, because your justifications
 live there.
 
@@ -136,6 +154,16 @@ so an auditor can find every verdict resting on an assertion. Trusted bounds
 satisfy `//bigo:max` budgets — that is the point — and `bigo diff` reports a
 verdict that moved because trust changed as `trust changed`, never as an
 improvement.
+
+**One consequence to know before you wire the CI gate.** `trust changed` is
+neither a regression nor an improvement, so it never fails `-fail-on`. When the
+trust surface differs between base and head, a verdict on code that rests on an
+assertion is reported under that class **instead of** the class it would
+otherwise have had — including a broken budget. A commit that edits the trust
+file *and* makes trusted code asymptotically worse can therefore exit 0. Code
+that does **not** depend on the changed trust still classifies normally, so an
+ordinary regression is never masked by an unrelated trust edit. Review trust-file
+changes as changes to what your gate checks, because that is what they are.
 
 ### What cannot be trusted
 

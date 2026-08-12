@@ -368,20 +368,38 @@ func causeSuffix(h Function) string {
 
 // trustSurfacesDiffer reports whether the two documents were produced under
 // different trust. When they match, provenance plays no role in Diff at all.
+//
+// Compared as key→bound MAPS, by the same helper trustDelta renders from, so
+// the two cannot disagree. They used to: this compared lengths first while
+// trustDelta compared maps, so a document carrying a duplicated key could be
+// called different and then described as "entries reordered", and the pair
+// {A,B} against {A,A} was called EQUAL. bigo's own writer cannot produce a
+// duplicate — assume.parse rejects one at the line that repeats it — but Diff
+// reads documents it did not write, and a comparison that is only correct for
+// well-formed input is one a consumer can surprise (2026-08-12 review, nit).
 func trustSurfacesDiffer(base, head Document) bool {
-	if len(base.Assumptions) != len(head.Assumptions) {
+	b, h := trustMap(base), trustMap(head)
+	if len(b) != len(h) {
 		return true
 	}
-	seen := make(map[string]string, len(base.Assumptions))
-	for _, a := range base.Assumptions {
-		seen[a.Key] = a.Bound
-	}
-	for _, a := range head.Assumptions {
-		if b, ok := seen[a.Key]; !ok || b != a.Bound {
+	for k, bv := range b {
+		if hv, ok := h[k]; !ok || hv != bv {
 			return true
 		}
 	}
 	return false
+}
+
+// trustMap indexes a document's trust surface by key. A repeated key keeps its
+// last bound, which is arbitrary and deliberately so: the input is malformed,
+// and the only property worth guaranteeing is that every reader of the surface
+// resolves it the same way.
+func trustMap(d Document) map[string]string {
+	m := make(map[string]string, len(d.Assumptions))
+	for _, a := range d.Assumptions {
+		m[a.Key] = a.Bound
+	}
+	return m
 }
 
 // trusted reports whether either side of a matched pair rests on an assertion.
@@ -407,14 +425,7 @@ func funcName(f Function) string {
 // trustDelta renders how the trust surface moved, so the warning names the
 // entries rather than merely asserting that something changed.
 func trustDelta(base, head Document) string {
-	b := make(map[string]string, len(base.Assumptions))
-	for _, a := range base.Assumptions {
-		b[a.Key] = a.Bound
-	}
-	h := make(map[string]string, len(head.Assumptions))
-	for _, a := range head.Assumptions {
-		h[a.Key] = a.Bound
-	}
+	b, h := trustMap(base), trustMap(head)
 	var added, removed, changed []string
 	for k, hv := range h {
 		bv, ok := b[k]
@@ -444,7 +455,11 @@ func trustDelta(base, head Document) string {
 		}
 	}
 	if len(parts) == 0 {
-		return "entries reordered"
+		// Unreachable while trustSurfacesDiffer gates this call on the same
+		// maps: equal maps mean no delta. Kept as a fail-visible default rather
+		// than an empty sentence, because the alternative is a warning that
+		// says a surface changed and then names nothing.
+		return "entries differ"
 	}
 	return strings.Join(parts, "; ")
 }
