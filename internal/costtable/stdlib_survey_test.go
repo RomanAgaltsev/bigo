@@ -152,6 +152,47 @@ func f(elems []string) string { return strings.Join(elems, ", ") }`, "O(len(elem
 		{"strings.ReplaceAll const new", `package input
 import "strings"
 func f(s, old string) string { return strings.ReplaceAll(s, old, "-") }`, "O(len(s))"},
+
+		// --- The substring-search family: sweep item C, decided 2026-08-12 ---
+		//
+		// A needle longer than bytealg.MaxLen falls through to IndexRabinKarp,
+		// which verifies every hash match with a full compare against a
+		// compile-time PrimeRK, so collisions are constructible and the worst
+		// case is the product. Below that length the comparison is bounded by a
+		// machine constant and the linear bound is sound.
+		//
+		// The 2026-08-12 review declined to call this a break because the worst
+		// case is adversarial. Priced as the product anyway: the directive is a
+		// WORST-CASE bound, and "holds for typical inputs" is the reasoning
+		// that produced Trim.
+		{"strings.Index", `package input
+import "strings"
+func f(s, sub string) int { return strings.Index(s, sub) }`, "O(len(s) len(sub))"},
+
+		{"strings.Split", `package input
+import "strings"
+func f(s, sep string) []string { return strings.Split(s, sep) }`, "O(len(s) len(sep))"},
+
+		{"bytes.Index", `package input
+import "bytes"
+func f(b, sub []byte) int { return bytes.Index(b, sub) }`, "O(len(b) len(sub))"},
+
+		// POSITIVE CONTROLS. A literal needle is the overwhelming majority of
+		// real calls and keeps the linear bound; without these the decision
+		// would be a coverage loss wearing a soundness argument.
+		{"strings.Contains const needle", `package input
+import "strings"
+func f(s string) bool { return strings.Contains(s, "://") }`, "O(len(s))"},
+
+		{"strings.Split const sep", `package input
+import "strings"
+func f(s string) []string { return strings.Split(s, ",") }`, "O(len(s))"},
+
+		// IndexByte is NOT in the family: a single byte has no length to
+		// multiply, so widening it would be a pure capability loss.
+		{"strings.IndexByte stays linear", `package input
+import "strings"
+func f(s string, c byte) int { return strings.IndexByte(s, c) }`, "O(len(s))"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -452,9 +493,19 @@ func f(b []byte) uint64 { return binary.LittleEndian.Uint64(b) }`, "O(1)"},
 import "encoding/binary"
 func f(b []byte) { binary.BigEndian.PutUint16(b, 7) }`, "O(1)"},
 
+		// AMENDED 2026-08-12 (sweep item C). This pinned O(len(s)) when the
+		// entry was added, on the stated ground that Cut is exactly as sound as
+		// strings.Index — which it is, and Index was not sound for a VARIABLE
+		// separator. Both are searchCost now, so a variable separator is the
+		// product and a literal one keeps the linear bound. The pin moved
+		// because the answer was wrong, not because the test was inconvenient.
 		{"strings.Cut", `package input
 import "strings"
-func f(s, sep string) (string, string, bool) { return strings.Cut(s, sep) }`, "O(len(s))"},
+func f(s, sep string) (string, string, bool) { return strings.Cut(s, sep) }`, "O(len(s) len(sep))"},
+
+		{"strings.Cut const sep", `package input
+import "strings"
+func f(s string) (string, string, bool) { return strings.Cut(s, "=") }`, "O(len(s))"},
 
 		{"bytes.IndexByte", `package input
 import "bytes"
