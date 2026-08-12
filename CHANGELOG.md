@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.45.1](https://github.com/RomanAgaltsev/bigo/compare/v1.45.0...v1.45.1) (2026-08-12)
+
+
+### Bug Fixes
+
+* the eighth wrong bound, the sweep it owed, and the generic join ([#144](https://github.com/RomanAgaltsev/bigo/issues/144)) ([dd0213b](https://github.com/RomanAgaltsev/bigo/commit/dd0213bb6c7aecba7b6c6ef2c73f01e159ff5c75))
+
 ## [1.45.0](https://github.com/RomanAgaltsev/bigo/compare/v1.44.2...v1.45.0) (2026-08-11)
 
 
