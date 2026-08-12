@@ -47,9 +47,15 @@ func f(xs []int, v int) bool { return slices.Contains(xs, v) }`, "O(len(xs))", t
 		{"strings.Contains linear in s", `package input
 import "strings"
 func f(s string) bool { return strings.Contains(s, "x") }`, "O(len(s))", true},
+		// This fixture needs a stdlib function that will NEVER be priced, and
+		// picking one casually does not achieve that: it used math.Sqrt until
+		// the 2026-08-12 blind-repo lane priced the whole math package, and the
+		// test then failed for an entirely good reason. net.Dial is a network
+		// round trip — unbounded in work and in wall-clock, and bounded by
+		// nothing in the program — so no future lane can reach it.
 		{"unknown stdlib not in table", `package input
-import "math"
-func f(x float64) float64 { return math.Sqrt(x) }`, "O(1)", false},
+import "net"
+func f(a string) (net.Conn, error) { return net.Dial("tcp", a) }`, "O(1)", false},
 		{"slices.Max is linear", `package input
 import "slices"
 func f(xs []int) int { return slices.Max(xs) }`, "O(len(xs))", true},

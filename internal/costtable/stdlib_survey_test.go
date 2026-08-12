@@ -193,6 +193,67 @@ func f(s string) []string { return strings.Split(s, ",") }`, "O(len(s))"},
 		{"strings.IndexByte stays linear", `package input
 import "strings"
 func f(s string, c byte) int { return strings.IndexByte(s, c) }`, "O(len(s))"},
+
+		// --- Blind-repo lane 2, 2026-08-12 ---
+
+		{"math.Sqrt", `package input
+import "math"
+func f(x float64) float64 { return math.Sqrt(x) }`, "O(1)"},
+
+		// Pow shifts a 64-bit exponent; Gamma's argument reduction runs at most
+		// ~33 times because q > 33 already returned via Stirling. Both are named
+		// separately in the entry comment because they ride DIFFERENT grounds.
+		{"math.Pow", `package input
+import "math"
+func f(x, y float64) float64 { return math.Pow(x, y) }`, "O(1)"},
+
+		{"math.Gamma", `package input
+import "math"
+func f(x float64) float64 { return math.Gamma(x) }`, "O(1)"},
+
+		{"math.Mod", `package input
+import "math"
+func f(x, y float64) float64 { return math.Mod(x, y) }`, "O(1)"},
+
+		// THE METHOD ARGUMENT INDEX. ssa Args carries the receiver at index 0,
+		// so a method's first declared parameter is index 1. Sizing this by
+		// index 0 would name the header MAP rather than the key — a different
+		// quantity that happens to compile, and a bound nobody could read as
+		// wrong from the code alone.
+		{"http.Header.Get sizes the key not the map", `package input
+import "net/http"
+func f(h http.Header, key string) string { return h.Get(key) }`, "O(len(key))"},
+
+		{"http.Header.Set sizes the key", `package input
+import "net/http"
+func f(h http.Header, key, v string) { h.Set(key, v) }`, "O(len(key))"},
+
+		{"base64 EncodeToString sizes the source", `package input
+import "encoding/base64"
+func f(src []byte) string { return base64.StdEncoding.EncodeToString(src) }`, "O(len(src))"},
+
+		{"slices.Clone", `package input
+import "slices"
+func f(xs []int) []int { return slices.Clone(xs) }`, "O(len(xs))"},
+
+		{"strings.IndexRune", `package input
+import "strings"
+func f(s string, r rune) int { return strings.IndexRune(s, r) }`, "O(len(s))"},
+
+		{"path/filepath.Clean", `package input
+import "path/filepath"
+func f(p string) string { return filepath.Clean(p) }`, "O(len(p))"},
+
+		// Wall-clock is not work. This table has priced (*sync.Mutex).Lock at
+		// O(1) since v1.35.0 though lockSlow spins, and a deliberate wait is the
+		// same question as a contended one.
+		{"time.Sleep is wall-clock not work", `package input
+import "time"
+func f(d time.Duration) { time.Sleep(d) }`, "O(1)"},
+
+		{"sync.NewCond", `package input
+import "sync"
+func f(l sync.Locker) *sync.Cond { return sync.NewCond(l) }`, "O(1)"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -537,6 +598,59 @@ func f(s string) netip.Prefix { return netip.MustParsePrefix(s) }`, "O(len(s))"}
 //
 // Fifth instance of that shape, after clear on maps, min/max on strings, the
 // Trim cutset, and (*sync/atomic.Value).CompareAndSwap.
+// TestLane2RefusalsStayTop pins the 2026-08-12 blind-repo lane's refusals.
+//
+// Each is a capability bigo could plausibly be expected to have, so each needs
+// a test saying why it does not. A refusal with no pin is a refusal the next
+// reader will quietly overturn.
+func TestLane2RefusalsStayTop(t *testing.T) {
+	tests := []struct{ name, src, why string }{
+		// The whole math package is priced EXCEPT these two, which take an
+		// integer n and loop n times. Excluding them is what keeps the family
+		// argument true as written, so the exclusion is the load-bearing part.
+		{"math.Jn", `package input
+import "math"
+func f(n int, x float64) float64 { return math.Jn(n, x) }`,
+			"Jn loops n times, so its cost depends on an argument's VALUE"},
+
+		{"math.Yn", `package input
+import "math"
+func f(n int, x float64) float64 { return math.Yn(n, x) }`,
+			"Yn loops n times, so its cost depends on an argument's VALUE"},
+
+		// The README used this as its worked example of reading an
+		// implementation properly. On Windows syscall.Getenv copies the VALUE
+		// out of the environment block, and the value is not an argument.
+		{"os.Getenv", `package input
+import "os"
+func f(k string) string { return os.Getenv(k) }`,
+			"cost is O(len(value)) on Windows and the value is not an argument"},
+
+		// Rejection sampling has no worst-case iteration bound, only an
+		// expected one. Pricing on the expected case would contradict the
+		// substring-search decision made the same day.
+		{"math/rand.Intn", `package input
+import "math/rand"
+func f(n int) int { return rand.Intn(n) }`,
+			"Int31n rejects and retries; there is no worst-case bound"},
+
+		// Variadic, so the cost is a SUM of element lengths and no helper here
+		// expresses a sum. This population's largest apparently priceable row.
+		{"path.Join", `package input
+import "path"
+func f(a, b string) string { return path.Join(a, b) }`,
+			"variadic sum of element lengths is not expressible"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, ok := costOf(t, tt.src)
+			if ok && got != "unverifiable" {
+				t.Errorf("cost = %q, want unverifiable — %s", got, tt.why)
+			}
+		})
+	}
+}
+
 func TestUnicodeIsStaysTop(t *testing.T) {
 	got, ok := costOf(t, `package input
 import "unicode"
