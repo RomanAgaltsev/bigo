@@ -32,3 +32,22 @@ func mystery() string { return "x" }
 // strconv.Atoi is already priced, so the curated table answers this key and a
 // trust entry for it would be shadowed and contribute nothing.
 func BlockedByArgSize() (int, error) { return strconv.Atoi(mystery()) }
+
+// Drain is FIRST-PARTY, GENERIC and unverifiable — the 2026-08-12 review's F2.
+//
+// A call to it renders the instantiation in the cause sentence while the
+// document records the declaration, so the frontier walk used to miss the join,
+// score the hop as a blocker, and offer the caller's own module code as a trust
+// key. Code the user can edit wants //bigo:cost, never a trust entry.
+func Drain[T any](xs []T) int {
+	n := 0
+	for len(xs) > 0 {
+		xs = xs[1:]
+		n++
+	}
+	return n
+}
+
+// BlockedByOwnGeneric calls it. Its real blocker is Drain's loop, two hops
+// away, and a loop has no cost-table key — so nothing here is offerable.
+func BlockedByOwnGeneric(xs []string) int { return Drain(xs) }

@@ -16,7 +16,7 @@ import (
 // ROADMAP §1's most-repeated principle at the point a user reads a number:
 // fmt was 8,367 sites, 744 sole-blocker functions, 298 truthfully priceable.
 func TestTrustInitRanksByGraduationCount(t *testing.T) {
-	out, err := trustInit("../report/testdata/trustinit")
+	out, _, err := trustInit("../report/testdata/trustinit")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -32,7 +32,7 @@ func TestTrustInitRanksByGraduationCount(t *testing.T) {
 // trust file, so it must not be offered. The generator filters on the presence
 // of the callee key rather than on a hand-maintained list.
 func TestTrustInitOmitsUnkeyableBlockers(t *testing.T) {
-	out, err := trustInit("../report/testdata/trustinit")
+	out, _, err := trustInit("../report/testdata/trustinit")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -45,7 +45,7 @@ func TestTrustInitOmitsUnkeyableBlockers(t *testing.T) {
 // would be inventing the thing it exists to check, so the placeholder must not
 // parse if someone uncomments a line without editing it.
 func TestTrustInitProposesNoBound(t *testing.T) {
-	out, err := trustInit("../report/testdata/trustinit")
+	out, _, err := trustInit("../report/testdata/trustinit")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -61,7 +61,7 @@ func TestTrustInitProposesNoBound(t *testing.T) {
 // emitting something its own loader rejects: uncomment everything, fill in any
 // bound, and the result must parse.
 func TestTrustInitRoundTrips(t *testing.T) {
-	out, err := trustInit("../report/testdata/trustinit")
+	out, _, err := trustInit("../report/testdata/trustinit")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -84,11 +84,11 @@ func TestTrustInitRoundTrips(t *testing.T) {
 // TestTrustInitIsDeterministic: two runs over one module are byte-identical, so
 // a regenerated file produces a reviewable diff rather than noise.
 func TestTrustInitIsDeterministic(t *testing.T) {
-	a, err := trustInit("../report/testdata/trustinit")
+	a, _, err := trustInit("../report/testdata/trustinit")
 	if err != nil {
 		t.Fatal(err)
 	}
-	b, err := trustInit("../report/testdata/trustinit")
+	b, _, err := trustInit("../report/testdata/trustinit")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -142,7 +142,7 @@ func TestInitMainRefusesToClobber(t *testing.T) {
 // parsing the cause sentence: parsing prose is what the callee key was added to
 // avoid, and a table-driven answer stays correct as entries are added.
 func TestTrustInitOmitsAlreadyCuratedKeys(t *testing.T) {
-	out, err := trustInit("../report/testdata/trustinit")
+	out, _, err := trustInit("../report/testdata/trustinit")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -153,6 +153,30 @@ func TestTrustInitOmitsAlreadyCuratedKeys(t *testing.T) {
 	// satisfied by suppressing everything.
 	if !strings.Contains(out, "os.Getenv") {
 		t.Errorf("output no longer offers os.Getenv, which is genuinely unpriced:\n%s", out)
+	}
+}
+
+// TestTrustInitOmitsFirstPartyGenerics is the product half of the 2026-08-12
+// review's F2, pinned end to end through a real module rather than through a
+// hand-built document.
+//
+// A trust file is for code the user CANNOT edit. Offering them a generic
+// function from their own module is wrong twice: it contradicts the premise,
+// and it points at the wrong tool — //bigo:cost lives beside the code and is
+// checked against the signature, which an assertion in a side file is not.
+//
+// The control matters as much as the assertion: os.Getenv must still be
+// offered, or a fix that suppressed every first-party-looking key would pass.
+func TestTrustInitOmitsFirstPartyGenerics(t *testing.T) {
+	out, _, err := trustInit("../report/testdata/trustinit")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(out, "trustinit.Drain") {
+		t.Errorf("output offers a first-party generic from the user's own module:\n%s", out)
+	}
+	if !strings.Contains(out, "os.Getenv") {
+		t.Errorf("control failed: os.Getenv is genuinely unpriced and must still be offered:\n%s", out)
 	}
 }
 
@@ -167,7 +191,7 @@ func TestTrustInitOmitsAlreadyCuratedKeys(t *testing.T) {
 func TestTrustInitCountsAreMeasuredNotPredicted(t *testing.T) {
 	const dir = "../report/testdata/trustinit"
 
-	out, err := trustInit(dir)
+	out, _, err := trustInit(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -241,14 +265,78 @@ func countFor(t *testing.T, out, key string) int {
 //
 // Prose that carries a measured caveat is load-bearing, so it gets a test.
 func TestHeaderCarriesTheMeasuredCaveat(t *testing.T) {
+	got := headerFor(true)
 	for _, want := range []string{
 		"MEASURED, not predicted",
 		"UPPER BOUND",
 		"CONSTANT bound",
 		"resolve at the call site",
 	} {
-		if !strings.Contains(trustHeader, want) {
-			t.Errorf("header does not mention %q:\n%s", want, trustHeader)
+		if !strings.Contains(got, want) {
+			t.Errorf("header does not mention %q:\n%s", want, got)
+		}
+	}
+}
+
+// TestReadmeCarriesTheSameCaveats extends the header test to the document a
+// user actually reads first (2026-08-12 review F3).
+//
+// v1.44.2 existed because a measured caveat shipped in a PR description instead
+// of in the file, and its durable half was a test on the generated header. The
+// README kept describing the PRE-measurement semantics for two releases anyway,
+// because the test was scoped to the one file the fix had touched. The lesson
+// was "checking a claim a user will ACT ON is worth a test", and the README
+// carries the same claim to more people than the header does.
+//
+// Reading the file from disk is the point: a constant in this package would
+// pin a copy, not the thing shipped.
+func TestReadmeCarriesTheSameCaveats(t *testing.T) {
+	b, err := os.ReadFile("../../README.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	readme := string(b)
+	for _, want := range []string{
+		// F3 — the counts are measured and bounded.
+		"measured, not predicted",
+		"upper bound, and only a constant bound reaches it",
+		"resolve at the call site",
+		// F6 — generated code is scored.
+		"Generated code counts",
+		// F5 — the gate can be silenced by a trust edit.
+		"never fails `-fail-on`",
+	} {
+		if !strings.Contains(readme, want) {
+			t.Errorf("README does not state %q — the header says it and the README is where a user reads it first", want)
+		}
+	}
+}
+
+// TestHeaderSaysWhichNumberItCarries is the other half, added 2026-08-12
+// (review F4). The measured caveat was asserted UNCONDITIONALLY while the
+// measurement pass failed soft to the predicted count, so on that path the file
+// claimed a property of itself that was false.
+//
+// Both directions, because a fix that always said "predicted" would satisfy a
+// one-sided test and throw away the number the pass exists to produce.
+func TestHeaderSaysWhichNumberItCarries(t *testing.T) {
+	measured, predicted := headerFor(true), headerFor(false)
+	if strings.Contains(measured, "PREDICTED") {
+		t.Error("a measured file warns about predicted counts")
+	}
+	if !strings.Contains(predicted, "PREDICTED, not measured") {
+		t.Errorf("an unmeasured file does not say so:\n%s", predicted)
+	}
+	if strings.Contains(predicted, "MEASURED, not predicted") {
+		t.Errorf("an unmeasured file still claims its counts are measured:\n%s", predicted)
+	}
+	// Both must carry the notes that do not depend on which number it is.
+	for _, h := range []string{measured, predicted} {
+		if !strings.Contains(h, "Only single blockers are listed") {
+			t.Error("header lost the single-blocker note")
+		}
+		if !strings.Contains(h, "GENERATED CODE COUNTS") {
+			t.Error("header does not warn that generated code is scored (review F6)")
 		}
 	}
 }
