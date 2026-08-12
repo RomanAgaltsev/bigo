@@ -156,6 +156,30 @@ func TestTrustInitOmitsAlreadyCuratedKeys(t *testing.T) {
 	}
 }
 
+// TestTrustInitOmitsFirstPartyGenerics is the product half of the 2026-08-12
+// review's F2, pinned end to end through a real module rather than through a
+// hand-built document.
+//
+// A trust file is for code the user CANNOT edit. Offering them a generic
+// function from their own module is wrong twice: it contradicts the premise,
+// and it points at the wrong tool — //bigo:cost lives beside the code and is
+// checked against the signature, which an assertion in a side file is not.
+//
+// The control matters as much as the assertion: os.Getenv must still be
+// offered, or a fix that suppressed every first-party-looking key would pass.
+func TestTrustInitOmitsFirstPartyGenerics(t *testing.T) {
+	out, err := trustInit("../report/testdata/trustinit")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(out, "trustinit.Drain") {
+		t.Errorf("output offers a first-party generic from the user's own module:\n%s", out)
+	}
+	if !strings.Contains(out, "os.Getenv") {
+		t.Errorf("control failed: os.Getenv is genuinely unpriced and must still be offered:\n%s", out)
+	}
+}
+
 // TestTrustInitCountsAreMeasuredNotPredicted pins the property the whole
 // measurement pass exists to establish: the number beside a key equals what
 // asserting that key actually delivers.

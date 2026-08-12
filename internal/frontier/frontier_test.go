@@ -14,6 +14,16 @@ func callTo(callee string) report.CauseJSON {
 	return cause("call", CostPrefix+callee)
 }
 
+// keyedCallTo is callTo with the cost-table key the engine attaches alongside
+// the sentence. The two DIFFER on generic code — the sentence carries the
+// instantiation, the key is resolved to the origin — which is the whole subject
+// of the 2026-08-12 review's F2.
+func keyedCallTo(callee, key string) report.CauseJSON {
+	c := callTo(callee)
+	c.Callee = key
+	return c
+}
+
 func TestDistanceCountsDistinctLeaves(t *testing.T) {
 	doc := report.Document{
 		Module: "example.com/m",
@@ -247,6 +257,108 @@ func genFn(pkg, name string, top bool, causes ...report.CauseJSON) report.Functi
 	f := fn(pkg, name, top, causes...)
 	f.File = name + ".pb.go"
 	return f
+}
+
+// TestGenericCalleePropagates is the DIFFERENTIAL PAIR for the 2026-08-12
+// review's F2. Two callers of two otherwise identical ⊤ functions; the only
+// difference is that one callee is generic.
+//
+// The cause sentence renders the INSTANTIATION — RelString gives
+// "example.com/m.Drain[string]" — while the document records the DECLARATION,
+// "Drain". The join missed, so the hop was scored as a LEAF: CallGeneric came
+// out at distance 1 with a cost-table key, which made `bigo trust init` offer
+// the user their own generic function and inflated Near, CeilingPct and the
+// sole-blocker ranking the survey ranks work by.
+//
+// Both halves must be asserted. Checking only the generic caller's distance
+// would pass under a fix that broke the non-generic one, and checking only that
+// nothing is offered would pass if the walk stopped recursing entirely.
+// The callees below carry TWO distinct leaves, so a missed hop is visible as a
+// distance of 1 where the answer is 2. A single-leaf callee would score 1 both
+// ways and the test would pass throughout the defect's life.
+func TestGenericCalleePropagates(t *testing.T) {
+	twoLeaves := []report.CauseJSON{callTo("fmt.Errorf"), callTo("time.Now")}
+	doc := report.Document{
+		Module: "example.com/m",
+		Functions: []report.Function{
+			// The cause sentence renders the instantiation; Callee carries the
+			// origin-resolved key, exactly as engine.go emits them.
+			fn("example.com/m", "CallGeneric", true,
+				keyedCallTo("example.com/m.Drain[string]", "example.com/m.Drain")),
+			fn("example.com/m", "CallPlain", true,
+				keyedCallTo("example.com/m.DrainInt", "example.com/m.DrainInt")),
+			fn("example.com/m", "Drain", true, twoLeaves...),
+			fn("example.com/m", "DrainInt", true, twoLeaves...),
+		},
+	}
+	fr := Of(doc)
+
+	// Every function bottoms out at the same two leaves, so all four sit at
+	// distance 2. Before the fix CallGeneric sat at 1, because its hop was
+	// mistaken for a blocker.
+	if got := fr.Hist["2"]; got != 4 {
+		t.Errorf("all four should sit at distance 2, hist=%v", fr.Hist)
+	}
+	if got := fr.Hist["1"]; got != 0 {
+		t.Errorf("nothing here is one blocker from a bound, hist=%v", fr.Hist)
+	}
+	// A first-party generic must never be offerable: it is code the user can
+	// edit, and the right tool for it is //bigo:cost, not a trust entry.
+	if got := fr.SoleBlockerCallee["example.com/m.Drain"]; got != 0 {
+		t.Errorf("bigo offered the user their own generic function %d time(s)", got)
+	}
+	// Same property at the per-function level, which is what the trust
+	// generator attributes graduations with. The two must agree.
+	for pos, key := range SoleBlockerIndex(doc) {
+		if key == "example.com/m.Drain" {
+			t.Errorf("SoleBlockerIndex disagrees with SoleBlockerCallee at %q", pos)
+		}
+	}
+}
+
+// TestGenericMethodCalleePropagates is the same defect on a method of a generic
+// type, where the type arguments sit inside the RECEIVER rather than after the
+// function name — and where the two sides disagree on BOTH sides of the join:
+// the document renders the declared parameters "[K, V]" and the cause renders
+// the arguments "[string,int]". Normalising only the cause would not fix it.
+func TestGenericMethodCalleePropagates(t *testing.T) {
+	declared := report.Function{
+		Package: "example.com/m", Func: "Get", Receiver: "*Pair[K, V]",
+		Time:   report.BoundJSON{Top: true},
+		Causes: []report.CauseJSON{callTo("fmt.Errorf"), callTo("time.Now")},
+	}
+	doc := report.Document{
+		Module: "example.com/m",
+		Functions: []report.Function{
+			fn("example.com/m", "Caller", true, keyedCallTo(
+				"(*example.com/m.Pair[string,int]).Get", "(*example.com/m.Pair[K, V]).Get")),
+			declared,
+		},
+	}
+	fr := Of(doc)
+	if got := fr.Hist["2"]; got != 2 {
+		t.Errorf("both should sit at distance 2, hist=%v", fr.Hist)
+	}
+	if len(fr.SoleBlockerCallee) != 0 {
+		t.Errorf("the caller's hop is not a blocker, got %v", fr.SoleBlockerCallee)
+	}
+}
+
+// TestNonGenericJoinUnaffected is the negative half: stripping type arguments
+// must not disturb a name that has none, and must not merge two genuinely
+// different callees.
+func TestNonGenericJoinUnaffected(t *testing.T) {
+	doc := report.Document{
+		Module: "example.com/m",
+		Functions: []report.Function{
+			fn("example.com/m", "A", true, callTo("fmt.Errorf")),
+			fn("example.com/m", "B", true, callTo("example.com/m.A")),
+		},
+	}
+	fr := Of(doc)
+	if got := fr.SoleBlocker[CostPrefix+"fmt.Errorf"]; got != 2 {
+		t.Errorf("both should bottom out at fmt.Errorf, got %d", got)
+	}
 }
 
 // TestSeenSetNotDepthCap pins that the walk terminates on mutual ⊤ recursion by

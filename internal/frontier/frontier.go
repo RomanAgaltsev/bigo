@@ -83,6 +83,53 @@ func funcKey(f report.Function) string {
 	return "(" + star + f.Package + "." + name + ")." + f.Func
 }
 
+// stripTypeArgs removes a generic type-argument or type-parameter list from a
+// rendered function name, so the two spellings of the same declaration join.
+//
+// They are two spellings because they come from two places. The cause sentence
+// is ssa.Function.RelString, which renders the INSTANTIATION —
+// "pkg.Drain[string]", or "(*pkg.Pair[string,int]).Get" with the arguments
+// inside the receiver. The document records the DECLARATION, whose receiver is
+// the source text "*Pair[K, V]". Normalising only one side would fix generic
+// functions and leave methods on generic types broken, which is why this is
+// applied to both.
+//
+// First "[" to last "]" rather than a matching-bracket scan: type arguments
+// nest ("Map[[]int, string]") but nothing follows the list except ").Method",
+// and no package path, type name or function name can contain a bracket. A name
+// with no bracket is returned unchanged, so non-generic code is untouched.
+//
+// Collisions are safe by construction. Two declarations in one package cannot
+// normalise together — Go forbids declaring both Foo and Foo[T] — and if one
+// somehow did, byKey holds a SLICE and the walk already refuses any callee with
+// more than one hit.
+func stripTypeArgs(name string) string {
+	i := strings.IndexByte(name, '[')
+	if i < 0 {
+		return name
+	}
+	j := strings.LastIndexByte(name, ']')
+	if j < i {
+		return name
+	}
+	return name[:i] + name[j+1:]
+}
+
+// indexByCallee builds the name → position index the propagation walk joins on.
+//
+// Shared by Excluding and SoleBlockerIndex so the two cannot drift: they are
+// the aggregate and per-function forms of one measurement, and F2 would have
+// been twice as expensive to fix if the normalisation had to be applied in two
+// hand-written places (the tripcount.isInitEdge lesson).
+func indexByCallee(funcs []report.Function) map[string][]int {
+	byKey := make(map[string][]int, len(funcs))
+	for i, f := range funcs {
+		k := stripTypeArgs(funcKey(f))
+		byKey[k] = append(byKey[k], i)
+	}
+	return byKey
+}
+
 // leafSet collects the distinct leaf blockers standing between fn and a bound.
 //
 // A cause naming a callee that is itself ⊤ in this document is propagation, and
@@ -106,7 +153,7 @@ func leafSet(idx int, funcs []report.Function, byKey map[string][]int, seen map[
 	seen[idx] = true
 	for _, c := range funcs[idx].Causes {
 		if callee, ok := strings.CutPrefix(c.Detail, CostPrefix); ok {
-			if hits := byKey[callee]; len(hits) == 1 && funcs[hits[0]].Time.Top {
+			if hits := byKey[stripTypeArgs(callee)]; len(hits) == 1 && funcs[hits[0]].Time.Top {
 				leafSet(hits[0], funcs, byKey, seen, out)
 				continue
 			}
@@ -147,10 +194,7 @@ func Of(doc report.Document) Frontier {
 func Excluding(doc report.Document, skip func(report.Function) bool) Frontier {
 	fr := Frontier{Hist: map[string]int{}, SoleBlocker: map[string]int{}, SoleBlockerCallee: map[string]int{}}
 
-	byKey := make(map[string][]int, len(doc.Functions))
-	for i, f := range doc.Functions {
-		byKey[funcKey(f)] = append(byKey[funcKey(f)], i)
-	}
+	byKey := indexByCallee(doc.Functions)
 
 	for i, f := range doc.Functions {
 		if !FirstParty(f.Package, doc.Module) || !f.Time.Top {
@@ -237,10 +281,7 @@ func PositionKey(f report.Function) string {
 // function had been waiting on. Attribution is sound because cross-blocker
 // interaction was measured at exactly zero (what-if campaign 1, twice).
 func SoleBlockerIndex(doc report.Document) map[string]string {
-	byKey := make(map[string][]int, len(doc.Functions))
-	for i, f := range doc.Functions {
-		byKey[funcKey(f)] = append(byKey[funcKey(f)], i)
-	}
+	byKey := indexByCallee(doc.Functions)
 	// Sized by the document, not by the loop bound bigo's own SM6 suggests: the
 	// result holds one entry per SOLE-BLOCKED function, which is a fraction of
 	// the functions walked. The document length is the only bound available
