@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.46.0](https://github.com/RomanAgaltsev/bigo/compare/v1.45.1...v1.46.0) (2026-08-12)
+
+
+### Features
+
+* **costtable:** price math and the gaps a second blind run surfaced ([#146](https://github.com/RomanAgaltsev/bigo/issues/146)) ([7925892](https://github.com/RomanAgaltsev/bigo/commit/7925892e511bbc99759797edc14d652b08961790))
+
 ## [1.45.1](https://github.com/RomanAgaltsev/bigo/compare/v1.45.0...v1.45.1) (2026-08-12)
 
 
