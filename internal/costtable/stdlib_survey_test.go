@@ -110,6 +110,48 @@ func f(s string) string { return strings.Trim(s, " \t\n") }`, "O(len(s))"},
 		{"strings.TrimLeft const cutset", `package input
 import "strings"
 func f(s string) string { return strings.TrimLeft(s, "x") }`, "O(len(s))"},
+
+		// --- The OUTPUT-AMPLIFIED family: also a product (2026-08-12 review F1) ---
+		//
+		// The EIGHTH wrong bound, and it is the seventh's class with the sweep
+		// that was owed after it. Trim multiplies because it READS its second
+		// argument once per element of its first; these multiply because they
+		// WRITE their second argument once per element of the first. Different
+		// mechanism, identical arithmetic, and the same repair.
+		//
+		// Join writes sep exactly len(elems)-1 times (strings.go's
+		// b.WriteString(sep) loop), so the cost carries a len(sep) factor no
+		// matter what the elements hold. Priced O(len(elems)) since the entry
+		// was added, which is not an upper bound whenever sep is a variable.
+		{"strings.Join", `package input
+import "strings"
+func f(elems []string, sep string) string { return strings.Join(elems, sep) }`, "O(len(elems) len(sep))"},
+
+		// Replace writes `new` once per replacement, and the replacement count
+		// is Count(s, old), which is bounded only by len(s) — so the cost
+		// carries a len(new) factor. Note the arg index: `new` is argument 2,
+		// not 1. Sizing it by `old` would be a different wrong bound.
+		{"strings.Replace", `package input
+import "strings"
+func f(s, old, nw string, n int) string { return strings.Replace(s, old, nw, n) }`, "O(len(nw) len(s))"},
+
+		{"strings.ReplaceAll", `package input
+import "strings"
+func f(s, old, nw string) string { return strings.ReplaceAll(s, old, nw) }`, "O(len(nw) len(s))"},
+
+		// POSITIVE CONTROLS. A constant separator or replacement collapses the
+		// product exactly as a constant cutset does, and these are the common
+		// real shapes — strings.Join(parts, ", ") is everywhere. Pinning only
+		// the product cases would pass throughout the defect's life AND would
+		// pass again if someone later priced the product unconditionally, which
+		// is the C5 capability loss this project has now paid for twice.
+		{"strings.Join const sep", `package input
+import "strings"
+func f(elems []string) string { return strings.Join(elems, ", ") }`, "O(len(elems))"},
+
+		{"strings.ReplaceAll const new", `package input
+import "strings"
+func f(s, old string) string { return strings.ReplaceAll(s, old, "-") }`, "O(len(s))"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

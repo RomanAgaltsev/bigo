@@ -245,24 +245,55 @@ func product(args []ssa.Value, i, j int) bound.Bound {
 	return bound.Of(bound.Term(vi).Mul(bound.Term(vj)))
 }
 
+// productUnlessConst prices an entry whose cost is O(size(args[i]) *
+// size(args[j])) in general but collapses to O(size(args[i])) when args[j] is a
+// compile-time string constant — a fixed length contributes only a constant
+// factor.
+//
+// This is the shared repair for a class this project has now shipped TWICE as a
+// wrong bound. The members differ in mechanism and agree in arithmetic:
+//
+//   - the Trim family READS args[j] once per element of args[i] (membership of
+//     every rune of s in the cutset) — the seventh wrong bound, v1.38.1;
+//   - Join and Replace WRITE args[j] once per element of args[i] (the
+//     separator, or the replacement) — the eighth, 2026-08-12 review F1.
+//
+// The constant arm is not an optimisation, it is a POSITIVE CONTROL the entries
+// owe: `strings.Trim(s, " \t\n")` and `strings.Join(parts, ", ")` really are
+// linear, and refusing them would be a precondition stricter than soundness
+// requires — the C5 capability loss, which this project has already paid for.
+//
+// Generalised from trimCost 2026-08-12, when the class acquired its third and
+// fourth entries. The sweep that produced them — every one-argument entry in
+// this table, checked against its signature — is recorded in SWEEP.md beside
+// this file; a fifth member should extend this helper, never hand-roll the
+// check again.
+func productUnlessConst(args []ssa.Value, i, j int) bound.Bound {
+	if j < len(args) {
+		if c, ok := args[j].(*ssa.Const); ok && c.Value != nil && c.Value.Kind() == constant.String {
+			return linear(args, i)
+		}
+	}
+	return product(args, i, j)
+}
+
 // trimCost prices the strings.Trim family, whose cost is bounded by NEITHER
 // argument alone: they test membership of every rune of args[0] in the CUTSET
 // args[1], so the two lengths multiply.
+func trimCost(args []ssa.Value) bound.Bound { return productUnlessConst(args, 0, 1) }
+
+// joinCost prices strings.Join, which writes the SEPARATOR args[1] exactly
+// len(args[0])-1 times, so the cost carries a len(sep) factor whatever the
+// elements hold.
+func joinCost(args []ssa.Value) bound.Bound { return productUnlessConst(args, 0, 1) }
+
+// replaceCost prices strings.Replace and ReplaceAll, which write the
+// REPLACEMENT args[2] once per replacement, and the replacement count is
+// Count(s, old) — bounded only by len(s).
 //
-// A CONSTANT cutset is the common case and keeps the linear bound, because a
-// compile-time string has a fixed length and contributes only a constant
-// factor — `strings.Trim(s, " \t\n")` really is O(len(s)). Refusing that would
-// be a precondition stricter than soundness requires, which this project has
-// already paid for once (C5's loop-invariance requirement, v1.33.0).
-func trimCost(args []ssa.Value) bound.Bound {
-	if len(args) < 2 {
-		return bound.Top()
-	}
-	if c, ok := args[1].(*ssa.Const); ok && c.Value != nil && c.Value.Kind() == constant.String {
-		return linear(args, 0)
-	}
-	return product(args, 0, 1)
-}
+// Note the index: the replacement is argument 2, not 1. Sizing this by `old`
+// would be a different wrong bound that happens to look like a fix.
+func replaceCost(args []ssa.Value) bound.Bound { return productUnlessConst(args, 0, 2) }
 
 // nLogN returns O(n log n) where n = size of args[i], or Top().
 func nLogN(args []ssa.Value, i int) bound.Bound {
@@ -324,10 +355,10 @@ var stdlib = map[string]func(args []ssa.Value) bound.Bound{
 	"strings.Contains":   func(a []ssa.Value) bound.Bound { return linear(a, 0) },
 	"strings.Index":      func(a []ssa.Value) bound.Bound { return linear(a, 0) },
 	"strings.Count":      func(a []ssa.Value) bound.Bound { return linear(a, 0) },
-	"strings.Replace":    func(a []ssa.Value) bound.Bound { return linear(a, 0) },
-	"strings.ReplaceAll": func(a []ssa.Value) bound.Bound { return linear(a, 0) },
+	"strings.Replace":    replaceCost,
+	"strings.ReplaceAll": replaceCost,
 	"strings.Split":      func(a []ssa.Value) bound.Bound { return linear(a, 0) },
-	"strings.Join":       func(a []ssa.Value) bound.Bound { return linear(a, 0) },
+	"strings.Join":       joinCost,
 	"strings.Fields":     func(a []ssa.Value) bound.Bound { return linear(a, 0) },
 	"strings.ToLower":    func(a []ssa.Value) bound.Bound { return linear(a, 0) },
 	"strings.ToUpper":    func(a []ssa.Value) bound.Bound { return linear(a, 0) },
