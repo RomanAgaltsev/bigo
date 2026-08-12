@@ -849,6 +849,178 @@ var stdlib = map[string]func(args []ssa.Value) bound.Bound{
 	// assumed from it.
 	"strings.Compare": func(a []ssa.Value) bound.Bound { return linear(a, 0) },
 
+	// --- Blind-repo lane 2, added 2026-08-12 ---
+	//
+	// Found by running `bigo trust init` against six repositories the survey has
+	// never analysed — moby, terraform, weaviate, consul, lazygit, berty —
+	// chosen under a rule fixed before any output was looked at. Stdlib keys
+	// only: third-party keys are one repo's dependency choice, not a gap here.
+	//
+	// --- math ---
+	//
+	// 61 entries, and unlike math/bits the argument has THREE separate grounds.
+	// Blurring them would be the family-argument failure mode, so:
+	//
+	//  1. OPERAND WIDTH, the primary ground and the same one math/bits rides:
+	//     every function here takes and returns float64, or a small int, so no
+	//     cost can depend on a program size variable.
+	//  2. WORD-WIDTH LOOPS: Pow shifts a 64-bit exponent, Sqrt has two loops
+	//     bounded by 64, Mod's loop is bounded by the float64 exponent range.
+	//     The machine-constant licence already granted to bits.Div64 and to
+	//     GOMAXPROCS in (*sync.Pool).Put.
+	//  3. DOMAIN-BOUNDED VALUE LOOPS, which is a NEW ground and is named rather
+	//     than folded into (2): Gamma reduces its argument one integer step at a
+	//     time, but only after `q > 33` has already returned via Stirling, so
+	//     the reduction runs at most ~33 times. The bound comes from a numeric
+	//     DOMAIN CHECK, not from a width.
+	//
+	// CHECKED, NOT ASSUMED: five files in math contain loops — gamma.go, jn.go,
+	// mod.go, pow.go, sqrt.go — and each was read. Four are covered by (2) or
+	// (3). jn.go is not, which is why:
+	//
+	// DELIBERATELY ABSENT: math.Jn and math.Yn take an integer n and loop n
+	// times (jn.go lines 120, 135, 184, 201, 206, 298). Their cost depends on
+	// the VALUE of an argument and is bounded by nothing here. Excluding two
+	// keeps the family argument true as written — the atomic.Value precedent —
+	// and they are pinned ⊤.
+	//
+	// Float32bits/Float32frombits/Float64bits/Float64frombits were priced in
+	// v1.35.0 and live in the strconv/math block above; together with these the
+	// package is complete, which TestMathMatchesStdlib pins in both directions.
+	"math.Abs":         constCost,
+	"math.Acos":        constCost,
+	"math.Acosh":       constCost,
+	"math.Asin":        constCost,
+	"math.Asinh":       constCost,
+	"math.Atan":        constCost,
+	"math.Atan2":       constCost,
+	"math.Atanh":       constCost,
+	"math.Cbrt":        constCost,
+	"math.Ceil":        constCost,
+	"math.Copysign":    constCost,
+	"math.Cos":         constCost,
+	"math.Cosh":        constCost,
+	"math.Dim":         constCost,
+	"math.Erf":         constCost,
+	"math.Erfc":        constCost,
+	"math.Erfcinv":     constCost,
+	"math.Erfinv":      constCost,
+	"math.Exp":         constCost,
+	"math.Exp2":        constCost,
+	"math.Expm1":       constCost,
+	"math.FMA":         constCost,
+	"math.Floor":       constCost,
+	"math.Frexp":       constCost,
+	"math.Gamma":       constCost,
+	"math.Hypot":       constCost,
+	"math.Ilogb":       constCost,
+	"math.Inf":         constCost,
+	"math.IsInf":       constCost,
+	"math.IsNaN":       constCost,
+	"math.J0":          constCost,
+	"math.J1":          constCost,
+	"math.Ldexp":       constCost,
+	"math.Lgamma":      constCost,
+	"math.Log":         constCost,
+	"math.Log10":       constCost,
+	"math.Log1p":       constCost,
+	"math.Log2":        constCost,
+	"math.Logb":        constCost,
+	"math.Max":         constCost,
+	"math.Min":         constCost,
+	"math.Mod":         constCost,
+	"math.Modf":        constCost,
+	"math.NaN":         constCost,
+	"math.Nextafter":   constCost,
+	"math.Nextafter32": constCost,
+	"math.Pow":         constCost,
+	"math.Pow10":       constCost,
+	"math.Remainder":   constCost,
+	"math.Round":       constCost,
+	"math.RoundToEven": constCost,
+	"math.Signbit":     constCost,
+	"math.Sin":         constCost,
+	"math.Sincos":      constCost,
+	"math.Sinh":        constCost,
+	"math.Sqrt":        constCost,
+	"math.Tan":         constCost,
+	"math.Tanh":        constCost,
+	"math.Trunc":       constCost,
+	"math.Y0":          constCost,
+	"math.Y1":          constCost,
+
+	// --- Other gaps the blind run surfaced, each read on its own ---
+	//
+	// NOTE THE ARGUMENT INDEX ON EVERY METHOD BELOW. ssa.CallCommon.Args carries
+	// the RECEIVER as Args[0] for a method call, so a method's first declared
+	// parameter is index 1. Sizing (net/http.Header).Get by index 0 would name
+	// the header map rather than the key — a different quantity entirely, and
+	// the kind of mistake that looks like a fix. Pinned.
+
+	// Header.Get and Set delegate to textproto.MIMEHeader, which canonicalises
+	// the KEY and does one map operation. Cost is in the key, never in the
+	// number of headers.
+	"(net/http.Header).Get": func(a []ssa.Value) bound.Bound { return linear(a, 1) },
+	"(net/http.Header).Set": func(a []ssa.Value) bound.Bound { return linear(a, 1) },
+
+	// base64 encodes and decodes in one pass over the source, which is the
+	// method's first parameter and therefore index 1.
+	"(*encoding/base64.Encoding).EncodeToString": func(a []ssa.Value) bound.Bound { return linear(a, 1) },
+	"(*encoding/base64.Encoding).DecodeString":   func(a []ssa.Value) bound.Bound { return linear(a, 1) },
+
+	// append(S{}, s...) — one copy of s.
+	"slices.Clone": func(a []ssa.Value) bound.Bound { return linear(a, 0) },
+
+	// bytealg.Compare stops at the shorter operand, so O(min) <= O(len(a)) —
+	// the slices.Equal precedent, and []byte elements are fixed-width so the
+	// unit-element axiom is not even in play.
+	"bytes.Compare": func(a []ssa.Value) bound.Bound { return linear(a, 0) },
+
+	// One scan of s for a single rune.
+	"strings.IndexRune": func(a []ssa.Value) bound.Bound { return linear(a, 0) },
+
+	// Single linear passes over their string argument.
+	"strconv.ParseFloat":  func(a []ssa.Value) bound.Bound { return linear(a, 0) },
+	"time.ParseDuration":  func(a []ssa.Value) bound.Bound { return linear(a, 0) },
+	"path/filepath.Clean": func(a []ssa.Value) bound.Bound { return linear(a, 0) },
+	"net/url.PathEscape":  func(a []ssa.Value) bound.Bound { return linear(a, 0) },
+
+	// Sets two fields.
+	"sync.NewCond": constCost,
+
+	// time.Sleep is WALL-CLOCK, not work, and this table has always modelled
+	// total work — it is why (*sync.Mutex).Lock is O(1) though lockSlow spins.
+	// Sleeping longer does not do more work, so the doctrine that was written
+	// for contention applies verbatim to a deliberate wait.
+	"time.Sleep": constCost,
+
+	// Deliberately ABSENT, with reasons, so nobody re-derives them:
+	//
+	//   - os.Getenv: on Windows syscall.Getenv COPIES the value out of the
+	//     environment block, so the cost is O(len(value)) — a quantity that is
+	//     not an argument at all. The unix path is O(len(key)), which would be
+	//     nameable, but an entry has to hold on every platform. SIXTH instance
+	//     of "the cost depends on something other than what the entry is sized
+	//     by", and the first found in bigo's own DOCUMENTATION rather than its
+	//     table: the README used `os.Getenv O(1)` as its worked example of
+	//     reading an implementation properly. Pinned by TestOsGetenvStaysTop.
+	//   - path.Join and path/filepath.Join: variadic, so the cost is the SUM of
+	//     the element lengths and no helper here expresses a sum. Recorded in
+	//     v1.35.0 and re-confirmed as this population's largest apparently
+	//     priceable row at 120 graduations combined.
+	//   - sort.Sort: takes an interface, so both the element count and the Less
+	//     comparison are arbitrary user code.
+	//   - reflect.DeepEqual: walks an arbitrary object graph.
+	//   - math/rand.Intn and the other bounded generators: Int31n rejects and
+	//     retries until it lands in range, so there is no WORST-CASE iteration
+	//     bound at all — only an expected one. Pricing on the expected case is
+	//     a doctrine this table has never adopted, and adopting it here would
+	//     contradict the substring-search decision made the same day, which
+	//     refused exactly that reasoning. Deferred as a whole package.
+	//   - os.Remove, os.RemoveAll, os.MkdirAll, os.Stat, filepath.Walk,
+	//     os/exec.Command: filesystem and PATH traversal, bounded by the
+	//     machine rather than by the program.
+
 	// Does not return.
 	"os.Exit": constCost,
 

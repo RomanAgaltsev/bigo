@@ -92,6 +92,24 @@ func main() {
 		fmt.Fprintln(os.Stderr, "usage: bigo trust init [-C dir] [-o file] [-force]")
 		os.Exit(2)
 	}
+	// A subcommand name appearing AFTER the driver's own flags is a flag-order
+	// mistake, not a package pattern. `bigo -C dir trust init` is the natural
+	// way to write it and used to fall through to the analyzer, which took
+	// "trust" and "init" as packages and failed with "package trust is not in
+	// std" — an error naming neither the subcommand nor the flag. Found by
+	// running this lane's own discovery pass across six repositories before
+	// noticing none of them had produced output (2026-08-12 blind-repo lane 2).
+	for i, a := range os.Args[1:] {
+		if a != "trust" && a != "json" && a != "diff" && a != "badge" {
+			continue
+		}
+		if i == 0 {
+			break // already dispatched above
+		}
+		fmt.Fprintf(os.Stderr, "bigo: %q is a subcommand and must come first: bigo %s [flags]\n"+
+			"       the driver's own flags apply to analysis, not to subcommands, which own their -C\n", a, a)
+		os.Exit(2)
+	}
 	// -C dir makes ./... resolve against a target module. The subcommands above
 	// take their own -C (they own their flag sets); this one is the driver's.
 	dir, rest, err := splitChdir(os.Args[1:])

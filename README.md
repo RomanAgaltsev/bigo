@@ -136,9 +136,23 @@ Write down why, next to the entry. An entry with no justification is a bound
 nobody has reasoned about:
 
 ```
-# os.Getenv is O(1): it reads a pre-parsed environ slice, no scan.
-os.Getenv O(1)
+# (*cache.LRU).Get is O(1): a map lookup, then a move-to-front on a
+# doubly-linked list. Nothing scans, and eviction is on the write path.
+(*github.com/example/cache.LRU).Get O(1)
 ```
+
+The example names a made-up dependency on purpose. A trust file is mostly for
+third-party code, and a fabricated key cannot quietly become false when someone
+else's implementation changes.
+
+**This example used to be `os.Getenv O(1)`, justified as "it reads a pre-parsed
+environ slice, no scan".** Both halves were wrong, and finding that out is the
+best illustration this section has. On unix there *is* a scan — of the key, so
+the honest bound is `O(len(key))`. On Windows `GetEnvironmentVariable` copies
+the **value** into a buffer, so the cost is `O(len(value))`, and the value is
+not an argument at all. bigo now refuses `os.Getenv` for exactly that reason and
+`bigo trust init` no longer offers it. The worked example of reading an
+implementation properly was itself a bound nobody had read properly.
 
 ### Using it
 

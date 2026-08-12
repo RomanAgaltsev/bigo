@@ -7,11 +7,11 @@ contents and CI never runs it. Its targets are repositories that exist on one
 machine at whatever commit they happen to sit, so these numbers are a record
 of one run — compare across runs only via the per-target commit below.
 
-Run 2026-08-12 with bigo 1.45.0 — the last RELEASED version at run time. A run made before its own release stamps the previous tag, so compare runs by the per-target commit below, never by this line.
+Run 2026-08-12 with bigo 1.45.1 — the last RELEASED version at run time. A run made before its own release stamps the previous tag, so compare runs by the per-target commit below, never by this line.
 
-**Aggregate: 32.7%** — 10947 of 33504 first-party functions bounded.
+**Aggregate: 32.9%** — 11021 of 33504 first-party functions bounded.
 
-**Hand-written: 31.3%** — 9155 of 29214 functions bounded, with 4290 generated functions excluded.
+**Hand-written: 31.6%** — 9229 of 29214 functions bounded, with 4290 generated functions excluded.
 
 Generated code is first-party by module path and is real code, but nobody
 hand-tunes it and its unverifiability is usually the CORRECT answer — the
@@ -20,26 +20,26 @@ sole-blocker functions as generated protobuf whose verdict is right.
 **The aggregate above is kept unrebased** so it stays comparable with the
 2026-07-20/21 probes, which pin their population to it.
 
-**Hand-written near frontier: 8214 of 20059 (40.9%), ceiling 59.5%.**
+**Hand-written near frontier: 8217 of 19985 (41.1%), ceiling 59.7%.**
 
-**Near frontier: 9831 of 22557 unverifiable functions (43.6%) sit within 2 distinct blockers of a bound.** Clearing all of them would put coverage at **62.0%** — an UPPER BOUND, not a forecast: clearing a blocker for one function need not clear it for another. Two 2026-07-20 probes measured that gap directly (`fmt`: 744 sole-blocker functions, 298 actually priceable; function values: 573, zero reachable).
+**Near frontier: 9834 of 22483 unverifiable functions (43.7%) sit within 2 distinct blockers of a bound.** Clearing all of them would put coverage at **62.2%** — an UPPER BOUND, not a forecast: clearing a blocker for one function need not clear it for another. Two 2026-07-20 probes measured that gap directly (`fmt`: 744 sole-blocker functions, 298 actually priceable; function values: 573, zero reachable).
 
 ## Per target
 
 | Target | Module | Commit | Functions | Bounded | Coverage | Generated | Hand | Hand cov | Near | Ceiling |
 |---|---|---|---|---|---|---|---|---|---|---|
-| grpc-go | google.golang.org/grpc | 2fd426d0 | 5467 | 1969 | 36.0% | 1902 | 3565 | 29.9% | 1974 | 72.1% |
-| caddy | github.com/caddyserver/caddy/v2 | 0e8eb41b | 1963 | 472 | 24.0% | 0 | 1963 | 24.0% | 472 | 48.1% |
-| prometheus | github.com/prometheus/prometheus | a0524eeca | 5859 | 1948 | 33.2% | 776 | 5083 | 31.3% | 1743 | 63.0% |
+| grpc-go | google.golang.org/grpc | 2fd426d0 | 5467 | 1973 | 36.1% | 1902 | 3565 | 30.0% | 1971 | 72.1% |
+| caddy | github.com/caddyserver/caddy/v2 | 0e8eb41b | 1963 | 473 | 24.1% | 0 | 1963 | 24.1% | 471 | 48.1% |
+| prometheus | github.com/prometheus/prometheus | a0524eeca | 5859 | 1971 | 33.6% | 776 | 5083 | 31.8% | 1755 | 63.6% |
 | etcd | go.etcd.io/etcd/v3 | 22b4192b9 | 98 | 9 | 9.2% | 0 | 98 | 9.2% | 40 | 50.0% |
-| delve | github.com/go-delve/delve | 8fc4acbd | 2793 | 731 | 26.2% | 28 | 2765 | 26.2% | 723 | 52.1% |
+| delve | github.com/go-delve/delve | 8fc4acbd | 2793 | 734 | 26.3% | 28 | 2765 | 26.3% | 722 | 52.1% |
 | chi | github.com/go-chi/chi/v5 | 3b17157 | 180 | 66 | 36.7% | 0 | 180 | 36.7% | 55 | 67.2% |
 | goldmark | github.com/yuin/goldmark | 50ba9fc | 795 | 442 | 55.6% | 0 | 795 | 55.6% | 130 | 71.9% |
-| pgx | github.com/jackc/pgx/v5 | 0a977a6 | 2099 | 784 | 37.4% | 110 | 1989 | 37.6% | 658 | 68.7% |
-| cel-go | github.com/google/cel-go | 646511d | 3586 | 1515 | 42.2% | 937 | 2649 | 39.4% | 1120 | 73.5% |
-| expr | github.com/expr-lang/expr | 4b31df3 | 1286 | 232 | 18.0% | 515 | 771 | 30.1% | 210 | 34.4% |
-| nats-server | github.com/nats-io/nats-server/v2 | 2e5f51f31 | 4000 | 1007 | 25.2% | 0 | 4000 | 25.2% | 1081 | 52.2% |
-| hugo | github.com/gohugoio/hugo | 89b8c3220 | 5378 | 1772 | 32.9% | 22 | 5356 | 32.7% | 1625 | 63.2% |
+| pgx | github.com/jackc/pgx/v5 | 0a977a6 | 2099 | 784 | 37.4% | 110 | 1989 | 37.6% | 660 | 68.8% |
+| cel-go | github.com/google/cel-go | 646511d | 3586 | 1545 | 43.1% | 937 | 2649 | 40.6% | 1115 | 74.2% |
+| expr | github.com/expr-lang/expr | 4b31df3 | 1286 | 232 | 18.0% | 515 | 771 | 30.1% | 214 | 34.7% |
+| nats-server | github.com/nats-io/nats-server/v2 | 2e5f51f31 | 4000 | 1007 | 25.2% | 0 | 4000 | 25.2% | 1084 | 52.3% |
+| hugo | github.com/gohugoio/hugo | 89b8c3220 | 5378 | 1785 | 33.2% | 22 | 5356 | 32.9% | 1617 | 63.3% |
 
 ## Distance to bound
 
@@ -51,22 +51,22 @@ reach against a deep tail that no achievable engine work will.
 | Blockers | Functions | Share |
 |---|---|---|
 | 0 | 31 | 0.1% |
-| 1 | 6559 | 29.1% |
-| 2 | 3241 | 14.4% |
-| 3 | 2005 | 8.9% |
-| 4 | 1658 | 7.4% |
-| 5 | 1037 | 4.6% |
-| 6 | 756 | 3.4% |
-| 7 | 661 | 2.9% |
-| 8 | 493 | 2.2% |
-| 9 | 380 | 1.7% |
-| 10+ | 5736 | 25.4% |
+| 1 | 6583 | 29.3% |
+| 2 | 3220 | 14.3% |
+| 3 | 1988 | 8.8% |
+| 4 | 1665 | 7.4% |
+| 5 | 1018 | 4.5% |
+| 6 | 749 | 3.3% |
+| 7 | 684 | 3.0% |
+| 8 | 492 | 2.2% |
+| 9 | 368 | 1.6% |
+| 10+ | 5685 | 25.3% |
 
 ## Unverifiable by cause kind
 
 | Cause | Count |
 |---|---|
-| call | 92978 |
+| call | 92332 |
 | loop | 43226 |
 | defer | 828 |
 | go | 335 |
@@ -94,9 +94,9 @@ does. Before that exclusion the 2026-07-21 measurement had this table's
 
 | Blocker | Functions |
 |---|---|
-| loop with unrecognized trip count | 610 |
-| unresolved cost at call to fmt.Sprintf | 330 |
-| unresolved cost at call to fmt.Errorf | 320 |
+| loop with unrecognized trip count | 625 |
+| unresolved cost at call to fmt.Errorf | 341 |
+| unresolved cost at call to fmt.Sprintf | 333 |
 | unresolved cost at call to t6 | 196 |
 | unresolved cost at call to (*sync.Once).Do | 90 |
 | unresolved cost at call to (*sync.Pool).Get | 87 |

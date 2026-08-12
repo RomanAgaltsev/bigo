@@ -100,6 +100,37 @@ Cost of deciding this way, checked rather than assumed:
   metrics and report goldens are **byte-identical**. **The survey will move and
   that movement is unmeasured** — it must be re-run and the delta explained.
 
+## Additions — blind-repo lane 2, 2026-08-12
+
+The rule from this file's header, applied on its first occasion: a new
+one-argument entry owes a row here. Each was checked for a second argument that
+could multiply its cost.
+
+**Note the argument index on every method.** `ssa.CallCommon.Args` carries the
+receiver at index 0, so a method's first declared parameter is index **1**.
+Sizing `(net/http.Header).Get` by index 0 would name the header map instead of
+the key — a different quantity that compiles fine and reads as correct. Pinned
+by a test that asserts the bound names the key.
+
+| Entry | Sized by | Second argument | Verdict |
+|---|---|---|---|
+| `(net/http.Header).Get` | arg 1, the key | — | fine — canonicalises the key, one map lookup; the number of headers does not enter |
+| `(net/http.Header).Set` | arg 1, the key | `value` | fine — the value is stored, never scanned |
+| `(*encoding/base64.Encoding).EncodeToString` | arg 1, the source | — | fine — one pass |
+| `(*encoding/base64.Encoding).DecodeString` | arg 1, the string | — | fine — one pass |
+| `slices.Clone` | arg 0 | — | fine — one copy; unit-element axiom applies |
+| `bytes.Compare` | arg 0 | `b` | fine — stops at `min`, and `[]byte` elements are fixed-width so the axiom is not even in play |
+| `strings.IndexRune` | arg 0 | a single rune | fine — a rune has no length to multiply, the `IndexByte` case |
+| `strconv.ParseFloat` | arg 0 | bit size, numeric | fine |
+| `time.ParseDuration` | arg 0 | — | fine |
+| `path/filepath.Clean` | arg 0 | — | fine |
+| `net/url.PathEscape` | arg 0 | — | fine |
+
+Constant entries added in the same lane — `math` ×61, `sync.NewCond`,
+`time.Sleep` — name no argument at all and so cannot be members of this class.
+The `math` family argument and its two declared refusals are documented at the
+entries.
+
 ## D — sorting
 
 | Entry | Verdict |
