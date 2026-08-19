@@ -70,11 +70,24 @@ func SM1NoFireConstTrip() string {
 
 // --- SM4: regexp compile-in-loop ---
 
-// SM4Compile fires: MustCompile inside any natural loop.
+// SM4Compile fires: a constant pattern recompiled every iteration is
+// hoistable, which is what makes the advice actionable.
 func SM4Compile(patterns []string) []bool {
 	out := make([]bool, 0, len(patterns))
 	for _, p := range patterns {
-		re := regexp.MustCompile(p) // want `smell\(SM4\): regexp compiled inside a loop`
+		re := regexp.MustCompile("x") // want `smell\(SM4\): regexp compiled inside a loop`
+		out = append(out, re.MatchString(p))
+	}
+	return out
+}
+
+// SM4NoFireVaryingPattern does not fire: the pattern is the range variable, so
+// there is nothing to hoist. This was a firing fixture before the invariance
+// analysis landed, and it is the shape that dominated the real-world findings.
+func SM4NoFireVaryingPattern(patterns []string) []bool {
+	out := make([]bool, 0, len(patterns))
+	for _, p := range patterns {
+		re := regexp.MustCompile(p)
 		out = append(out, re.MatchString("x"))
 	}
 	return out
@@ -92,17 +105,37 @@ func SM4NoFireHoisted(patterns []string) []bool {
 
 // --- SM5: sort-in-loop ---
 
-// SM5Sort fires: slices.Sort inside a data-dependent loop.
-func SM5Sort(groups [][]int) {
-	for _, g := range groups {
-		slices.Sort(g) // want `smell\(SM5\): sort inside a data-dependent loop`
+// SM5Sort fires: the same parameter slice re-sorted every iteration, with
+// nothing writing to it, so the 2nd..nth sorts are no-ops.
+func SM5Sort(s []int, xs []string) {
+	for range xs {
+		slices.Sort(s) // want `smell\(SM5\): sort inside a data-dependent loop`
 	}
 }
 
-// SM5SortSlice fires: sort.Slice inside a data-dependent loop.
-func SM5SortSlice(groups [][]int) {
+// SM5NoFirePerIteration does not fire: a different slice each iteration, so
+// every sort is necessary work. Formerly a firing fixture.
+func SM5NoFirePerIteration(groups [][]int) {
 	for _, g := range groups {
-		sort.Slice(g, func(i, j int) bool { return g[i] < g[j] }) // want `smell\(SM5\): sort inside a data-dependent loop`
+		slices.Sort(g)
+	}
+}
+
+// SM5NoFireMutated does not fire: the slice grows inside the loop, so it must
+// be re-sorted.
+func SM5NoFireMutated(s []int, xs []int) []int {
+	for _, x := range xs {
+		s = append(s, x)
+		slices.Sort(s)
+	}
+	return s
+}
+
+// SM5NoFireSortInterface does not fire: sort.Sort takes a sort.Interface,
+// which exposes no slice operand whose stability could be checked.
+func SM5NoFireSortInterface(s sort.Interface, xs []int) {
+	for range xs {
+		sort.Sort(s)
 	}
 }
 

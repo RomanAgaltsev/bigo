@@ -1,9 +1,9 @@
 {
-  "total": 243,
-  "bounded": 136,
-  "coverage_pct": "56.0",
+  "total": 246,
+  "bounded": 137,
+  "coverage_pct": "55.7",
   "by_cause": {
-    "call": 58,
+    "call": 60,
     "go": 3,
     "irreducible": 1,
     "loop": 37,
@@ -67,8 +67,8 @@
       "bounded": 9
     },
     "smells": {
-      "total": 24,
-      "bounded": 14
+      "total": 27,
+      "bounded": 15
     },
     "smoke": {
       "total": 2,
@@ -1262,7 +1262,19 @@
     },
     {
       "pkg": "smells",
+      "func": "SM4NoFireVaryingPattern",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "smells",
       "func": "SM5NoFireConstTrip",
+      "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "smells",
+      "func": "SM5NoFireMutated",
       "verdict": "unverifiable",
       "cause": "call"
     },
@@ -1274,15 +1286,21 @@
     },
     {
       "pkg": "smells",
-      "func": "SM5Sort",
+      "func": "SM5NoFirePerIteration",
       "verdict": "unverifiable",
       "cause": "call"
     },
     {
       "pkg": "smells",
-      "func": "SM5SortSlice",
+      "func": "SM5NoFireSortInterface",
       "verdict": "unverifiable",
       "cause": "call"
+    },
+    {
+      "pkg": "smells",
+      "func": "SM5Sort",
+      "verdict": "bounded",
+      "bound": "O(len(s) log(len(s)) len(xs))"
     },
     {
       "pkg": "smells",
@@ -1572,7 +1590,7 @@
     "SM2": 1,
     "SM3": 1,
     "SM4": 1,
-    "SM5": 2,
+    "SM5": 1,
     "SM6": 3,
     "SM7": 1,
     "SM8": 2
