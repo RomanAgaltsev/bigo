@@ -7,7 +7,7 @@ contents and CI never runs it. Its targets are repositories that exist on one
 machine at whatever commit they happen to sit, so these numbers are a record
 of one run — compare across runs only via the per-target commit below.
 
-Run 2026-08-12 with bigo 1.45.1 — the last RELEASED version at run time. A run made before its own release stamps the previous tag, so compare runs by the per-target commit below, never by this line.
+Run 2026-08-19 with bigo 1.46.0 — the last RELEASED version at run time. A run made before its own release stamps the previous tag, so compare runs by the per-target commit below, never by this line.
 
 **Aggregate: 32.9%** — 11021 of 33504 first-party functions bounded.
 
@@ -167,3 +167,24 @@ Population: hand-written code only, as above.
 | unresolved cost at call to (*google.golang.org/grpc/internal/grpclog.PrefixLogger).Infof | 187 |
 | unresolved cost at call to go.uber.org/zap.String | 186 |
 | unresolved argument size at call to strings.Join | 185 |
+
+## Advisory smells by rule
+
+The OUTWARD-facing table: every other table here ranks what bigo should
+build, and this one ranks what somebody else's code could be told about.
+Population: first-party, hand-written. Counts only — the finding list is in
+`survey.json`, and the triage sample is in `CONTRIB-QUEUE.md`.
+
+A count is not a defect. Five of the eight rules have prior art in linters
+Go projects already run (SM3 ≈ `prealloc`, SM1/SM7 ≈ `gocritic`,
+SM4 ≈ `perfsprint`-adjacent), so volume here says more about how common a
+pattern is than about whether a maintainer would merge the fix.
+
+| Rule | Findings |
+|---|---|
+| SM3 | 129 |
+| SM6 | 116 |
+| SM5 | 35 |
+| SM4 | 18 |
+| SM1 | 16 |
+| SM2 | 6 |

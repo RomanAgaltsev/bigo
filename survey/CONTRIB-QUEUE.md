@@ -8,7 +8,7 @@ they happen to sit; compare runs only via the per-target commit below.
 
 Run 2026-08-19 with bigo 1.46.0.
 
-**Sample: 40 findings, at most 8 per rule**, drawn in target order then file, line, rule. The rule was registered in `docs/bigo/investigations/2026-08-18-contribution-lane-thresholds.md` before this scan ran, and is implemented in `survey.Sample` so the two cannot drift.
+**Sample: 40 findings, at most 8 per rule and 6 per target**, drawn in target order then file, line, rule. The rule was registered in `docs/bigo/investigations/2026-08-18-contribution-lane-thresholds.md` before this scan ran, and is implemented in `survey.Sample` so the two cannot drift. The per-target cap is Amendment 1, made before any verdict was assigned.
 
 Population: first-party, hand-written. Generated code is excluded — nobody
 hand-tunes it, so a finding there is not a contribution.
@@ -54,37 +54,31 @@ however correct it is.
 | 4 | caddy | SM6 | `caddyconfig/httpcaddyfile/addresses.go:83` | map built without a size hint in a loop bounded by O(len(originalServerBlocks)); preallocate with make(map[K]V, O(len(originalServerBlocks))) | |
 | 5 | caddy | SM6 | `caddyconfig/httpcaddyfile/addresses.go:96` | map built without a size hint in a loop bounded by O(len(originalServerBlocks)); preallocate with make(map[K]V, O(len(originalServerBlocks))) | |
 | 6 | caddy | SM6 | `caddyconfig/httpcaddyfile/addresses.go:118` | map built without a size hint in a loop bounded by O(len(originalServerBlocks)); preallocate with make(map[K]V, O(len(originalServerBlocks))) | |
-| 7 | caddy | SM5 | `caddyconfig/httpcaddyfile/addresses.go:139` | sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure | |
-| 8 | caddy | SM5 | `caddyconfig/httpcaddyfile/addresses.go:153` | sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure | |
-| 9 | caddy | SM6 | `caddyconfig/httpcaddyfile/addresses.go:157` | map built without a size hint in a loop bounded by O(len(originalServerBlocks)); preallocate with make(map[K]V, O(len(originalServerBlocks))) | |
-| 10 | caddy | SM5 | `caddyconfig/httpcaddyfile/addresses.go:211` | sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure | |
-| 11 | caddy | SM5 | `caddyconfig/httpcaddyfile/addresses.go:240` | sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure | |
-| 12 | caddy | SM5 | `caddyconfig/httpcaddyfile/addresses.go:250` | sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure | |
-| 13 | caddy | SM6 | `caddyconfig/httpcaddyfile/directives.go:226` | map built without a size hint in a loop bounded by O(len(h.parentBlock.Segments)); preallocate with make(map[K]V, O(len(h.parentBlock.Segments))) | |
-| 14 | caddy | SM6 | `caddyconfig/httpcaddyfile/directives.go:564` | map built without a size hint in a loop bounded by O(len(sb.parsedKeys)); preallocate with make(map[K]V, O(len(sb.parsedKeys))) | |
-| 15 | caddy | SM6 | `caddyconfig/httpcaddyfile/directives.go:596` | map built without a size hint in a loop bounded by O(len(sb.parsedKeys)); preallocate with make(map[K]V, O(len(sb.parsedKeys))) | |
-| 16 | caddy | SM5 | `caddyconfig/httpcaddyfile/httptype.go:353` | sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure | |
-| 17 | caddy | SM5 | `caddyconfig/httpcaddyfile/httptype.go:657` | sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure | |
-| 18 | caddy | SM5 | `caddyconfig/httpcaddyfile/httptype.go:781` | sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure | |
-| 19 | caddy | SM4 | `modules/caddyhttp/headers/headers.go:152` | regexp compiled inside a loop; hoist the pattern | |
-| 20 | caddy | SM4 | `modules/caddyhttp/headers/headers.go:302` | regexp compiled inside a loop; hoist the pattern | |
-| 21 | caddy | SM4 | `modules/caddyhttp/headers/headers.go:329` | regexp compiled inside a loop; hoist the pattern | |
-| 22 | caddy | SM4 | `modules/caddyhttp/map/map.go:78` | regexp compiled inside a loop; hoist the pattern | |
-| 23 | caddy | SM3 | `modules/caddyhttp/reverseproxy/selectionpolicies.go:143` | append in a loop bounded by O(len(r.Weights)) on a zero-capacity slice; preallocate with make(…, 0, O(len(r.Weights))) | |
-| 24 | caddy | SM3 | `modules/caddyhttp/reverseproxy/selectionpolicies.go:823` | append in a loop bounded by O(len(upstreams)) on a zero-capacity slice; preallocate with make(…, 0, O(len(upstreams))) | |
-| 25 | caddy | SM3 | `modules/caddyhttp/reverseproxy/upstreams.go:516` | append in a loop bounded by O(len(mu.sources)) on a zero-capacity slice; preallocate with make(…, 0, O(len(mu.sources))) | |
-| 26 | caddy | SM4 | `modules/caddyhttp/rewrite/rewrite.go:114` | regexp compiled inside a loop; hoist the pattern | |
-| 27 | caddy | SM3 | `modules/caddyhttp/server.go:1096` | append in a loop bounded by O(len(headers)) on a zero-capacity slice; preallocate with make(…, 0, O(len(headers))) | |
-| 28 | caddy | SM4 | `modules/logging/filters.go:750` | regexp compiled inside a loop; hoist the pattern | |
-| 29 | nats-server | SM3 | `server/certidp/certidp.go:196` | append in a loop bounded by O(len(uris)) on a zero-capacity slice; preallocate with make(…, 0, O(len(uris))) | |
-| 30 | nats-server | SM3 | `server/certstore/certstore_windows.go:179` | append in a loop bounded by O(len(caCertsMatch)) on a zero-capacity slice; preallocate with make(…, 0, O(len(caCertsMatch))) | |
-| 31 | nats-server | SM3 | `server/certstore/certstore_windows.go:432` | append in a loop bounded by O(1) on a zero-capacity slice; preallocate with make(…, 0, O(1)) | |
-| 32 | nats-server | SM1 | `server/errors.go:319` | string built by repeated concatenation in a loop (quadratic); use strings.Builder | |
-| 33 | nats-server | SM1 | `server/errors.go:322` | string built by repeated concatenation in a loop (quadratic); use strings.Builder | |
-| 34 | nats-server | SM4 | `server/opts.go:5188` | regexp compiled inside a loop; hoist the pattern | |
-| 35 | nats-server | SM2 | `server/reload.go:2811` | repeated linear scan over the same slice (quadratic); build a map/set once before the loop | |
-| 36 | nats-server | SM2 | `server/reload.go:2818` | repeated linear scan over the same slice (quadratic); build a map/set once before the loop | |
-| 37 | hugo | SM4 | `codegen/methods.go:381` | regexp compiled inside a loop; hoist the pattern | |
-| 38 | hugo | SM2 | `langs/config.go:148` | repeated linear scan over the same slice (quadratic); build a map/set once before the loop | |
-| 39 | hugo | SM1 | `resources/internal/resourcepaths.go:53` | string built by repeated concatenation in a loop (quadratic); use strings.Builder | |
-| 40 | hugo | SM1 | `resources/transform.go:451` | string built by repeated concatenation in a loop (quadratic); use strings.Builder | |
+| 7 | nats-server | SM6 | `server/accounts.go:708` | map built without a size hint in a loop bounded by O(len(dests)); preallocate with make(map[K]V, O(len(dests))) | |
+| 8 | nats-server | SM3 | `server/certidp/certidp.go:196` | append in a loop bounded by O(len(uris)) on a zero-capacity slice; preallocate with make(…, 0, O(len(uris))) | |
+| 9 | nats-server | SM3 | `server/certstore/certstore_windows.go:179` | append in a loop bounded by O(len(caCertsMatch)) on a zero-capacity slice; preallocate with make(…, 0, O(len(caCertsMatch))) | |
+| 10 | nats-server | SM3 | `server/certstore/certstore_windows.go:432` | append in a loop bounded by O(1) on a zero-capacity slice; preallocate with make(…, 0, O(1)) | |
+| 11 | nats-server | SM3 | `server/client.go:6713` | append in a loop bounded by O(len(cts)) on a zero-capacity slice; preallocate with make(…, 0, O(len(cts))) | |
+| 12 | nats-server | SM1 | `server/errors.go:319` | string built by repeated concatenation in a loop (quadratic); use strings.Builder | |
+| 13 | hugo | SM3 | `codegen/methods.go:357` | append in a loop bounded by O(len(m)) on a zero-capacity slice; preallocate with make(…, 0, O(len(m))) | |
+| 14 | hugo | SM4 | `codegen/methods.go:381` | regexp compiled inside a loop; hoist the pattern | |
+| 15 | hugo | SM3 | `codegen/methods.go:402` | append in a loop bounded by O(len(m)) on a zero-capacity slice; preallocate with make(…, 0, O(len(m))) | |
+| 16 | hugo | SM3 | `codegen/methods.go:449` | append in a loop bounded by O(len(f)) on a zero-capacity slice; preallocate with make(…, 0, O(len(f))) | |
+| 17 | hugo | SM6 | `codegen/methods.go:510` | map built without a size hint in a loop bounded by O(len(s)); preallocate with make(map[K]V, O(len(s))) | |
+| 18 | hugo | SM6 | `commands/convert.go:206` | map built without a size hint in a loop bounded by O(len(pagesBackedByFile)); preallocate with make(map[K]V, O(len(pagesBackedByFile))) | |
+| 19 | prometheus | SM6 | `cmd/promtool/analyze.go:95` | map built without a size hint in a loop bounded by O(len(matchers)); preallocate with make(map[K]V, O(len(matchers))) | |
+| 20 | prometheus | SM5 | `cmd/promtool/unittest.go:412` | sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure | |
+| 21 | prometheus | SM5 | `cmd/promtool/unittest.go:413` | sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure | |
+| 22 | prometheus | SM5 | `cmd/promtool/unittest.go:517` | sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure | |
+| 23 | prometheus | SM5 | `cmd/promtool/unittest.go:520` | sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure | |
+| 24 | prometheus | SM5 | `discovery/moby/docker.go:258` | sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure | |
+| 25 | grpc-go | SM1 | `internal/resolver/dns/dns_resolver.go:303` | string built by repeated concatenation in a loop (quadratic); use strings.Builder | |
+| 26 | grpc-go | SM5 | `profiling/cmd/catapult.go:324` | sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure | |
+| 27 | grpc-go | SM1 | `xds/internal/xdsclient/xdsresource/matcher.go:129` | string built by repeated concatenation in a loop (quadratic); use strings.Builder | |
+| 28 | grpc-go | SM4 | `xds/internal/xdsclient/xdsresource/unmarshal_rds.go:237` | regexp compiled inside a loop; hoist the pattern | |
+| 29 | grpc-go | SM4 | `xds/internal/xdsclient/xdsresource/unmarshal_rds.go:257` | regexp compiled inside a loop; hoist the pattern | |
+| 30 | grpc-go | SM4 | `xds/internal/xdsclient/xdsresource/unmarshal_rds.go:415` | regexp compiled inside a loop; hoist the pattern | |
+| 31 | goldmark | SM2 | `testutil/testutil.go:167` | repeated linear scan over the same slice (quadratic); build a map/set once before the loop | |
+| 32 | cel-go | SM5 | `cel/prompt.go:159` | sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure | |
+| 33 | cel-go | SM1 | `common/error.go:61` | string built by repeated concatenation in a loop (quadratic); use strings.Builder | |
+| 34 | delve | SM5 | `pkg/proc/bininfo.go:268` | sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure | |

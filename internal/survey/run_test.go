@@ -164,8 +164,8 @@ func TestContribScan(t *testing.T) {
 		}
 		t.Logf("contrib: %s %d findings", tg.Name, len(tg.Smells.Findings))
 	}
-	t.Logf("contrib: %d findings across %d targets; sample of %d drawn (cap %d per rule)",
-		len(r.SmellFindings), len(r.Targets), len(sample), SamplePerRule)
+	t.Logf("contrib: %d findings across %d targets; sample of %d drawn (want %d, caps %d/rule %d/target)",
+		len(r.SmellFindings), len(r.Targets), len(sample), SampleSize, SamplePerRule, SamplePerTarget)
 	if len(sample) < 20 {
 		t.Logf("contrib: WARNING — sample is %d, and the thresholds file calls fewer than 20 "+
 			"eligible findings a Stage 2 failure", len(sample))
