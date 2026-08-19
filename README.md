@@ -7,6 +7,13 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/RomanAgaltsev/bigo.svg)](https://pkg.go.dev/github.com/RomanAgaltsev/bigo)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
+**Quickstart:** [install](#install--run) · [golangci-lint](#use-with-golangci-lint)
+· [GitHub Action](#in-ci) · [what bigo cannot bound](#what-bigo-does-not-count-yet)
+
+bigo bounds **roughly a third** of hand-written functions in large real
+codebases and reports the rest as ⊤ (unverifiable) — deliberately, because the
+one rule it will not break is emitting a wrong bound.
+
 A Go static analyzer that infers the **asymptotic time complexity** of Go code
 and checks it against developer-declared budgets:
 
@@ -315,7 +322,7 @@ did. Comparing different modules, or across a schema major, is refused.
 - uses: actions/setup-go@v5
   with:
     go-version-file: go.mod
-- uses: RomanAgaltsev/bigo@v1
+- uses: RomanAgaltsev/bigo-action@v1
   with:
     fail-on: none # none (default) | break | regression
 ```
