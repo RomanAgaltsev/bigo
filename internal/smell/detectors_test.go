@@ -183,21 +183,78 @@ func Hoisted(patterns []string) int {
 func TestSM5SortInLoop(t *testing.T) {
 	src := `package input
 import ("slices"; "sort")
-func InDataDep(groups [][]int) {
-	for _, g := range groups { slices.Sort(g) }
+
+// StableSort: the same parameter slice, nothing writes to it in the loop, so
+// the 2nd..nth sorts are provably no-ops. The rule's positive control.
+func StableSort(s []int, xs []string) {
+	for range xs {
+		slices.Sort(s)
+	}
 }
-func InConstTrip(groups [][]int) {
-	for i := 0; i < 10; i++ { slices.Sort(groups[i]) }
+
+// StableWithRead: reading an element is not a mutation. Pins that the
+// non-mutation check allows loads through an element address.
+func StableWithRead(s []int, xs []string) int {
+	n := 0
+	for range xs {
+		slices.Sort(s)
+		n += s[0]
+	}
+	return n
 }
+
+// PerIterationSlice: a DIFFERENT slice each iteration, so every sort is
+// necessary work. This was the rule's positive fixture before the invariance
+// analysis landed.
+func PerIterationSlice(groups [][]int) {
+	for _, g := range groups {
+		slices.Sort(g)
+	}
+}
+
+// MutatedByAppend: the slice grows inside the loop, so re-sorting is required.
+func MutatedByAppend(s []int, xs []int) []int {
+	for _, x := range xs {
+		s = append(s, x)
+		slices.Sort(s)
+	}
+	return s
+}
+
+// MutatedByIndex: an element is rewritten inside the loop. Same reason.
+func MutatedByIndex(s []int, xs []int) {
+	for i, x := range xs {
+		s[i%len(s)] = x
+		slices.Sort(s)
+	}
+}
+
+// SortInterface: sort.Sort takes a sort.Interface, which exposes no slice
+// operand whose stability could be checked, so the rule declines permanently.
+func SortInterface(s sort.Interface, xs []int) {
+	for range xs {
+		sort.Sort(s)
+	}
+}
+
+// ConstTripOnly: the only enclosing loop is constant-trip.
+func ConstTripOnly(groups [][]int) {
+	for i := 0; i < 10; i++ {
+		slices.Sort(groups[i])
+	}
+}
+
+// Outside: no enclosing loop.
 func Outside(g []int) { slices.Sort(g) }
-func SortSliceInLoop(groups [][]int) {
-	for _, g := range groups { sort.Slice(g, func(i, j int) bool { return g[i] < g[j] }) }
-}
 `
-	wantRuleCount(t, detectOne(t, src, "InDataDep", ruleset("SM5")), "SM5", 1)
-	wantRuleCount(t, detectOne(t, src, "InConstTrip", ruleset("SM5")), "SM5", 0)
+	wantRuleCount(t, detectOne(t, src, "StableSort", ruleset("SM5")), "SM5", 1)
+	wantRuleCount(t, detectOne(t, src, "StableWithRead", ruleset("SM5")), "SM5", 1)
+	wantRuleCount(t, detectOne(t, src, "PerIterationSlice", ruleset("SM5")), "SM5", 0)
+	wantRuleCount(t, detectOne(t, src, "MutatedByAppend", ruleset("SM5")), "SM5", 0)
+	wantRuleCount(t, detectOne(t, src, "MutatedByIndex", ruleset("SM5")), "SM5", 0)
+	wantRuleCount(t, detectOne(t, src, "SortInterface", ruleset("SM5")), "SM5", 0)
+	wantRuleCount(t, detectOne(t, src, "ConstTripOnly", ruleset("SM5")), "SM5", 0)
 	wantRuleCount(t, detectOne(t, src, "Outside", ruleset("SM5")), "SM5", 0)
-	wantRuleCount(t, detectOne(t, src, "SortSliceInLoop", ruleset("SM5")), "SM5", 1)
 }
 
 func TestSM3AppendNoPrealloc(t *testing.T) {

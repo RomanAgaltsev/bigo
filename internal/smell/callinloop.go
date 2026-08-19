@@ -57,11 +57,23 @@ func smCompileInLoop(fn *ssa.Function, ctx *fnContext) []Finding {
 }
 
 // smSortInLoop fires when a sorting function is called inside a data-dependent
-// loop — composed O(n·m log m).
+// loop ON A SLICE THAT IS BOTH STABLE ACROSS ITERATIONS AND UNTOUCHED BY THE
+// LOOP — the only condition under which the 2nd..nth sorts are redundant and
+// "hoist or restructure" is true advice. A slice rebuilt, appended to, or
+// written through inside the loop must be re-sorted, so the rule stays silent.
+//
+// This is the same test smLinearScan (SM2) applies below, extended with the
+// non-mutation half that a mutable operand needs and an immutable one does not.
 func smSortInLoop(fn *ssa.Function, ctx *fnContext) []Finding {
 	return callsInLoops(fn, ctx, sm5Names, true, "SM5",
 		"sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure",
-		func(*ssa.Call, *loopnest.Loop) bool { return true })
+		func(c *ssa.Call, lp *loopnest.Loop) bool {
+			s, ok := sortedSliceOperand(&c.Call)
+			if !ok {
+				return false
+			}
+			return loopInvariant(s, lp) && unmutatedIn(s, lp)
+		})
 }
 
 // operandOK decides whether a matched call is actionable with respect to lp,
@@ -79,7 +91,8 @@ type operandOK func(c *ssa.Call, lp *loopnest.Loop) bool
 // The gate and the predicate read DIFFERENT loops on purpose. needDataDep asks
 // whether ANY enclosing loop is data-dependent — a sort in a constant-trip loop
 // nested inside a data-dependent one is still repeated a data-dependent number
-// of times. The predicate is evaluated against the INNERMOST enclosing loop,
+// of times. The predicate is evaluated against the INNERMOST enclosing loop
+// (by Depth — EnclosingLoops does not guarantee an order),
 // because hoisting out of that loop is already a win and requiring invariance
 // across every enclosing loop would discard those cases.
 func callsInLoops(fn *ssa.Function, ctx *fnContext, names map[string]bool, needDataDep bool, rule, msg string, ok operandOK) []Finding {
@@ -94,7 +107,6 @@ func callsInLoops(fn *ssa.Function, ctx *fnContext, names map[string]bool, needD
 			if !resolved || !names[origin] {
 				continue
 			}
-			// EnclosingLoops is outermost-first.
 			encl := ctx.forest.EnclosingLoops(b)
 			if len(encl) == 0 {
 				continue
@@ -102,13 +114,27 @@ func callsInLoops(fn *ssa.Function, ctx *fnContext, names map[string]bool, needD
 			if needDataDep && !anyDataDep(encl, ctx) {
 				continue
 			}
-			if !ok(call, encl[len(encl)-1]) {
+			if !ok(call, innermost(encl)) {
 				continue
 			}
 			out = append(out, Finding{Pos: call.Pos(), Rule: rule, Message: msg})
 		}
 	}
 	return out
+}
+
+// innermost returns the deepest loop in the chain. EnclosingLoops explicitly
+// does NOT guarantee an order — its doc directs callers that need one to sort
+// by Depth — and the slice is built from a map, so indexing it positionally
+// picks a different loop from run to run.
+func innermost(loops []*loopnest.Loop) *loopnest.Loop {
+	best := loops[0]
+	for _, lp := range loops[1:] {
+		if lp.Depth > best.Depth {
+			best = lp
+		}
+	}
+	return best
 }
 
 // anyDataDep reports whether any loop in the chain is data-dependent.
