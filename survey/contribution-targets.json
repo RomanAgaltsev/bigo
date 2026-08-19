@@ -1,0 +1,15 @@
+{
+  "_comment": "Contribution-lane targets. SEPARATE from targets.json on purpose: that list is chosen for diversity of domain and style to measure the ENGINE, and its cross-run comparability must not move. These are chosen for CONTRIBUTION: active maintenance, permissive license, library-shaped hot paths, and an n that is genuinely unbounded at runtime. Overlap with targets.json is expected where both criteria hold. Machine-specific paths; a missing path is a skip, not an error, so this file stays useful on any machine. etcd is deliberately absent: it loads 98 functions in the current survey, which is a partial package load rather than a repository.",
+  "targets": [
+    {"name": "caddy",       "path": "E:/GIT/caddy"},
+    {"name": "nats-server", "path": "E:/GIT/nats-server"},
+    {"name": "hugo",        "path": "E:/GIT/hugo"},
+    {"name": "prometheus",  "path": "E:/GIT/prometheus"},
+    {"name": "grpc-go",     "path": "E:/GIT/grpc-go"},
+    {"name": "pgx",         "path": "E:/GIT/pgx"},
+    {"name": "goldmark",    "path": "E:/GIT/goldmark"},
+    {"name": "cel-go",      "path": "E:/GIT/cel-go"},
+    {"name": "delve",       "path": "E:/GIT/delve"},
+    {"name": "chi",         "path": "E:/GIT/chi"}
+  ]
+}

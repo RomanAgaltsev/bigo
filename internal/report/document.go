@@ -19,9 +19,9 @@ import (
 
 // SchemaVersion is the version of the document format.
 // 1.1.0 added the top-level smells array. 1.2.0 added provenance and the
-// top-level assumptions array. 1.3.0 added cause.callee (all additive; earlier
-// documents remain valid).
-const SchemaVersion = "1.3.0"
+// top-level assumptions array. 1.3.0 added cause.callee. 1.4.0 added
+// smells[].package (all additive; earlier documents remain valid).
+const SchemaVersion = "1.4.0"
 
 // Provenance values. Absence means "inferred" — the field is omitted for
 // every function no assumption influenced, which is what keeps documents
@@ -137,7 +137,12 @@ type TrustEntry struct {
 // SmellJSON is one advisory smell finding (internal/smell.Finding, serialized).
 // Rule is the canonical ID (SM1..SM8); Message carries no "smell(SMn):" prefix
 // — that is the analyzer's diagnostic presentation, not part of the data.
+//
+// Package is present since schema 1.4.0 and exists so consumers can apply
+// frontier.FirstParty: File alone cannot distinguish this module's code from a
+// dependency's, which put third-party findings into the survey's triage queue.
 type SmellJSON struct {
+	Package string `json:"package,omitempty"`
 	Rule    string `json:"rule"`
 	Message string `json:"message"`
 	File    string `json:"file"` // module-relative, forward slashes

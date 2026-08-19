@@ -12,6 +12,8 @@ var update = flag.Bool("update", false, "run the survey and rewrite survey/surve
 
 var whatifFile = flag.String("whatif", "", "candidates file; runs the what-if harness and writes survey/WHATIF.md and survey/whatif.json")
 
+var contribScan = flag.Bool("contrib", false, "run the contribution scan over survey/contribution-targets.json")
+
 // TestSurvey is the harness's entry point, and it is deliberately NOT a golden
 // test — it asserts nothing and SKIPS unless -update is passed.
 //
@@ -108,6 +110,65 @@ func TestWhatIf(t *testing.T) {
 			continue
 		}
 		t.Logf("whatif: %s graduated %d (%d hand-written, %s)", res.Name, res.Graduated, res.GraduatedHand, res.DeltaPP)
+	}
+}
+
+// TestContribScan is the contribution lane's entry point — TestSurvey's second
+// sibling. It asserts nothing and SKIPS unless -contrib is passed, for exactly
+// TestSurvey's reasons: machine-specific inputs, minutes to run, and numbers
+// that SHOULD move when a target is updated.
+//
+// It reads a DIFFERENT target list and writes DIFFERENT artifacts, so a
+// contribution scan can never disturb survey.json or SURVEY.md — whose
+// cross-run comparability the 2026-07-20/21 probes pin their populations to.
+//
+// Run it with: task contrib-scan
+func TestContribScan(t *testing.T) {
+	if !*contribScan {
+		t.Skip("contribution scan is a manual measurement; run `task contrib-scan`")
+	}
+	root, err := filepath.Abs(filepath.Join("..", ".."))
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfgPath := filepath.Join(root, "survey", "contribution-targets.json")
+	cfg, err := LoadConfig(cfgPath)
+	if err != nil {
+		t.Fatalf("read %s: %v", cfgPath, err)
+	}
+	if len(cfg.Targets) == 0 {
+		t.Fatalf("%s lists no targets", cfgPath)
+	}
+
+	r := Run(cfg, version(t, root), func(f string, a ...any) { t.Logf(f, a...) })
+	sample := Sample(r.SmellFindings, SampleSize, SamplePerRule, SamplePerTarget)
+
+	outDir := filepath.Join(root, "survey")
+	if err := os.MkdirAll(outDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(outDir, "contrib-queue.json"), r.JSON(), 0o644); err != nil { //nolint:gosec // generated record, not a secret
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(outDir, "CONTRIB-QUEUE.md"),
+		[]byte(RenderContribQueue(r, sample)), 0o644); err != nil { //nolint:gosec // generated record, not a secret
+		t.Fatal(err)
+	}
+
+	// Logged, not asserted: the probe's Stage 2 reads these numbers, and a test
+	// that failed on a low count would be asserting the outcome it is measuring.
+	for _, tg := range r.Targets {
+		if tg.Skipped != "" {
+			t.Logf("contrib: %s SKIPPED: %s", tg.Name, tg.Skipped)
+			continue
+		}
+		t.Logf("contrib: %s %d findings", tg.Name, len(tg.Smells.Findings))
+	}
+	t.Logf("contrib: %d findings across %d targets; sample of %d drawn (want %d, caps %d/rule %d/target)",
+		len(r.SmellFindings), len(r.Targets), len(sample), SampleSize, SamplePerRule, SamplePerTarget)
+	if len(sample) < 20 {
+		t.Logf("contrib: WARNING — sample is %d, and the thresholds file calls fewer than 20 "+
+			"eligible findings a Stage 2 failure", len(sample))
 	}
 }
 

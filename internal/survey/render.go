@@ -184,6 +184,22 @@ func (r Report) Markdown() []byte {
 		}
 		fmt.Fprintf(&b, "| %s | %d |\n", escapePipes(p.Key), p.Count)
 	}
+
+	if len(r.AggSmellsByRule) > 0 {
+		b.WriteString("\n## Advisory smells by rule\n\n")
+		b.WriteString("The OUTWARD-facing table: every other table here ranks what bigo should\n")
+		b.WriteString("build, and this one ranks what somebody else's code could be told about.\n")
+		b.WriteString("Population: first-party, hand-written. Counts only — the finding list is in\n")
+		b.WriteString("`survey.json`, and the triage sample is in `CONTRIB-QUEUE.md`.\n\n")
+		b.WriteString("A count is not a defect. Five of the eight rules have prior art in linters\n")
+		b.WriteString("Go projects already run (SM3 ≈ `prealloc`, SM1/SM7 ≈ `gocritic`,\n")
+		b.WriteString("SM4 ≈ `perfsprint`-adjacent), so volume here says more about how common a\n")
+		b.WriteString("pattern is than about whether a maintainer would merge the fix.\n\n")
+		b.WriteString("| Rule | Findings |\n|---|---|\n")
+		for _, p := range ranked(r.AggSmellsByRule) {
+			fmt.Fprintf(&b, "| %s | %d |\n", p.Key, p.Count)
+		}
+	}
 	return b.Bytes()
 }
 
