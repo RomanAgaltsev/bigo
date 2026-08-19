@@ -102,52 +102,159 @@ func S(xs []string) string {
 func TestSM4CompileInLoop(t *testing.T) {
 	src := `package input
 import "regexp"
-func InLoop(patterns []string) []bool {
-	out := []bool{}
-	for _, p := range patterns {
-		re := regexp.MustCompile(p)
-		out = append(out, re.MatchString("x"))
-	}
-	return out
-}
-func ConstTrip() []bool {
-	out := []bool{}
+
+// ConstPattern: a literal recompiled every iteration. Hoistable — the rule's
+// primary positive control.
+func ConstPattern() int {
+	c := 0
 	for i := 0; i < 10; i++ {
 		re := regexp.MustCompile("x")
-		out = append(out, re.MatchString("x"))
+		if re.MatchString("x") {
+			c++
+		}
 	}
-	return out
+	return c
 }
-func Hoisted(patterns []string) []bool {
+
+// ParamPattern: invariant across the loop because a parameter cannot be
+// redefined inside it.
+func ParamPattern(pat string, xs []string) int {
+	c := 0
+	for _, x := range xs {
+		re := regexp.MustCompile(pat)
+		if re.MatchString(x) {
+			c++
+		}
+	}
+	return c
+}
+
+// InnerInvariant: pat varies across the OUTER loop but is constant across the
+// inner one, so the compile hoists out of the inner loop. This fixture is the
+// discriminator for evaluating invariance against the innermost enclosing
+// loop; an outermost check silences it.
+func InnerInvariant(xs, ys []string) int {
+	c := 0
+	for _, x := range xs {
+		pat := "^" + x
+		for _, y := range ys {
+			re := regexp.MustCompile(pat)
+			if re.MatchString(y) {
+				c++
+			}
+		}
+	}
+	return c
+}
+
+// VaryingPattern: NOTHING to hoist — the pattern is the range variable. This
+// was the rule's positive fixture before the invariance analysis landed, and
+// it is the shape that made 12 of 12 sampled real-world findings unactionable.
+func VaryingPattern(patterns []string) int {
+	c := 0
+	for _, p := range patterns {
+		re := regexp.MustCompile(p)
+		if re.MatchString("x") {
+			c++
+		}
+	}
+	return c
+}
+
+// Hoisted: already correct.
+func Hoisted(patterns []string) int {
 	re := regexp.MustCompile("x")
-	out := []bool{}
-	for _, p := range patterns { out = append(out, re.MatchString(p)) }
-	return out
+	c := 0
+	for _, p := range patterns {
+		if re.MatchString(p) {
+			c++
+		}
+	}
+	return c
 }
 `
-	wantRuleCount(t, detectOne(t, src, "InLoop", ruleset("SM4")), "SM4", 1)
-	wantRuleCount(t, detectOne(t, src, "ConstTrip", ruleset("SM4")), "SM4", 1) // any loop
+	wantRuleCount(t, detectOne(t, src, "ConstPattern", ruleset("SM4")), "SM4", 1)
+	wantRuleCount(t, detectOne(t, src, "ParamPattern", ruleset("SM4")), "SM4", 1)
+	wantRuleCount(t, detectOne(t, src, "InnerInvariant", ruleset("SM4")), "SM4", 1)
+	wantRuleCount(t, detectOne(t, src, "VaryingPattern", ruleset("SM4")), "SM4", 0)
 	wantRuleCount(t, detectOne(t, src, "Hoisted", ruleset("SM4")), "SM4", 0)
 }
 
 func TestSM5SortInLoop(t *testing.T) {
 	src := `package input
 import ("slices"; "sort")
-func InDataDep(groups [][]int) {
-	for _, g := range groups { slices.Sort(g) }
+
+// StableSort: the same parameter slice, nothing writes to it in the loop, so
+// the 2nd..nth sorts are provably no-ops. The rule's positive control.
+func StableSort(s []int, xs []string) {
+	for range xs {
+		slices.Sort(s)
+	}
 }
-func InConstTrip(groups [][]int) {
-	for i := 0; i < 10; i++ { slices.Sort(groups[i]) }
+
+// StableWithRead: reading an element is not a mutation. Pins that the
+// non-mutation check allows loads through an element address.
+func StableWithRead(s []int, xs []string) int {
+	n := 0
+	for range xs {
+		slices.Sort(s)
+		n += s[0]
+	}
+	return n
 }
+
+// PerIterationSlice: a DIFFERENT slice each iteration, so every sort is
+// necessary work. This was the rule's positive fixture before the invariance
+// analysis landed.
+func PerIterationSlice(groups [][]int) {
+	for _, g := range groups {
+		slices.Sort(g)
+	}
+}
+
+// MutatedByAppend: the slice grows inside the loop, so re-sorting is required.
+func MutatedByAppend(s []int, xs []int) []int {
+	for _, x := range xs {
+		s = append(s, x)
+		slices.Sort(s)
+	}
+	return s
+}
+
+// MutatedByIndex: an element is rewritten inside the loop. Same reason.
+func MutatedByIndex(s []int, xs []int) {
+	for i, x := range xs {
+		s[i%len(s)] = x
+		slices.Sort(s)
+	}
+}
+
+// SortInterface: sort.Sort takes a sort.Interface, which exposes no slice
+// operand whose stability could be checked, so the rule declines permanently.
+func SortInterface(s sort.Interface, xs []int) {
+	for range xs {
+		sort.Sort(s)
+	}
+}
+
+// ConstTripOnly: the only enclosing loop is constant-trip.
+func ConstTripOnly(groups [][]int) {
+	for i := 0; i < 10; i++ {
+		slices.Sort(groups[i])
+	}
+}
+
+// Outside: no enclosing loop.
 func Outside(g []int) { slices.Sort(g) }
-func SortSliceInLoop(groups [][]int) {
-	for _, g := range groups { sort.Slice(g, func(i, j int) bool { return g[i] < g[j] }) }
-}
 `
-	wantRuleCount(t, detectOne(t, src, "InDataDep", ruleset("SM5")), "SM5", 1)
-	wantRuleCount(t, detectOne(t, src, "InConstTrip", ruleset("SM5")), "SM5", 0)
+	wantRuleCount(t, detectOne(t, src, "StableSort", ruleset("SM5")), "SM5", 1)
+	wantRuleCount(t, detectOne(t, src, "StableWithRead", ruleset("SM5")), "SM5", 1)
+	wantRuleCount(t, detectOne(t, src, "PerIterationSlice", ruleset("SM5")), "SM5", 0)
+	wantRuleCount(t, detectOne(t, src, "MutatedByAppend", ruleset("SM5")), "SM5", 0)
+	wantRuleCount(t, detectOne(t, src, "MutatedByIndex", ruleset("SM5")), "SM5", 0)
+	wantRuleCount(t, detectOne(t, src, "SortInterface", ruleset("SM5")), "SM5", 0)
+	wantRuleCount(t, detectOne(t, src, "ConstTripOnly", ruleset("SM5")), "SM5", 0)
 	wantRuleCount(t, detectOne(t, src, "Outside", ruleset("SM5")), "SM5", 0)
-	wantRuleCount(t, detectOne(t, src, "SortSliceInLoop", ruleset("SM5")), "SM5", 1)
 }
 
 func TestSM3AppendNoPrealloc(t *testing.T) {
@@ -273,4 +380,41 @@ func FibMemo(n int, memo map[int]int) int {
 	wantRuleCount(t, detectOne(t, src, "Unguarded", ruleset("SM8")), "SM8", 0)
 	// Memoized recursion is O(n), not exponential — SM8 must stay silent.
 	wantRuleCount(t, detectOne(t, src, "FibMemo", ruleset("SM8")), "SM8", 0)
+}
+
+// TestSM5NestedConstTripInsideDataDep pins the gate: SM5 asks whether ANY
+// enclosing loop is data-dependent, not whether the innermost one is. The
+// operand predicate is evaluated against the innermost loop, but the gate is
+// not — otherwise a sort in a constant-trip inner loop would escape even though
+// the outer loop repeats it a data-dependent number of times.
+func TestSM5NestedConstTripInsideDataDep(t *testing.T) {
+	src := `package input
+import "slices"
+func Nested(s []int, xs []string) {
+	for range xs {
+		for i := 0; i < 3; i++ {
+			slices.Sort(s)
+		}
+	}
+}
+`
+	wantRuleCount(t, detectOne(t, src, "Nested", ruleset("SM5")), "SM5", 1)
+}
+
+// TestSM3NoFireConstantBound pins that a resolvable but CONSTANT trip count is
+// useless to SM3/SM6: "preallocate with make(…, 0, O(1))" is not advice. Since
+// v1.36.0 the trip-count rules resolve constant guards, including shapes the
+// structural constantTrip helper does not recognise — a geometric step is not
+// an ADD/SUB phi, so constantTrip returns false while tripcount returns O(1).
+func TestSM3NoFireConstantBound(t *testing.T) {
+	src := `package input
+func GeometricConst() []int {
+	var out []int
+	for i := 1; i < 256; i *= 2 {
+		out = append(out, i)
+	}
+	return out
+}
+`
+	wantRuleCount(t, detectOne(t, src, "GeometricConst", ruleset("SM3")), "SM3", 0)
 }

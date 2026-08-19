@@ -1,6 +1,6 @@
 {
   "generated": "2026-08-19",
-  "bigo_version": "1.46.0",
+  "bigo_version": "1.47.0",
   "targets": [
     {
       "name": "caddy",
@@ -2040,8 +2040,6 @@
         "by_rule": {
           "SM1": 1,
           "SM3": 5,
-          "SM4": 6,
-          "SM5": 12,
           "SM6": 18
         },
         "findings": [
@@ -2051,7 +2049,7 @@
             "package": "github.com/caddyserver/caddy/v2",
             "file": "admin.go",
             "line": 301,
-            "message": "map built without a size hint in a loop bounded by O(len(admin.Origins)); preallocate with make(map[K]V, O(len(admin.Origins)))"
+            "message": "map grown in a loop bounded by O(len(admin.Origins)) without a size hint; preallocate with make(map[K]V, O(len(admin.Origins)))"
           },
           {
             "target": "caddy",
@@ -2075,7 +2073,7 @@
             "package": "github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile",
             "file": "caddyconfig/httpcaddyfile/addresses.go",
             "line": 83,
-            "message": "map built without a size hint in a loop bounded by O(len(originalServerBlocks)); preallocate with make(map[K]V, O(len(originalServerBlocks)))"
+            "message": "map grown in a loop bounded by O(len(originalServerBlocks)) without a size hint; preallocate with make(map[K]V, O(len(originalServerBlocks)))"
           },
           {
             "target": "caddy",
@@ -2083,7 +2081,7 @@
             "package": "github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile",
             "file": "caddyconfig/httpcaddyfile/addresses.go",
             "line": 96,
-            "message": "map built without a size hint in a loop bounded by O(len(originalServerBlocks)); preallocate with make(map[K]V, O(len(originalServerBlocks)))"
+            "message": "map grown in a loop bounded by O(len(originalServerBlocks)) without a size hint; preallocate with make(map[K]V, O(len(originalServerBlocks)))"
           },
           {
             "target": "caddy",
@@ -2091,23 +2089,7 @@
             "package": "github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile",
             "file": "caddyconfig/httpcaddyfile/addresses.go",
             "line": 118,
-            "message": "map built without a size hint in a loop bounded by O(len(originalServerBlocks)); preallocate with make(map[K]V, O(len(originalServerBlocks)))"
-          },
-          {
-            "target": "caddy",
-            "rule": "SM5",
-            "package": "github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile",
-            "file": "caddyconfig/httpcaddyfile/addresses.go",
-            "line": 139,
-            "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
-          },
-          {
-            "target": "caddy",
-            "rule": "SM5",
-            "package": "github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile",
-            "file": "caddyconfig/httpcaddyfile/addresses.go",
-            "line": 153,
-            "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
+            "message": "map grown in a loop bounded by O(len(originalServerBlocks)) without a size hint; preallocate with make(map[K]V, O(len(originalServerBlocks)))"
           },
           {
             "target": "caddy",
@@ -2115,31 +2097,7 @@
             "package": "github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile",
             "file": "caddyconfig/httpcaddyfile/addresses.go",
             "line": 157,
-            "message": "map built without a size hint in a loop bounded by O(len(originalServerBlocks)); preallocate with make(map[K]V, O(len(originalServerBlocks)))"
-          },
-          {
-            "target": "caddy",
-            "rule": "SM5",
-            "package": "github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile",
-            "file": "caddyconfig/httpcaddyfile/addresses.go",
-            "line": 211,
-            "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
-          },
-          {
-            "target": "caddy",
-            "rule": "SM5",
-            "package": "github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile",
-            "file": "caddyconfig/httpcaddyfile/addresses.go",
-            "line": 240,
-            "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
-          },
-          {
-            "target": "caddy",
-            "rule": "SM5",
-            "package": "github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile",
-            "file": "caddyconfig/httpcaddyfile/addresses.go",
-            "line": 250,
-            "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
+            "message": "map grown in a loop bounded by O(len(originalServerBlocks)) without a size hint; preallocate with make(map[K]V, O(len(originalServerBlocks)))"
           },
           {
             "target": "caddy",
@@ -2147,7 +2105,7 @@
             "package": "github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile",
             "file": "caddyconfig/httpcaddyfile/directives.go",
             "line": 226,
-            "message": "map built without a size hint in a loop bounded by O(len(h.parentBlock.Segments)); preallocate with make(map[K]V, O(len(h.parentBlock.Segments)))"
+            "message": "map grown in a loop bounded by O(len(h.parentBlock.Segments)) without a size hint; preallocate with make(map[K]V, O(len(h.parentBlock.Segments)))"
           },
           {
             "target": "caddy",
@@ -2155,7 +2113,7 @@
             "package": "github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile",
             "file": "caddyconfig/httpcaddyfile/directives.go",
             "line": 564,
-            "message": "map built without a size hint in a loop bounded by O(len(sb.parsedKeys)); preallocate with make(map[K]V, O(len(sb.parsedKeys)))"
+            "message": "map grown in a loop bounded by O(len(sb.parsedKeys)) without a size hint; preallocate with make(map[K]V, O(len(sb.parsedKeys)))"
           },
           {
             "target": "caddy",
@@ -2163,15 +2121,7 @@
             "package": "github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile",
             "file": "caddyconfig/httpcaddyfile/directives.go",
             "line": 596,
-            "message": "map built without a size hint in a loop bounded by O(len(sb.parsedKeys)); preallocate with make(map[K]V, O(len(sb.parsedKeys)))"
-          },
-          {
-            "target": "caddy",
-            "rule": "SM5",
-            "package": "github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile",
-            "file": "caddyconfig/httpcaddyfile/httptype.go",
-            "line": 353,
-            "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
+            "message": "map grown in a loop bounded by O(len(sb.parsedKeys)) without a size hint; preallocate with make(map[K]V, O(len(sb.parsedKeys)))"
           },
           {
             "target": "caddy",
@@ -2179,7 +2129,7 @@
             "package": "github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile",
             "file": "caddyconfig/httpcaddyfile/httptype.go",
             "line": 466,
-            "message": "map built without a size hint in a loop bounded by O(len(serverBlocks)); preallocate with make(map[K]V, O(len(serverBlocks)))"
+            "message": "map grown in a loop bounded by O(len(serverBlocks)) without a size hint; preallocate with make(map[K]V, O(len(serverBlocks)))"
           },
           {
             "target": "caddy",
@@ -2187,15 +2137,7 @@
             "package": "github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile",
             "file": "caddyconfig/httpcaddyfile/httptype.go",
             "line": 541,
-            "message": "map built without a size hint in a loop bounded by O(len(pairings)); preallocate with make(map[K]V, O(len(pairings)))"
-          },
-          {
-            "target": "caddy",
-            "rule": "SM5",
-            "package": "github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile",
-            "file": "caddyconfig/httpcaddyfile/httptype.go",
-            "line": 657,
-            "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
+            "message": "map grown in a loop bounded by O(len(pairings)) without a size hint; preallocate with make(map[K]V, O(len(pairings)))"
           },
           {
             "target": "caddy",
@@ -2203,31 +2145,7 @@
             "package": "github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile",
             "file": "caddyconfig/httpcaddyfile/httptype.go",
             "line": 753,
-            "message": "map built without a size hint in a loop bounded by O(len(pairings)); preallocate with make(map[K]V, O(len(pairings)))"
-          },
-          {
-            "target": "caddy",
-            "rule": "SM5",
-            "package": "github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile",
-            "file": "caddyconfig/httpcaddyfile/httptype.go",
-            "line": 781,
-            "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
-          },
-          {
-            "target": "caddy",
-            "rule": "SM5",
-            "package": "github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile",
-            "file": "caddyconfig/httpcaddyfile/httptype.go",
-            "line": 885,
-            "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
-          },
-          {
-            "target": "caddy",
-            "rule": "SM5",
-            "package": "github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile",
-            "file": "caddyconfig/httpcaddyfile/httptype.go",
-            "line": 956,
-            "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
+            "message": "map grown in a loop bounded by O(len(pairings)) without a size hint; preallocate with make(map[K]V, O(len(pairings)))"
           },
           {
             "target": "caddy",
@@ -2235,7 +2153,7 @@
             "package": "github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile",
             "file": "caddyconfig/httpcaddyfile/tlsapp.go",
             "line": 56,
-            "message": "map built without a size hint in a loop bounded by O(len(pairings)); preallocate with make(map[K]V, O(len(pairings)))"
+            "message": "map grown in a loop bounded by O(len(pairings)) without a size hint; preallocate with make(map[K]V, O(len(pairings)))"
           },
           {
             "target": "caddy",
@@ -2243,15 +2161,7 @@
             "package": "github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile",
             "file": "caddyconfig/httpcaddyfile/tlsapp.go",
             "line": 95,
-            "message": "map built without a size hint in a loop bounded by O(len(pairings)); preallocate with make(map[K]V, O(len(pairings)))"
-          },
-          {
-            "target": "caddy",
-            "rule": "SM5",
-            "package": "github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile",
-            "file": "caddyconfig/httpcaddyfile/tlsapp.go",
-            "line": 236,
-            "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
+            "message": "map grown in a loop bounded by O(len(pairings)) without a size hint; preallocate with make(map[K]V, O(len(pairings)))"
           },
           {
             "target": "caddy",
@@ -2259,15 +2169,7 @@
             "package": "github.com/caddyserver/caddy/v2/cmd",
             "file": "cmd/packagesfuncs.go",
             "line": 308,
-            "message": "map built without a size hint in a loop bounded by O(len(modules)); preallocate with make(map[K]V, O(len(modules)))"
-          },
-          {
-            "target": "caddy",
-            "rule": "SM5",
-            "package": "github.com/caddyserver/caddy/v2/modules/caddyhttp",
-            "file": "modules/caddyhttp/autohttps.go",
-            "line": 424,
-            "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
+            "message": "map grown in a loop bounded by O(len(modules)) without a size hint; preallocate with make(map[K]V, O(len(modules)))"
           },
           {
             "target": "caddy",
@@ -2275,39 +2177,7 @@
             "package": "github.com/caddyserver/caddy/v2/modules/caddyhttp/encode",
             "file": "modules/caddyhttp/encode/encode.go",
             "line": 143,
-            "message": "map built without a size hint in a loop bounded by O(len(enc.Prefer)); preallocate with make(map[K]V, O(len(enc.Prefer)))"
-          },
-          {
-            "target": "caddy",
-            "rule": "SM4",
-            "package": "github.com/caddyserver/caddy/v2/modules/caddyhttp/headers",
-            "file": "modules/caddyhttp/headers/headers.go",
-            "line": 152,
-            "message": "regexp compiled inside a loop; hoist the pattern"
-          },
-          {
-            "target": "caddy",
-            "rule": "SM4",
-            "package": "github.com/caddyserver/caddy/v2/modules/caddyhttp/headers",
-            "file": "modules/caddyhttp/headers/headers.go",
-            "line": 302,
-            "message": "regexp compiled inside a loop; hoist the pattern"
-          },
-          {
-            "target": "caddy",
-            "rule": "SM4",
-            "package": "github.com/caddyserver/caddy/v2/modules/caddyhttp/headers",
-            "file": "modules/caddyhttp/headers/headers.go",
-            "line": 329,
-            "message": "regexp compiled inside a loop; hoist the pattern"
-          },
-          {
-            "target": "caddy",
-            "rule": "SM4",
-            "package": "github.com/caddyserver/caddy/v2/modules/caddyhttp/map",
-            "file": "modules/caddyhttp/map/map.go",
-            "line": 78,
-            "message": "regexp compiled inside a loop; hoist the pattern"
+            "message": "map grown in a loop bounded by O(len(enc.Prefer)) without a size hint; preallocate with make(map[K]V, O(len(enc.Prefer)))"
           },
           {
             "target": "caddy",
@@ -2315,7 +2185,7 @@
             "package": "github.com/caddyserver/caddy/v2/modules/caddyhttp/map",
             "file": "modules/caddyhttp/map/map.go",
             "line": 97,
-            "message": "map built without a size hint in a loop bounded by O(len(h.Mappings)); preallocate with make(map[K]V, O(len(h.Mappings)))"
+            "message": "map grown in a loop bounded by O(len(h.Mappings)) without a size hint; preallocate with make(map[K]V, O(len(h.Mappings)))"
           },
           {
             "target": "caddy",
@@ -2343,14 +2213,6 @@
           },
           {
             "target": "caddy",
-            "rule": "SM4",
-            "package": "github.com/caddyserver/caddy/v2/modules/caddyhttp/rewrite",
-            "file": "modules/caddyhttp/rewrite/rewrite.go",
-            "line": 114,
-            "message": "regexp compiled inside a loop; hoist the pattern"
-          },
-          {
-            "target": "caddy",
             "rule": "SM3",
             "package": "github.com/caddyserver/caddy/v2/modules/caddyhttp",
             "file": "modules/caddyhttp/server.go",
@@ -2363,7 +2225,7 @@
             "package": "github.com/caddyserver/caddy/v2/modules/caddytls",
             "file": "modules/caddytls/ech.go",
             "line": 824,
-            "message": "map built without a size hint in a loop bounded by O(len(innerNames)); preallocate with make(map[K]V, O(len(innerNames)))"
+            "message": "map grown in a loop bounded by O(len(innerNames)) without a size hint; preallocate with make(map[K]V, O(len(innerNames)))"
           },
           {
             "target": "caddy",
@@ -2371,15 +2233,7 @@
             "package": "github.com/caddyserver/caddy/v2/modules/caddytls",
             "file": "modules/caddytls/tls.go",
             "line": 376,
-            "message": "map built without a size hint in a loop bounded by O(len(t.Automation.Policies)); preallocate with make(map[K]V, O(len(t.Automation.Policies)))"
-          },
-          {
-            "target": "caddy",
-            "rule": "SM4",
-            "package": "github.com/caddyserver/caddy/v2/modules/logging",
-            "file": "modules/logging/filters.go",
-            "line": 750,
-            "message": "regexp compiled inside a loop; hoist the pattern"
+            "message": "map grown in a loop bounded by O(len(t.Automation.Policies)) without a size hint; preallocate with make(map[K]V, O(len(t.Automation.Policies)))"
           }
         ]
       }
@@ -6079,9 +5933,8 @@
         "by_rule": {
           "SM1": 2,
           "SM2": 2,
-          "SM3": 15,
+          "SM3": 14,
           "SM4": 1,
-          "SM5": 2,
           "SM6": 6
         },
         "findings": [
@@ -6091,7 +5944,7 @@
             "package": "github.com/nats-io/nats-server/v2/server",
             "file": "server/accounts.go",
             "line": 708,
-            "message": "map built without a size hint in a loop bounded by O(len(dests)); preallocate with make(map[K]V, O(len(dests)))"
+            "message": "map grown in a loop bounded by O(len(dests)) without a size hint; preallocate with make(map[K]V, O(len(dests)))"
           },
           {
             "target": "nats-server",
@@ -6108,14 +5961,6 @@
             "file": "server/certstore/certstore_windows.go",
             "line": 179,
             "message": "append in a loop bounded by O(len(caCertsMatch)) on a zero-capacity slice; preallocate with make(…, 0, O(len(caCertsMatch)))"
-          },
-          {
-            "target": "nats-server",
-            "rule": "SM3",
-            "package": "github.com/nats-io/nats-server/v2/server/certstore",
-            "file": "server/certstore/certstore_windows.go",
-            "line": 432,
-            "message": "append in a loop bounded by O(1) on a zero-capacity slice; preallocate with make(…, 0, O(1))"
           },
           {
             "target": "nats-server",
@@ -6163,7 +6008,7 @@
             "package": "github.com/nats-io/nats-server/v2/server",
             "file": "server/jetstream_cluster.go",
             "line": 7669,
-            "message": "map built without a size hint in a loop bounded by O(len(existing)); preallocate with make(map[K]V, O(len(existing)))"
+            "message": "map grown in a loop bounded by O(len(existing)) without a size hint; preallocate with make(map[K]V, O(len(existing)))"
           },
           {
             "target": "nats-server",
@@ -6171,7 +6016,7 @@
             "package": "github.com/nats-io/nats-server/v2/server",
             "file": "server/jetstream_cluster.go",
             "line": 7688,
-            "message": "map built without a size hint in a loop bounded by O(len(ignore)); preallocate with make(map[K]V, O(len(ignore)))"
+            "message": "map grown in a loop bounded by O(len(ignore)) without a size hint; preallocate with make(map[K]V, O(len(ignore)))"
           },
           {
             "target": "nats-server",
@@ -6187,7 +6032,7 @@
             "package": "github.com/nats-io/nats-server/v2/server",
             "file": "server/leafnode.go",
             "line": 375,
-            "message": "map built without a size hint in a loop bounded by O(len(o.LeafNode.Users)); preallocate with make(map[K]V, O(len(o.LeafNode.Users)))"
+            "message": "map grown in a loop bounded by O(len(o.LeafNode.Users)) without a size hint; preallocate with make(map[K]V, O(len(o.LeafNode.Users)))"
           },
           {
             "target": "nats-server",
@@ -6195,15 +6040,7 @@
             "package": "github.com/nats-io/nats-server/v2/server",
             "file": "server/mqtt.go",
             "line": 1618,
-            "message": "map built without a size hint in a loop bounded by O(len(msgs)); preallocate with make(map[K]V, O(len(msgs)))"
-          },
-          {
-            "target": "nats-server",
-            "rule": "SM5",
-            "package": "github.com/nats-io/nats-server/v2/server",
-            "file": "server/mqtt.go",
-            "line": 4576,
-            "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
+            "message": "map grown in a loop bounded by O(len(msgs)) without a size hint; preallocate with make(map[K]V, O(len(msgs)))"
           },
           {
             "target": "nats-server",
@@ -6243,7 +6080,7 @@
             "package": "github.com/nats-io/nats-server/v2/server",
             "file": "server/opts.go",
             "line": 2206,
-            "message": "map built without a size hint in a loop bounded by O(len(a)); preallocate with make(map[K]V, O(len(a)))"
+            "message": "map grown in a loop bounded by O(len(a)) without a size hint; preallocate with make(map[K]V, O(len(a)))"
           },
           {
             "target": "nats-server",
@@ -6252,14 +6089,6 @@
             "file": "server/opts.go",
             "line": 5188,
             "message": "regexp compiled inside a loop; hoist the pattern"
-          },
-          {
-            "target": "nats-server",
-            "rule": "SM5",
-            "package": "github.com/nats-io/nats-server/v2/server",
-            "file": "server/reload.go",
-            "line": 1548,
-            "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
           },
           {
             "target": "nats-server",
@@ -10718,7 +10547,7 @@
           "SM1": 2,
           "SM2": 1,
           "SM3": 42,
-          "SM4": 8,
+          "SM4": 1,
           "SM6": 20
         },
         "findings": [
@@ -10729,14 +10558,6 @@
             "file": "codegen/methods.go",
             "line": 357,
             "message": "append in a loop bounded by O(len(m)) on a zero-capacity slice; preallocate with make(…, 0, O(len(m)))"
-          },
-          {
-            "target": "hugo",
-            "rule": "SM4",
-            "package": "github.com/gohugoio/hugo/codegen",
-            "file": "codegen/methods.go",
-            "line": 381,
-            "message": "regexp compiled inside a loop; hoist the pattern"
           },
           {
             "target": "hugo",
@@ -10760,7 +10581,7 @@
             "package": "github.com/gohugoio/hugo/codegen",
             "file": "codegen/methods.go",
             "line": 510,
-            "message": "map built without a size hint in a loop bounded by O(len(s)); preallocate with make(map[K]V, O(len(s)))"
+            "message": "map grown in a loop bounded by O(len(s)) without a size hint; preallocate with make(map[K]V, O(len(s)))"
           },
           {
             "target": "hugo",
@@ -10776,7 +10597,7 @@
             "package": "github.com/gohugoio/hugo/commands",
             "file": "commands/convert.go",
             "line": 206,
-            "message": "map built without a size hint in a loop bounded by O(len(pagesBackedByFile)); preallocate with make(map[K]V, O(len(pagesBackedByFile)))"
+            "message": "map grown in a loop bounded by O(len(pagesBackedByFile)) without a size hint; preallocate with make(map[K]V, O(len(pagesBackedByFile)))"
           },
           {
             "target": "hugo",
@@ -10828,14 +10649,6 @@
           },
           {
             "target": "hugo",
-            "rule": "SM4",
-            "package": "github.com/gohugoio/hugo/config/allconfig",
-            "file": "config/allconfig/allconfig.go",
-            "line": 373,
-            "message": "regexp compiled inside a loop; hoist the pattern"
-          },
-          {
-            "target": "hugo",
             "rule": "SM3",
             "package": "github.com/gohugoio/hugo/config/allconfig",
             "file": "config/allconfig/load.go",
@@ -10844,43 +10657,11 @@
           },
           {
             "target": "hugo",
-            "rule": "SM4",
-            "package": "github.com/gohugoio/hugo/config",
-            "file": "config/commonConfig.go",
-            "line": 275,
-            "message": "regexp compiled inside a loop; hoist the pattern"
-          },
-          {
-            "target": "hugo",
             "rule": "SM3",
             "package": "github.com/gohugoio/hugo/config/security",
             "file": "config/security/whitelist.go",
             "line": 74,
             "message": "append in a loop bounded by O(len(patterns)) on a zero-capacity slice; preallocate with make(…, 0, O(len(patterns)))"
-          },
-          {
-            "target": "hugo",
-            "rule": "SM4",
-            "package": "github.com/gohugoio/hugo/config/security",
-            "file": "config/security/whitelist.go",
-            "line": 89,
-            "message": "regexp compiled inside a loop; hoist the pattern"
-          },
-          {
-            "target": "hugo",
-            "rule": "SM4",
-            "package": "github.com/gohugoio/hugo/deploy/deployconfig",
-            "file": "deploy/deployconfig/deployConfig.go",
-            "line": 165,
-            "message": "regexp compiled inside a loop; hoist the pattern"
-          },
-          {
-            "target": "hugo",
-            "rule": "SM4",
-            "package": "github.com/gohugoio/hugo/deploy/deployconfig",
-            "file": "deploy/deployconfig/deployConfig.go",
-            "line": 171,
-            "message": "regexp compiled inside a loop; hoist the pattern"
           },
           {
             "target": "hugo",
@@ -10896,7 +10677,7 @@
             "package": "github.com/gohugoio/hugo/htesting",
             "file": "htesting/test_helpers.go",
             "line": 84,
-            "message": "map built without a size hint in a loop bounded by O(len(slice1)); preallocate with make(map[K]V, O(len(slice1)))"
+            "message": "map grown in a loop bounded by O(len(slice1)) without a size hint; preallocate with make(map[K]V, O(len(slice1)))"
           },
           {
             "target": "hugo",
@@ -10904,7 +10685,7 @@
             "package": "github.com/gohugoio/hugo/hugolib",
             "file": "hugolib/content_map_page_assembler.go",
             "line": 1375,
-            "message": "map built without a size hint in a loop bounded by O(len(a.h.sitesLanguages)); preallocate with make(map[K]V, O(len(a.h.sitesLanguages)))"
+            "message": "map grown in a loop bounded by O(len(a.h.sitesLanguages)) without a size hint; preallocate with make(map[K]V, O(len(a.h.sitesLanguages)))"
           },
           {
             "target": "hugo",
@@ -10928,7 +10709,7 @@
             "package": "github.com/gohugoio/hugo/hugolib",
             "file": "hugolib/hugo_sites.go",
             "line": 467,
-            "message": "map built without a size hint in a loop bounded by O(len(errs)); preallocate with make(map[K]V, O(len(errs)))"
+            "message": "map grown in a loop bounded by O(len(errs)) without a size hint; preallocate with make(map[K]V, O(len(errs)))"
           },
           {
             "target": "hugo",
@@ -10936,7 +10717,7 @@
             "package": "github.com/gohugoio/hugo/hugolib",
             "file": "hugolib/hugo_sites.go",
             "line": 495,
-            "message": "map built without a size hint in a loop bounded by O(len(h.Sites)); preallocate with make(map[K]V, O(len(h.Sites)))"
+            "message": "map grown in a loop bounded by O(len(h.Sites)) without a size hint; preallocate with make(map[K]V, O(len(h.Sites)))"
           },
           {
             "target": "hugo",
@@ -10968,7 +10749,7 @@
             "package": "github.com/gohugoio/hugo/hugolib",
             "file": "hugolib/shortcode.go",
             "line": 537,
-            "message": "map built without a size hint in a loop bounded by O(len(s.shortcodes)); preallocate with make(map[K]V, O(len(s.shortcodes)))"
+            "message": "map grown in a loop bounded by O(len(s.shortcodes)) without a size hint; preallocate with make(map[K]V, O(len(s.shortcodes)))"
           },
           {
             "target": "hugo",
@@ -10976,7 +10757,7 @@
             "package": "github.com/gohugoio/hugo/hugolib",
             "file": "hugolib/site.go",
             "line": 473,
-            "message": "map built without a size hint in a loop bounded by O(len(sitesVersionsRoles)); preallocate with make(map[K]V, O(len(sitesVersionsRoles)))"
+            "message": "map grown in a loop bounded by O(len(sitesVersionsRoles)) without a size hint; preallocate with make(map[K]V, O(len(sitesVersionsRoles)))"
           },
           {
             "target": "hugo",
@@ -11000,7 +10781,7 @@
             "package": "github.com/gohugoio/hugo/hugolib",
             "file": "hugolib/site.go",
             "line": 1314,
-            "message": "map built without a size hint in a loop bounded by O(len(events)); preallocate with make(map[K]V, O(len(events)))"
+            "message": "map grown in a loop bounded by O(len(events)) without a size hint; preallocate with make(map[K]V, O(len(events)))"
           },
           {
             "target": "hugo",
@@ -11040,7 +10821,7 @@
             "package": "github.com/gohugoio/hugo/langs",
             "file": "langs/language.go",
             "line": 198,
-            "message": "map built without a size hint in a loop bounded by O(len(l)); preallocate with make(map[K]V, O(len(l)))"
+            "message": "map grown in a loop bounded by O(len(l)) without a size hint; preallocate with make(map[K]V, O(len(l)))"
           },
           {
             "target": "hugo",
@@ -11048,7 +10829,7 @@
             "package": "github.com/gohugoio/hugo/langs",
             "file": "langs/language.go",
             "line": 208,
-            "message": "map built without a size hint in a loop bounded by O(len(l)); preallocate with make(map[K]V, O(len(l)))"
+            "message": "map grown in a loop bounded by O(len(l)) without a size hint; preallocate with make(map[K]V, O(len(l)))"
           },
           {
             "target": "hugo",
@@ -11072,7 +10853,7 @@
             "package": "github.com/gohugoio/hugo/modules",
             "file": "modules/client.go",
             "line": 846,
-            "message": "map built without a size hint in a loop bounded by O(len(mods)); preallocate with make(map[K]V, O(len(mods)))"
+            "message": "map grown in a loop bounded by O(len(mods)) without a size hint; preallocate with make(map[K]V, O(len(mods)))"
           },
           {
             "target": "hugo",
@@ -11096,7 +10877,7 @@
             "package": "github.com/gohugoio/hugo/modules/npm",
             "file": "modules/npm/package_builder.go",
             "line": 478,
-            "message": "map built without a size hint in a loop bounded by O(len(mods)); preallocate with make(map[K]V, O(len(mods)))"
+            "message": "map grown in a loop bounded by O(len(mods)) without a size hint; preallocate with make(map[K]V, O(len(mods)))"
           },
           {
             "target": "hugo",
@@ -11104,7 +10885,7 @@
             "package": "github.com/gohugoio/hugo/modules/npm",
             "file": "modules/npm/package_builder.go",
             "line": 595,
-            "message": "map built without a size hint in a loop bounded by O(len(mods)); preallocate with make(map[K]V, O(len(mods)))"
+            "message": "map grown in a loop bounded by O(len(mods)) without a size hint; preallocate with make(map[K]V, O(len(mods)))"
           },
           {
             "target": "hugo",
@@ -11136,15 +10917,7 @@
             "package": "github.com/gohugoio/hugo/related",
             "file": "related/inverted_index.go",
             "line": 181,
-            "message": "map built without a size hint in a loop bounded by O(len(cfg.Indices)); preallocate with make(map[K]V, O(len(cfg.Indices)))"
-          },
-          {
-            "target": "hugo",
-            "rule": "SM4",
-            "package": "github.com/gohugoio/hugo/releaser",
-            "file": "releaser/releaser.go",
-            "line": 222,
-            "message": "regexp compiled inside a loop; hoist the pattern"
+            "message": "map grown in a loop bounded by O(len(cfg.Indices)) without a size hint; preallocate with make(map[K]V, O(len(cfg.Indices)))"
           },
           {
             "target": "hugo",
@@ -11224,7 +10997,7 @@
             "package": "github.com/gohugoio/hugo/resources/resource",
             "file": "resources/resource/resources.go",
             "line": 227,
-            "message": "map built without a size hint in a loop bounded by O(len(r)); preallocate with make(map[K]V, O(len(r)))"
+            "message": "map grown in a loop bounded by O(len(r)) without a size hint; preallocate with make(map[K]V, O(len(r)))"
           },
           {
             "target": "hugo",
@@ -11248,7 +11021,7 @@
             "package": "github.com/gohugoio/hugo/tpl/collections",
             "file": "tpl/collections/reflect_helpers.go",
             "line": 58,
-            "message": "map built without a size hint in a loop bounded by O(len(seqs)); preallocate with make(map[K]V, O(len(seqs)))"
+            "message": "map grown in a loop bounded by O(len(seqs)) without a size hint; preallocate with make(map[K]V, O(len(seqs)))"
           },
           {
             "target": "hugo",
@@ -11256,7 +11029,7 @@
             "package": "github.com/gohugoio/hugo/tpl/internal/go_templates/htmltemplate",
             "file": "tpl/internal/go_templates/htmltemplate/escape.go",
             "line": 323,
-            "message": "map built without a size hint in a loop bounded by O(len(p.Cmds)); preallocate with make(map[K]V, O(len(p.Cmds)))"
+            "message": "map grown in a loop bounded by O(len(p.Cmds)) without a size hint; preallocate with make(map[K]V, O(len(p.Cmds)))"
           },
           {
             "target": "hugo",
@@ -11280,7 +11053,7 @@
             "package": "github.com/gohugoio/hugo/tpl/internal",
             "file": "tpl/internal/templatefuncsRegistry.go",
             "line": 155,
-            "message": "map built without a size hint in a loop bounded by O(len(namespaces)); preallocate with make(map[K]V, O(len(namespaces)))"
+            "message": "map grown in a loop bounded by O(len(namespaces)) without a size hint; preallocate with make(map[K]V, O(len(namespaces)))"
           },
           {
             "target": "hugo",
@@ -11288,7 +11061,7 @@
             "package": "github.com/gohugoio/hugo/tpl/internal",
             "file": "tpl/internal/templatefuncsRegistry.go",
             "line": 157,
-            "message": "map built without a size hint in a loop bounded by O(len(namespaces)); preallocate with make(map[K]V, O(len(namespaces)))"
+            "message": "map grown in a loop bounded by O(len(namespaces)) without a size hint; preallocate with make(map[K]V, O(len(namespaces)))"
           },
           {
             "target": "hugo",
@@ -15727,7 +15500,6 @@
           "SM1": 1,
           "SM2": 2,
           "SM3": 32,
-          "SM5": 14,
           "SM6": 27
         },
         "findings": [
@@ -15737,7 +15509,7 @@
             "package": "github.com/prometheus/prometheus/cmd/promtool",
             "file": "cmd/promtool/analyze.go",
             "line": 95,
-            "message": "map built without a size hint in a loop bounded by O(len(matchers)); preallocate with make(map[K]V, O(len(matchers)))"
+            "message": "map grown in a loop bounded by O(len(matchers)) without a size hint; preallocate with make(map[K]V, O(len(matchers)))"
           },
           {
             "target": "prometheus",
@@ -15745,39 +15517,7 @@
             "package": "github.com/prometheus/prometheus/cmd/promtool",
             "file": "cmd/promtool/analyze.go",
             "line": 287,
-            "message": "map built without a size hint in a loop bounded by O(len(series.Histograms)); preallocate with make(map[K]V, O(len(series.Histograms)))"
-          },
-          {
-            "target": "prometheus",
-            "rule": "SM5",
-            "package": "github.com/prometheus/prometheus/cmd/promtool",
-            "file": "cmd/promtool/unittest.go",
-            "line": 412,
-            "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
-          },
-          {
-            "target": "prometheus",
-            "rule": "SM5",
-            "package": "github.com/prometheus/prometheus/cmd/promtool",
-            "file": "cmd/promtool/unittest.go",
-            "line": 413,
-            "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
-          },
-          {
-            "target": "prometheus",
-            "rule": "SM5",
-            "package": "github.com/prometheus/prometheus/cmd/promtool",
-            "file": "cmd/promtool/unittest.go",
-            "line": 517,
-            "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
-          },
-          {
-            "target": "prometheus",
-            "rule": "SM5",
-            "package": "github.com/prometheus/prometheus/cmd/promtool",
-            "file": "cmd/promtool/unittest.go",
-            "line": 520,
-            "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
+            "message": "map grown in a loop bounded by O(len(series.Histograms)) without a size hint; preallocate with make(map[K]V, O(len(series.Histograms)))"
           },
           {
             "target": "prometheus",
@@ -15785,7 +15525,7 @@
             "package": "github.com/prometheus/prometheus/config",
             "file": "config/config.go",
             "line": 353,
-            "message": "map built without a size hint in a loop bounded by O(len(c.ScrapeConfigs)); preallocate with make(map[K]V, O(len(c.ScrapeConfigs)))"
+            "message": "map grown in a loop bounded by O(len(c.ScrapeConfigs)) without a size hint; preallocate with make(map[K]V, O(len(c.ScrapeConfigs)))"
           },
           {
             "target": "prometheus",
@@ -15793,7 +15533,7 @@
             "package": "github.com/prometheus/prometheus/config",
             "file": "config/config.go",
             "line": 616,
-            "message": "map built without a size hint in a loop bounded by O(len(sps)); preallocate with make(map[K]V, O(len(sps)))"
+            "message": "map grown in a loop bounded by O(len(sps)) without a size hint; preallocate with make(map[K]V, O(len(sps)))"
           },
           {
             "target": "prometheus",
@@ -15801,7 +15541,7 @@
             "package": "github.com/prometheus/prometheus/config",
             "file": "config/config.go",
             "line": 1297,
-            "message": "map built without a size hint in a loop bounded by O(len(a)); preallocate with make(map[K]V, O(len(a)))"
+            "message": "map grown in a loop bounded by O(len(a)) without a size hint; preallocate with make(map[K]V, O(len(a)))"
           },
           {
             "target": "prometheus",
@@ -15809,7 +15549,7 @@
             "package": "github.com/prometheus/prometheus/config",
             "file": "config/config.go",
             "line": 1773,
-            "message": "map built without a size hint in a loop bounded by O(len(attributes)); preallocate with make(map[K]V, O(len(attributes)))"
+            "message": "map grown in a loop bounded by O(len(attributes)) without a size hint; preallocate with make(map[K]V, O(len(attributes)))"
           },
           {
             "target": "prometheus",
@@ -15841,7 +15581,7 @@
             "package": "github.com/prometheus/prometheus/discovery/kubernetes",
             "file": "discovery/kubernetes/node.go",
             "line": 223,
-            "message": "map built without a size hint in a loop bounded by O(len(node.Status.Addresses)); preallocate with make(map[K]V, O(len(node.Status.Addresses)))"
+            "message": "map grown in a loop bounded by O(len(node.Status.Addresses)) without a size hint; preallocate with make(map[K]V, O(len(node.Status.Addresses)))"
           },
           {
             "target": "prometheus",
@@ -15849,15 +15589,7 @@
             "package": "github.com/prometheus/prometheus/discovery/marathon",
             "file": "discovery/marathon/marathon.go",
             "line": 384,
-            "message": "map built without a size hint in a loop bounded by O(len(apps.Apps)); preallocate with make(map[K]V, O(len(apps.Apps)))"
-          },
-          {
-            "target": "prometheus",
-            "rule": "SM5",
-            "package": "github.com/prometheus/prometheus/discovery/moby",
-            "file": "discovery/moby/docker.go",
-            "line": 258,
-            "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
+            "message": "map grown in a loop bounded by O(len(apps.Apps)) without a size hint; preallocate with make(map[K]V, O(len(apps.Apps)))"
           },
           {
             "target": "prometheus",
@@ -15881,7 +15613,7 @@
             "package": "github.com/prometheus/prometheus/discovery/scaleway",
             "file": "discovery/scaleway/instance.go",
             "line": 242,
-            "message": "map built without a size hint in a loop bounded by O(len(servers)); preallocate with make(map[K]V, O(len(servers)))"
+            "message": "map grown in a loop bounded by O(len(servers)) without a size hint; preallocate with make(map[K]V, O(len(servers)))"
           },
           {
             "target": "prometheus",
@@ -15890,14 +15622,6 @@
             "file": "discovery/xds/kuma.go",
             "line": 156,
             "message": "append in a loop bounded by O(len(resources)) on a zero-capacity slice; preallocate with make(…, 0, O(len(resources)))"
-          },
-          {
-            "target": "prometheus",
-            "rule": "SM5",
-            "package": "github.com/prometheus/prometheus/documentation/examples/custom-sd/adapter",
-            "file": "documentation/examples/custom-sd/adapter/adapter.go",
-            "line": 80,
-            "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
           },
           {
             "target": "prometheus",
@@ -15921,7 +15645,7 @@
             "package": "github.com/prometheus/prometheus/promql",
             "file": "promql/engine.go",
             "line": 1470,
-            "message": "map built without a size hint in a loop bounded by O(len(exprs)); preallocate with make(map[K]V, O(len(exprs)))"
+            "message": "map grown in a loop bounded by O(len(exprs)) without a size hint; preallocate with make(map[K]V, O(len(exprs)))"
           },
           {
             "target": "prometheus",
@@ -15929,23 +15653,7 @@
             "package": "github.com/prometheus/prometheus/promql",
             "file": "promql/engine.go",
             "line": 1597,
-            "message": "map built without a size hint in a loop bounded by O(len(inputMatrix)); preallocate with make(map[K]V, O(len(inputMatrix)))"
-          },
-          {
-            "target": "prometheus",
-            "rule": "SM5",
-            "package": "github.com/prometheus/prometheus/promql",
-            "file": "promql/engine.go",
-            "line": 4061,
-            "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
-          },
-          {
-            "target": "prometheus",
-            "rule": "SM5",
-            "package": "github.com/prometheus/prometheus/promql",
-            "file": "promql/engine.go",
-            "line": 4070,
-            "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
+            "message": "map grown in a loop bounded by O(len(inputMatrix)) without a size hint; preallocate with make(map[K]V, O(len(inputMatrix)))"
           },
           {
             "target": "prometheus",
@@ -15953,7 +15661,7 @@
             "package": "github.com/prometheus/prometheus/promql",
             "file": "promql/engine.go",
             "line": 4093,
-            "message": "map built without a size hint in a loop bounded by O(len(vec)); preallocate with make(map[K]V, O(len(vec)))"
+            "message": "map grown in a loop bounded by O(len(vec)) without a size hint; preallocate with make(map[K]V, O(len(vec)))"
           },
           {
             "target": "prometheus",
@@ -15961,23 +15669,7 @@
             "package": "github.com/prometheus/prometheus/promql",
             "file": "promql/engine.go",
             "line": 4176,
-            "message": "map built without a size hint in a loop bounded by O(len(mat)); preallocate with make(map[K]V, O(len(mat)))"
-          },
-          {
-            "target": "prometheus",
-            "rule": "SM5",
-            "package": "github.com/prometheus/prometheus/promql",
-            "file": "promql/engine.go",
-            "line": 4199,
-            "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
-          },
-          {
-            "target": "prometheus",
-            "rule": "SM5",
-            "package": "github.com/prometheus/prometheus/promql",
-            "file": "promql/engine.go",
-            "line": 4202,
-            "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
+            "message": "map grown in a loop bounded by O(len(mat)) without a size hint; preallocate with make(map[K]V, O(len(mat)))"
           },
           {
             "target": "prometheus",
@@ -15985,7 +15677,7 @@
             "package": "github.com/prometheus/prometheus/promql",
             "file": "promql/info.go",
             "line": 164,
-            "message": "map built without a size hint in a loop bounded by O(len(mat)); preallocate with make(map[K]V, O(len(mat)))"
+            "message": "map grown in a loop bounded by O(len(mat)) without a size hint; preallocate with make(map[K]V, O(len(mat)))"
           },
           {
             "target": "prometheus",
@@ -15993,7 +15685,7 @@
             "package": "github.com/prometheus/prometheus/promql",
             "file": "promql/info.go",
             "line": 178,
-            "message": "map built without a size hint in a loop bounded by O(len(mat)); preallocate with make(map[K]V, O(len(mat)))"
+            "message": "map grown in a loop bounded by O(len(mat)) without a size hint; preallocate with make(map[K]V, O(len(mat)))"
           },
           {
             "target": "prometheus",
@@ -16001,7 +15693,7 @@
             "package": "github.com/prometheus/prometheus/promql",
             "file": "promql/info.go",
             "line": 251,
-            "message": "map built without a size hint in a loop bounded by O(len(infoMat)); preallocate with make(map[K]V, O(len(infoMat)))"
+            "message": "map grown in a loop bounded by O(len(infoMat)) without a size hint; preallocate with make(map[K]V, O(len(infoMat)))"
           },
           {
             "target": "prometheus",
@@ -16009,7 +15701,7 @@
             "package": "github.com/prometheus/prometheus/promql",
             "file": "promql/info.go",
             "line": 426,
-            "message": "map built without a size hint in a loop bounded by O(len(base)); preallocate with make(map[K]V, O(len(base)))"
+            "message": "map grown in a loop bounded by O(len(base)) without a size hint; preallocate with make(map[K]V, O(len(base)))"
           },
           {
             "target": "prometheus",
@@ -16018,14 +15710,6 @@
             "file": "promql/parser/parse.go",
             "line": 117,
             "message": "append in a loop bounded by O(len(matchers)) on a zero-capacity slice; preallocate with make(…, 0, O(len(matchers)))"
-          },
-          {
-            "target": "prometheus",
-            "rule": "SM5",
-            "package": "github.com/prometheus/prometheus/promql/promqltest",
-            "file": "promql/promqltest/test.go",
-            "line": 1020,
-            "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
           },
           {
             "target": "prometheus",
@@ -16065,7 +15749,7 @@
             "package": "github.com/prometheus/prometheus/rules",
             "file": "rules/manager.go",
             "line": 350,
-            "message": "map built without a size hint in a loop bounded by O(len(filenames)); preallocate with make(map[K]V, O(len(filenames)))"
+            "message": "map grown in a loop bounded by O(len(filenames)) without a size hint; preallocate with make(map[K]V, O(len(filenames)))"
           },
           {
             "target": "prometheus",
@@ -16081,7 +15765,7 @@
             "package": "github.com/prometheus/prometheus/rules",
             "file": "rules/manager.go",
             "line": 629,
-            "message": "map built without a size hint in a loop bounded by O(len(patterns)); preallocate with make(map[K]V, O(len(patterns)))"
+            "message": "map grown in a loop bounded by O(len(patterns)) without a size hint; preallocate with make(map[K]V, O(len(patterns)))"
           },
           {
             "target": "prometheus",
@@ -16089,7 +15773,7 @@
             "package": "github.com/prometheus/prometheus/scrape",
             "file": "scrape/scrape.go",
             "line": 443,
-            "message": "map built without a size hint in a loop bounded by O(len(targets)); preallocate with make(map[K]V, O(len(targets)))"
+            "message": "map grown in a loop bounded by O(len(targets)) without a size hint; preallocate with make(map[K]V, O(len(targets)))"
           },
           {
             "target": "prometheus",
@@ -16106,22 +15790,6 @@
             "file": "scrape/scrape.go",
             "line": 721,
             "message": "append in a loop bounded by O(len(sps)) on a zero-capacity slice; preallocate with make(…, 0, O(len(sps)))"
-          },
-          {
-            "target": "prometheus",
-            "rule": "SM5",
-            "package": "github.com/prometheus/prometheus/scrape",
-            "file": "scrape/scrape.go",
-            "line": 1836,
-            "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
-          },
-          {
-            "target": "prometheus",
-            "rule": "SM5",
-            "package": "github.com/prometheus/prometheus/scrape",
-            "file": "scrape/scrape_append_v2.go",
-            "line": 294,
-            "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
           },
           {
             "target": "prometheus",
@@ -16193,7 +15861,7 @@
             "package": "github.com/prometheus/prometheus/tsdb",
             "file": "tsdb/compact.go",
             "line": 446,
-            "message": "map built without a size hint in a loop bounded by O(len(blocks)); preallocate with make(map[K]V, O(len(blocks)))"
+            "message": "map grown in a loop bounded by O(len(blocks)) without a size hint; preallocate with make(map[K]V, O(len(blocks)))"
           },
           {
             "target": "prometheus",
@@ -16217,7 +15885,7 @@
             "package": "github.com/prometheus/prometheus/tsdb",
             "file": "tsdb/db.go",
             "line": 1949,
-            "message": "map built without a size hint in a loop bounded by O(len(blocks)); preallocate with make(map[K]V, O(len(blocks)))"
+            "message": "map grown in a loop bounded by O(len(blocks)) without a size hint; preallocate with make(map[K]V, O(len(blocks)))"
           },
           {
             "target": "prometheus",
@@ -16225,7 +15893,7 @@
             "package": "github.com/prometheus/prometheus/tsdb",
             "file": "tsdb/db.go",
             "line": 1990,
-            "message": "map built without a size hint in a loop bounded by O(len(blocks)); preallocate with make(map[K]V, O(len(blocks)))"
+            "message": "map grown in a loop bounded by O(len(blocks)) without a size hint; preallocate with make(map[K]V, O(len(blocks)))"
           },
           {
             "target": "prometheus",
@@ -16233,7 +15901,7 @@
             "package": "github.com/prometheus/prometheus/tsdb",
             "file": "tsdb/db.go",
             "line": 2030,
-            "message": "map built without a size hint in a loop bounded by O(len(blocks)); preallocate with make(map[K]V, O(len(blocks)))"
+            "message": "map grown in a loop bounded by O(len(blocks)) without a size hint; preallocate with make(map[K]V, O(len(blocks)))"
           },
           {
             "target": "prometheus",
@@ -16257,7 +15925,7 @@
             "package": "github.com/prometheus/prometheus/tsdb",
             "file": "tsdb/head.go",
             "line": 2250,
-            "message": "map built without a size hint in a loop bounded by O(len(refs)); preallocate with make(map[K]V, O(len(refs)))"
+            "message": "map grown in a loop bounded by O(len(refs)) without a size hint; preallocate with make(map[K]V, O(len(refs)))"
           },
           {
             "target": "prometheus",
@@ -16266,14 +15934,6 @@
             "file": "tsdb/head_append_v2.go",
             "line": 317,
             "message": "append in a loop bounded by O(len(exemplar)) on a zero-capacity slice; preallocate with make(…, 0, O(len(exemplar)))"
-          },
-          {
-            "target": "prometheus",
-            "rule": "SM5",
-            "package": "github.com/prometheus/prometheus/tsdb/index",
-            "file": "tsdb/index/index.go",
-            "line": 812,
-            "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
           },
           {
             "target": "prometheus",
@@ -16329,7 +15989,7 @@
             "package": "github.com/prometheus/prometheus/web/api/testhelpers",
             "file": "web/api/testhelpers/mocks.go",
             "line": 78,
-            "message": "map built without a size hint in a loop bounded by O(len(f.series)); preallocate with make(map[K]V, O(len(f.series)))"
+            "message": "map grown in a loop bounded by O(len(f.series)) without a size hint; preallocate with make(map[K]V, O(len(f.series)))"
           },
           {
             "target": "prometheus",
@@ -16337,7 +15997,7 @@
             "package": "github.com/prometheus/prometheus/web/api/testhelpers",
             "file": "web/api/testhelpers/mocks.go",
             "line": 121,
-            "message": "map built without a size hint in a loop bounded by O(len(f.series)); preallocate with make(map[K]V, O(len(f.series)))"
+            "message": "map grown in a loop bounded by O(len(f.series)) without a size hint; preallocate with make(map[K]V, O(len(f.series)))"
           }
         ]
       }
@@ -19219,8 +18879,6 @@
         "by_rule": {
           "SM1": 2,
           "SM3": 18,
-          "SM4": 3,
-          "SM5": 1,
           "SM6": 26
         },
         "findings": [
@@ -19230,7 +18888,7 @@
             "package": "google.golang.org/grpc/authz",
             "file": "authz/rbac_translator.go",
             "line": 271,
-            "message": "map built without a size hint in a loop bounded by O(len(rules)); preallocate with make(map[K]V, O(len(rules)))"
+            "message": "map grown in a loop bounded by O(len(rules)) without a size hint; preallocate with make(map[K]V, O(len(rules)))"
           },
           {
             "target": "grpc-go",
@@ -19246,7 +18904,7 @@
             "package": "google.golang.org/grpc/balancer/grpclb",
             "file": "balancer/grpclb/grpclb_remote_balancer.go",
             "line": 174,
-            "message": "map built without a size hint in a loop bounded by O(len(backendAddrs)); preallocate with make(map[K]V, O(len(backendAddrs)))"
+            "message": "map grown in a loop bounded by O(len(backendAddrs)) without a size hint; preallocate with make(map[K]V, O(len(backendAddrs)))"
           },
           {
             "target": "grpc-go",
@@ -19254,7 +18912,7 @@
             "package": "google.golang.org/grpc/balancer/pickfirst/pickfirstleaf",
             "file": "balancer/pickfirst/pickfirstleaf/pickfirstleaf.go",
             "line": 422,
-            "message": "map built without a size hint in a loop bounded by O(len(addrs)); preallocate with make(map[K]V, O(len(addrs)))"
+            "message": "map grown in a loop bounded by O(len(addrs)) without a size hint; preallocate with make(map[K]V, O(len(addrs)))"
           },
           {
             "target": "grpc-go",
@@ -19270,7 +18928,7 @@
             "package": "google.golang.org/grpc/balancer/rls/internal/keys",
             "file": "balancer/rls/internal/keys/builder.go",
             "line": 238,
-            "message": "map built without a size hint in a loop bounded by O(len(b.headerKeys)); preallocate with make(map[K]V, O(len(b.headerKeys)))"
+            "message": "map grown in a loop bounded by O(len(b.headerKeys)) without a size hint; preallocate with make(map[K]V, O(len(b.headerKeys)))"
           },
           {
             "target": "grpc-go",
@@ -19278,7 +18936,7 @@
             "package": "google.golang.org/grpc/internal/hierarchy",
             "file": "internal/hierarchy/hierarchy.go",
             "line": 112,
-            "message": "map built without a size hint in a loop bounded by O(len(addrs)); preallocate with make(map[K]V, O(len(addrs)))"
+            "message": "map grown in a loop bounded by O(len(addrs)) without a size hint; preallocate with make(map[K]V, O(len(addrs)))"
           },
           {
             "target": "grpc-go",
@@ -19286,7 +18944,7 @@
             "package": "google.golang.org/grpc/internal/hierarchy",
             "file": "internal/hierarchy/hierarchy.go",
             "line": 159,
-            "message": "map built without a size hint in a loop bounded by O(len(endpoints)); preallocate with make(map[K]V, O(len(endpoints)))"
+            "message": "map grown in a loop bounded by O(len(endpoints)) without a size hint; preallocate with make(map[K]V, O(len(endpoints)))"
           },
           {
             "target": "grpc-go",
@@ -19318,7 +18976,7 @@
             "package": "google.golang.org/grpc/internal/testutils",
             "file": "internal/testutils/balancer.go",
             "line": 333,
-            "message": "map built without a size hint in a loop bounded by O(len(want)); preallocate with make(map[K]V, O(len(want)))"
+            "message": "map grown in a loop bounded by O(len(want)) without a size hint; preallocate with make(map[K]V, O(len(want)))"
           },
           {
             "target": "grpc-go",
@@ -19334,7 +18992,7 @@
             "package": "google.golang.org/grpc/internal/testutils/roundrobin",
             "file": "internal/testutils/roundrobin/roundrobin.go",
             "line": 96,
-            "message": "map built without a size hint in a loop bounded by O(len(addrs)); preallocate with make(map[K]V, O(len(addrs)))"
+            "message": "map grown in a loop bounded by O(len(addrs)) without a size hint; preallocate with make(map[K]V, O(len(addrs)))"
           },
           {
             "target": "grpc-go",
@@ -19342,7 +19000,7 @@
             "package": "google.golang.org/grpc/internal/testutils/roundrobin",
             "file": "internal/testutils/roundrobin/roundrobin.go",
             "line": 148,
-            "message": "map built without a size hint in a loop bounded by O(len(addrs)); preallocate with make(map[K]V, O(len(addrs)))"
+            "message": "map grown in a loop bounded by O(len(addrs)) without a size hint; preallocate with make(map[K]V, O(len(addrs)))"
           },
           {
             "target": "grpc-go",
@@ -19350,7 +19008,7 @@
             "package": "google.golang.org/grpc/internal/testutils/roundrobin",
             "file": "internal/testutils/roundrobin/roundrobin.go",
             "line": 176,
-            "message": "map built without a size hint in a loop bounded by O(len(addrs)); preallocate with make(map[K]V, O(len(addrs)))"
+            "message": "map grown in a loop bounded by O(len(addrs)) without a size hint; preallocate with make(map[K]V, O(len(addrs)))"
           },
           {
             "target": "grpc-go",
@@ -19374,7 +19032,7 @@
             "package": "google.golang.org/grpc/internal/transport",
             "file": "internal/transport/http2_client.go",
             "line": 659,
-            "message": "map built without a size hint in a loop bounded by O(len(t.perRPCCreds)); preallocate with make(map[K]V, O(len(t.perRPCCreds)))"
+            "message": "map grown in a loop bounded by O(len(t.perRPCCreds)) without a size hint; preallocate with make(map[K]V, O(len(t.perRPCCreds)))"
           },
           {
             "target": "grpc-go",
@@ -19406,15 +19064,7 @@
             "package": "google.golang.org/grpc/metadata",
             "file": "metadata/metadata.go",
             "line": 150,
-            "message": "map built without a size hint in a loop bounded by O(len(mds)); preallocate with make(map[K]V, O(len(mds)))"
-          },
-          {
-            "target": "grpc-go",
-            "rule": "SM5",
-            "package": "google.golang.org/grpc/profiling/cmd",
-            "file": "profiling/cmd/catapult.go",
-            "line": 324,
-            "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
+            "message": "map grown in a loop bounded by O(len(mds)) without a size hint; preallocate with make(map[K]V, O(len(mds)))"
           },
           {
             "target": "grpc-go",
@@ -19422,7 +19072,7 @@
             "package": "google.golang.org/grpc/resolver",
             "file": "resolver/map.go",
             "line": 159,
-            "message": "map built without a size hint in a loop bounded by O(len(endpoint.Addresses)); preallocate with make(map[K]V, O(len(endpoint.Addresses)))"
+            "message": "map grown in a loop bounded by O(len(endpoint.Addresses)) without a size hint; preallocate with make(map[K]V, O(len(endpoint.Addresses)))"
           },
           {
             "target": "grpc-go",
@@ -19430,7 +19080,7 @@
             "package": "google.golang.org/grpc/stats",
             "file": "stats/metrics.go",
             "line": 33,
-            "message": "map built without a size hint in a loop bounded by O(len(metricNames)); preallocate with make(map[K]V, O(len(metricNames)))"
+            "message": "map grown in a loop bounded by O(len(metricNames)) without a size hint; preallocate with make(map[K]V, O(len(metricNames)))"
           },
           {
             "target": "grpc-go",
@@ -19438,7 +19088,7 @@
             "package": "google.golang.org/grpc/stats",
             "file": "stats/metrics.go",
             "line": 49,
-            "message": "map built without a size hint in a loop bounded by O(len(metricNames)); preallocate with make(map[K]V, O(len(metricNames)))"
+            "message": "map grown in a loop bounded by O(len(metricNames)) without a size hint; preallocate with make(map[K]V, O(len(metricNames)))"
           },
           {
             "target": "grpc-go",
@@ -19470,7 +19120,7 @@
             "package": "google.golang.org/grpc/xds/internal/balancer/clusterresolver",
             "file": "xds/internal/balancer/clusterresolver/configbuilder.go",
             "line": 211,
-            "message": "map built without a size hint in a loop bounded by O(len(localities)); preallocate with make(map[K]V, O(len(localities)))"
+            "message": "map grown in a loop bounded by O(len(localities)) without a size hint; preallocate with make(map[K]V, O(len(localities)))"
           },
           {
             "target": "grpc-go",
@@ -19486,7 +19136,7 @@
             "package": "google.golang.org/grpc/xds/internal/balancer/clusterresolver",
             "file": "xds/internal/balancer/clusterresolver/configbuilder_childname.go",
             "line": 57,
-            "message": "map built without a size hint in a loop bounded by O(len(priorities)); preallocate with make(map[K]V, O(len(priorities)))"
+            "message": "map grown in a loop bounded by O(len(priorities)) without a size hint; preallocate with make(map[K]V, O(len(priorities)))"
           },
           {
             "target": "grpc-go",
@@ -19494,7 +19144,7 @@
             "package": "google.golang.org/grpc/xds/internal/balancer/clusterresolver",
             "file": "xds/internal/balancer/clusterresolver/configbuilder_childname.go",
             "line": 58,
-            "message": "map built without a size hint in a loop bounded by O(len(priorities)); preallocate with make(map[K]V, O(len(priorities)))"
+            "message": "map grown in a loop bounded by O(len(priorities)) without a size hint; preallocate with make(map[K]V, O(len(priorities)))"
           },
           {
             "target": "grpc-go",
@@ -19510,7 +19160,7 @@
             "package": "google.golang.org/grpc/xds/internal/balancer/clusterresolver",
             "file": "xds/internal/balancer/clusterresolver/resource_resolver.go",
             "line": 172,
-            "message": "map built without a size hint in a loop bounded by O(len(mechanisms)); preallocate with make(map[K]V, O(len(mechanisms)))"
+            "message": "map grown in a loop bounded by O(len(mechanisms)) without a size hint; preallocate with make(map[K]V, O(len(mechanisms)))"
           },
           {
             "target": "grpc-go",
@@ -19526,7 +19176,7 @@
             "package": "google.golang.org/grpc/xds/internal/balancer/ringhash",
             "file": "xds/internal/balancer/ringhash/picker.go",
             "line": 38,
-            "message": "map built without a size hint in a loop bounded by O(len(ring.items)); preallocate with make(map[K]V, O(len(ring.items)))"
+            "message": "map grown in a loop bounded by O(len(ring.items)) without a size hint; preallocate with make(map[K]V, O(len(ring.items)))"
           },
           {
             "target": "grpc-go",
@@ -19534,7 +19184,7 @@
             "package": "google.golang.org/grpc/xds/internal/balancer/wrrlocality",
             "file": "xds/internal/balancer/wrrlocality/balancer.go",
             "line": 164,
-            "message": "map built without a size hint in a loop bounded by O(len(s.ResolverState.Addresses)); preallocate with make(map[K]V, O(len(s.ResolverState.Addresses)))"
+            "message": "map grown in a loop bounded by O(len(s.ResolverState.Addresses)) without a size hint; preallocate with make(map[K]V, O(len(s.ResolverState.Addresses)))"
           },
           {
             "target": "grpc-go",
@@ -19542,7 +19192,7 @@
             "package": "google.golang.org/grpc/xds/internal/test/e2e",
             "file": "xds/internal/test/e2e/e2e_utils.go",
             "line": 29,
-            "message": "map built without a size hint in a loop bounded by O(len(scs)); preallocate with make(map[K]V, O(len(scs)))"
+            "message": "map grown in a loop bounded by O(len(scs)) without a size hint; preallocate with make(map[K]V, O(len(scs)))"
           },
           {
             "target": "grpc-go",
@@ -19550,7 +19200,7 @@
             "package": "google.golang.org/grpc/xds/internal/xdsclient",
             "file": "xds/internal/xdsclient/channel.go",
             "line": 268,
-            "message": "map built without a size hint in a loop bounded by O(len(resp.Resources)); preallocate with make(map[K]V, O(len(resp.Resources)))"
+            "message": "map grown in a loop bounded by O(len(resp.Resources)) without a size hint; preallocate with make(map[K]V, O(len(resp.Resources)))"
           },
           {
             "target": "grpc-go",
@@ -19558,7 +19208,7 @@
             "package": "google.golang.org/grpc/xds/internal/xdsclient",
             "file": "xds/internal/xdsclient/channel.go",
             "line": 269,
-            "message": "map built without a size hint in a loop bounded by O(len(resp.Resources)); preallocate with make(map[K]V, O(len(resp.Resources)))"
+            "message": "map grown in a loop bounded by O(len(resp.Resources)) without a size hint; preallocate with make(map[K]V, O(len(resp.Resources)))"
           },
           {
             "target": "grpc-go",
@@ -19574,7 +19224,7 @@
             "package": "google.golang.org/grpc/xds/internal/xdsclient/xdsresource",
             "file": "xds/internal/xdsclient/xdsresource/unmarshal_rds.go",
             "line": 123,
-            "message": "map built without a size hint in a loop bounded by O(len(csps)); preallocate with make(map[K]V, O(len(csps)))"
+            "message": "map grown in a loop bounded by O(len(csps)) without a size hint; preallocate with make(map[K]V, O(len(csps)))"
           },
           {
             "target": "grpc-go",
@@ -19582,23 +19232,7 @@
             "package": "google.golang.org/grpc/xds/internal/xdsclient/xdsresource",
             "file": "xds/internal/xdsclient/xdsresource/unmarshal_rds.go",
             "line": 211,
-            "message": "map built without a size hint in a loop bounded by O(len(routes)); preallocate with make(map[K]V, O(len(routes)))"
-          },
-          {
-            "target": "grpc-go",
-            "rule": "SM4",
-            "package": "google.golang.org/grpc/xds/internal/xdsclient/xdsresource",
-            "file": "xds/internal/xdsclient/xdsresource/unmarshal_rds.go",
-            "line": 237,
-            "message": "regexp compiled inside a loop; hoist the pattern"
-          },
-          {
-            "target": "grpc-go",
-            "rule": "SM4",
-            "package": "google.golang.org/grpc/xds/internal/xdsclient/xdsresource",
-            "file": "xds/internal/xdsclient/xdsresource/unmarshal_rds.go",
-            "line": 257,
-            "message": "regexp compiled inside a loop; hoist the pattern"
+            "message": "map grown in a loop bounded by O(len(routes)) without a size hint; preallocate with make(map[K]V, O(len(routes)))"
           },
           {
             "target": "grpc-go",
@@ -19607,14 +19241,6 @@
             "file": "xds/internal/xdsclient/xdsresource/unmarshal_rds.go",
             "line": 400,
             "message": "append in a loop bounded by O(len(routes)) on a zero-capacity slice; preallocate with make(…, 0, O(len(routes)))"
-          },
-          {
-            "target": "grpc-go",
-            "rule": "SM4",
-            "package": "google.golang.org/grpc/xds/internal/xdsclient/xdsresource",
-            "file": "xds/internal/xdsclient/xdsresource/unmarshal_rds.go",
-            "line": 415,
-            "message": "regexp compiled inside a loop; hoist the pattern"
           },
           {
             "target": "grpc-go",
@@ -20898,7 +20524,7 @@
             "package": "github.com/jackc/pgx/v5",
             "file": "conn.go",
             "line": 1082,
-            "message": "map built without a size hint in a loop bounded by O(len(b.QueuedQueries)); preallocate with make(map[K]V, O(len(b.QueuedQueries)))"
+            "message": "map grown in a loop bounded by O(len(b.QueuedQueries)) without a size hint; preallocate with make(map[K]V, O(len(b.QueuedQueries)))"
           },
           {
             "target": "pgx",
@@ -20906,7 +20532,7 @@
             "package": "github.com/jackc/pgx/v5",
             "file": "conn.go",
             "line": 1114,
-            "message": "map built without a size hint in a loop bounded by O(len(b.QueuedQueries)); preallocate with make(map[K]V, O(len(b.QueuedQueries)))"
+            "message": "map grown in a loop bounded by O(len(b.QueuedQueries)) without a size hint; preallocate with make(map[K]V, O(len(b.QueuedQueries)))"
           },
           {
             "target": "pgx",
@@ -20914,7 +20540,7 @@
             "package": "github.com/jackc/pgx/v5",
             "file": "conn.go",
             "line": 1141,
-            "message": "map built without a size hint in a loop bounded by O(len(b.QueuedQueries)); preallocate with make(map[K]V, O(len(b.QueuedQueries)))"
+            "message": "map grown in a loop bounded by O(len(b.QueuedQueries)) without a size hint; preallocate with make(map[K]V, O(len(b.QueuedQueries)))"
           },
           {
             "target": "pgx",
@@ -21384,7 +21010,7 @@
             "package": "github.com/yuin/goldmark/testutil",
             "file": "testutil/testutil.go",
             "line": 257,
-            "message": "map built without a size hint in a loop bounded by O(len(v1lines)); preallocate with make(map[K]V, O(len(v1lines)))"
+            "message": "map grown in a loop bounded by O(len(v1lines)) without a size hint; preallocate with make(map[K]V, O(len(v1lines)))"
           },
           {
             "target": "goldmark",
@@ -21392,7 +21018,7 @@
             "package": "github.com/yuin/goldmark/testutil",
             "file": "testutil/testutil.go",
             "line": 270,
-            "message": "map built without a size hint in a loop bounded by O(len(v2lines)); preallocate with make(map[K]V, O(len(v2lines)))"
+            "message": "map grown in a loop bounded by O(len(v2lines)) without a size hint; preallocate with make(map[K]V, O(len(v2lines)))"
           },
           {
             "target": "goldmark",
@@ -23238,7 +22864,6 @@
         "by_rule": {
           "SM1": 1,
           "SM3": 3,
-          "SM5": 1,
           "SM6": 2
         },
         "findings": [
@@ -23252,19 +22877,11 @@
           },
           {
             "target": "cel-go",
-            "rule": "SM5",
-            "package": "github.com/google/cel-go/cel",
-            "file": "cel/prompt.go",
-            "line": 159,
-            "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
-          },
-          {
-            "target": "cel-go",
             "rule": "SM6",
             "package": "github.com/google/cel-go/common/decls",
             "file": "common/decls/decls.go",
             "line": 233,
-            "message": "map built without a size hint in a loop bounded by O(len(f.overloadOrdinals)); preallocate with make(map[K]V, O(len(f.overloadOrdinals)))"
+            "message": "map grown in a loop bounded by O(len(f.overloadOrdinals)) without a size hint; preallocate with make(map[K]V, O(len(f.overloadOrdinals)))"
           },
           {
             "target": "cel-go",
@@ -23296,7 +22913,7 @@
             "package": "github.com/google/cel-go/interpreter",
             "file": "interpreter/attribute_patterns.go",
             "line": 256,
-            "message": "map built without a size hint in a loop bounded by O(len(variableNames)); preallocate with make(map[K]V, O(len(variableNames)))"
+            "message": "map grown in a loop bounded by O(len(variableNames)) without a size hint; preallocate with make(map[K]V, O(len(variableNames)))"
           }
         ]
       }
@@ -25726,7 +25343,6 @@
       "smells": {
         "by_rule": {
           "SM3": 5,
-          "SM5": 4,
           "SM6": 9
         },
         "findings": [
@@ -25744,7 +25360,7 @@
             "package": "github.com/go-delve/delve/pkg/logflags",
             "file": "pkg/logflags/logflags.go",
             "line": 38,
-            "message": "map built without a size hint in a loop bounded by O(len(attrs)); preallocate with make(map[K]V, O(len(attrs)))"
+            "message": "map grown in a loop bounded by O(len(attrs)) without a size hint; preallocate with make(map[K]V, O(len(attrs)))"
           },
           {
             "target": "delve",
@@ -25752,15 +25368,7 @@
             "package": "github.com/go-delve/delve/pkg/logflags",
             "file": "pkg/logflags/logflags.go",
             "line": 277,
-            "message": "map built without a size hint in a loop bounded by O(len(attrs)); preallocate with make(map[K]V, O(len(attrs)))"
-          },
-          {
-            "target": "delve",
-            "rule": "SM5",
-            "package": "github.com/go-delve/delve/pkg/proc",
-            "file": "pkg/proc/bininfo.go",
-            "line": 268,
-            "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
+            "message": "map grown in a loop bounded by O(len(attrs)) without a size hint; preallocate with make(map[K]V, O(len(attrs)))"
           },
           {
             "target": "delve",
@@ -25768,7 +25376,7 @@
             "package": "github.com/go-delve/delve/pkg/proc",
             "file": "pkg/proc/bininfo.go",
             "line": 971,
-            "message": "map built without a size hint in a loop bounded by O(len(linenos)); preallocate with make(map[K]V, O(len(linenos)))"
+            "message": "map grown in a loop bounded by O(len(linenos)) without a size hint; preallocate with make(map[K]V, O(len(linenos)))"
           },
           {
             "target": "delve",
@@ -25784,7 +25392,7 @@
             "package": "github.com/go-delve/delve/pkg/proc",
             "file": "pkg/proc/bininfo.go",
             "line": 2434,
-            "message": "map built without a size hint in a loop bounded by O(len(image.symTable.Funcs)); preallocate with make(map[K]V, O(len(image.symTable.Funcs)))"
+            "message": "map grown in a loop bounded by O(len(image.symTable.Funcs)) without a size hint; preallocate with make(map[K]V, O(len(image.symTable.Funcs)))"
           },
           {
             "target": "delve",
@@ -25804,27 +25412,11 @@
           },
           {
             "target": "delve",
-            "rule": "SM5",
-            "package": "github.com/go-delve/delve/pkg/terminal",
-            "file": "pkg/terminal/command.go",
-            "line": 945,
-            "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
-          },
-          {
-            "target": "delve",
             "rule": "SM6",
             "package": "github.com/go-delve/delve/service/dap",
             "file": "service/dap/server.go",
             "line": 2015,
-            "message": "map built without a size hint in a loop bounded by O(len(request.Arguments.Filters)); preallocate with make(map[K]V, O(len(request.Arguments.Filters)))"
-          },
-          {
-            "target": "delve",
-            "rule": "SM5",
-            "package": "github.com/go-delve/delve/service/dap",
-            "file": "service/dap/server.go",
-            "line": 2222,
-            "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
+            "message": "map grown in a loop bounded by O(len(request.Arguments.Filters)) without a size hint; preallocate with make(map[K]V, O(len(request.Arguments.Filters)))"
           },
           {
             "target": "delve",
@@ -25840,7 +25432,7 @@
             "package": "github.com/go-delve/delve/service/debugger",
             "file": "service/debugger/debugger.go",
             "line": 1860,
-            "message": "map built without a size hint in a loop bounded by O(len(gs)); preallocate with make(map[K]V, O(len(gs)))"
+            "message": "map grown in a loop bounded by O(len(gs)) without a size hint; preallocate with make(map[K]V, O(len(gs)))"
           },
           {
             "target": "delve",
@@ -25848,7 +25440,7 @@
             "package": "github.com/go-delve/delve/service/debugger",
             "file": "service/debugger/debugger.go",
             "line": 1861,
-            "message": "map built without a size hint in a loop bounded by O(len(gs)); preallocate with make(map[K]V, O(len(gs)))"
+            "message": "map grown in a loop bounded by O(len(gs)) without a size hint; preallocate with make(map[K]V, O(len(gs)))"
           },
           {
             "target": "delve",
@@ -25856,7 +25448,7 @@
             "package": "github.com/go-delve/delve/service/debugger",
             "file": "service/debugger/debugger.go",
             "line": 2653,
-            "message": "map built without a size hint in a loop bounded by O(len(bins)); preallocate with make(map[K]V, O(len(bins)))"
+            "message": "map grown in a loop bounded by O(len(bins)) without a size hint; preallocate with make(map[K]V, O(len(bins)))"
           },
           {
             "target": "delve",
@@ -25864,15 +25456,7 @@
             "package": "github.com/go-delve/delve/service/debugger",
             "file": "service/debugger/debugger.go",
             "line": 2655,
-            "message": "map built without a size hint in a loop bounded by O(len(bins)); preallocate with make(map[K]V, O(len(bins)))"
-          },
-          {
-            "target": "delve",
-            "rule": "SM5",
-            "package": "github.com/go-delve/delve/service/rpc2",
-            "file": "service/rpc2/server.go",
-            "line": 980,
-            "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
+            "message": "map grown in a loop bounded by O(len(bins)) without a size hint; preallocate with make(map[K]V, O(len(bins)))"
           }
         ]
       }
@@ -26085,7 +25669,7 @@
             "package": "github.com/go-chi/chi/v5/middleware",
             "file": "middleware/compress.go",
             "line": 66,
-            "message": "map built without a size hint in a loop bounded by O(len(types)); preallocate with make(map[K]V, O(len(types)))"
+            "message": "map grown in a loop bounded by O(len(types)) without a size hint; preallocate with make(map[K]V, O(len(types)))"
           },
           {
             "target": "chi",
@@ -26093,7 +25677,7 @@
             "package": "github.com/go-chi/chi/v5/middleware",
             "file": "middleware/compress.go",
             "line": 67,
-            "message": "map built without a size hint in a loop bounded by O(len(types)); preallocate with make(map[K]V, O(len(types)))"
+            "message": "map grown in a loop bounded by O(len(types)) without a size hint; preallocate with make(map[K]V, O(len(types)))"
           }
         ]
       }
@@ -46417,9 +46001,8 @@
   "aggregate_smells_by_rule": {
     "SM1": 9,
     "SM2": 6,
-    "SM3": 122,
-    "SM4": 18,
-    "SM5": 34,
+    "SM3": 121,
+    "SM4": 2,
     "SM6": 115
   },
   "smell_findings": [
@@ -46429,7 +46012,7 @@
       "package": "github.com/caddyserver/caddy/v2",
       "file": "admin.go",
       "line": 301,
-      "message": "map built without a size hint in a loop bounded by O(len(admin.Origins)); preallocate with make(map[K]V, O(len(admin.Origins)))"
+      "message": "map grown in a loop bounded by O(len(admin.Origins)) without a size hint; preallocate with make(map[K]V, O(len(admin.Origins)))"
     },
     {
       "target": "caddy",
@@ -46453,7 +46036,7 @@
       "package": "github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile",
       "file": "caddyconfig/httpcaddyfile/addresses.go",
       "line": 83,
-      "message": "map built without a size hint in a loop bounded by O(len(originalServerBlocks)); preallocate with make(map[K]V, O(len(originalServerBlocks)))"
+      "message": "map grown in a loop bounded by O(len(originalServerBlocks)) without a size hint; preallocate with make(map[K]V, O(len(originalServerBlocks)))"
     },
     {
       "target": "caddy",
@@ -46461,7 +46044,7 @@
       "package": "github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile",
       "file": "caddyconfig/httpcaddyfile/addresses.go",
       "line": 96,
-      "message": "map built without a size hint in a loop bounded by O(len(originalServerBlocks)); preallocate with make(map[K]V, O(len(originalServerBlocks)))"
+      "message": "map grown in a loop bounded by O(len(originalServerBlocks)) without a size hint; preallocate with make(map[K]V, O(len(originalServerBlocks)))"
     },
     {
       "target": "caddy",
@@ -46469,23 +46052,7 @@
       "package": "github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile",
       "file": "caddyconfig/httpcaddyfile/addresses.go",
       "line": 118,
-      "message": "map built without a size hint in a loop bounded by O(len(originalServerBlocks)); preallocate with make(map[K]V, O(len(originalServerBlocks)))"
-    },
-    {
-      "target": "caddy",
-      "rule": "SM5",
-      "package": "github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile",
-      "file": "caddyconfig/httpcaddyfile/addresses.go",
-      "line": 139,
-      "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
-    },
-    {
-      "target": "caddy",
-      "rule": "SM5",
-      "package": "github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile",
-      "file": "caddyconfig/httpcaddyfile/addresses.go",
-      "line": 153,
-      "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
+      "message": "map grown in a loop bounded by O(len(originalServerBlocks)) without a size hint; preallocate with make(map[K]V, O(len(originalServerBlocks)))"
     },
     {
       "target": "caddy",
@@ -46493,31 +46060,7 @@
       "package": "github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile",
       "file": "caddyconfig/httpcaddyfile/addresses.go",
       "line": 157,
-      "message": "map built without a size hint in a loop bounded by O(len(originalServerBlocks)); preallocate with make(map[K]V, O(len(originalServerBlocks)))"
-    },
-    {
-      "target": "caddy",
-      "rule": "SM5",
-      "package": "github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile",
-      "file": "caddyconfig/httpcaddyfile/addresses.go",
-      "line": 211,
-      "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
-    },
-    {
-      "target": "caddy",
-      "rule": "SM5",
-      "package": "github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile",
-      "file": "caddyconfig/httpcaddyfile/addresses.go",
-      "line": 240,
-      "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
-    },
-    {
-      "target": "caddy",
-      "rule": "SM5",
-      "package": "github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile",
-      "file": "caddyconfig/httpcaddyfile/addresses.go",
-      "line": 250,
-      "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
+      "message": "map grown in a loop bounded by O(len(originalServerBlocks)) without a size hint; preallocate with make(map[K]V, O(len(originalServerBlocks)))"
     },
     {
       "target": "caddy",
@@ -46525,7 +46068,7 @@
       "package": "github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile",
       "file": "caddyconfig/httpcaddyfile/directives.go",
       "line": 226,
-      "message": "map built without a size hint in a loop bounded by O(len(h.parentBlock.Segments)); preallocate with make(map[K]V, O(len(h.parentBlock.Segments)))"
+      "message": "map grown in a loop bounded by O(len(h.parentBlock.Segments)) without a size hint; preallocate with make(map[K]V, O(len(h.parentBlock.Segments)))"
     },
     {
       "target": "caddy",
@@ -46533,7 +46076,7 @@
       "package": "github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile",
       "file": "caddyconfig/httpcaddyfile/directives.go",
       "line": 564,
-      "message": "map built without a size hint in a loop bounded by O(len(sb.parsedKeys)); preallocate with make(map[K]V, O(len(sb.parsedKeys)))"
+      "message": "map grown in a loop bounded by O(len(sb.parsedKeys)) without a size hint; preallocate with make(map[K]V, O(len(sb.parsedKeys)))"
     },
     {
       "target": "caddy",
@@ -46541,15 +46084,7 @@
       "package": "github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile",
       "file": "caddyconfig/httpcaddyfile/directives.go",
       "line": 596,
-      "message": "map built without a size hint in a loop bounded by O(len(sb.parsedKeys)); preallocate with make(map[K]V, O(len(sb.parsedKeys)))"
-    },
-    {
-      "target": "caddy",
-      "rule": "SM5",
-      "package": "github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile",
-      "file": "caddyconfig/httpcaddyfile/httptype.go",
-      "line": 353,
-      "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
+      "message": "map grown in a loop bounded by O(len(sb.parsedKeys)) without a size hint; preallocate with make(map[K]V, O(len(sb.parsedKeys)))"
     },
     {
       "target": "caddy",
@@ -46557,7 +46092,7 @@
       "package": "github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile",
       "file": "caddyconfig/httpcaddyfile/httptype.go",
       "line": 466,
-      "message": "map built without a size hint in a loop bounded by O(len(serverBlocks)); preallocate with make(map[K]V, O(len(serverBlocks)))"
+      "message": "map grown in a loop bounded by O(len(serverBlocks)) without a size hint; preallocate with make(map[K]V, O(len(serverBlocks)))"
     },
     {
       "target": "caddy",
@@ -46565,15 +46100,7 @@
       "package": "github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile",
       "file": "caddyconfig/httpcaddyfile/httptype.go",
       "line": 541,
-      "message": "map built without a size hint in a loop bounded by O(len(pairings)); preallocate with make(map[K]V, O(len(pairings)))"
-    },
-    {
-      "target": "caddy",
-      "rule": "SM5",
-      "package": "github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile",
-      "file": "caddyconfig/httpcaddyfile/httptype.go",
-      "line": 657,
-      "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
+      "message": "map grown in a loop bounded by O(len(pairings)) without a size hint; preallocate with make(map[K]V, O(len(pairings)))"
     },
     {
       "target": "caddy",
@@ -46581,31 +46108,7 @@
       "package": "github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile",
       "file": "caddyconfig/httpcaddyfile/httptype.go",
       "line": 753,
-      "message": "map built without a size hint in a loop bounded by O(len(pairings)); preallocate with make(map[K]V, O(len(pairings)))"
-    },
-    {
-      "target": "caddy",
-      "rule": "SM5",
-      "package": "github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile",
-      "file": "caddyconfig/httpcaddyfile/httptype.go",
-      "line": 781,
-      "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
-    },
-    {
-      "target": "caddy",
-      "rule": "SM5",
-      "package": "github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile",
-      "file": "caddyconfig/httpcaddyfile/httptype.go",
-      "line": 885,
-      "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
-    },
-    {
-      "target": "caddy",
-      "rule": "SM5",
-      "package": "github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile",
-      "file": "caddyconfig/httpcaddyfile/httptype.go",
-      "line": 956,
-      "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
+      "message": "map grown in a loop bounded by O(len(pairings)) without a size hint; preallocate with make(map[K]V, O(len(pairings)))"
     },
     {
       "target": "caddy",
@@ -46613,7 +46116,7 @@
       "package": "github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile",
       "file": "caddyconfig/httpcaddyfile/tlsapp.go",
       "line": 56,
-      "message": "map built without a size hint in a loop bounded by O(len(pairings)); preallocate with make(map[K]V, O(len(pairings)))"
+      "message": "map grown in a loop bounded by O(len(pairings)) without a size hint; preallocate with make(map[K]V, O(len(pairings)))"
     },
     {
       "target": "caddy",
@@ -46621,15 +46124,7 @@
       "package": "github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile",
       "file": "caddyconfig/httpcaddyfile/tlsapp.go",
       "line": 95,
-      "message": "map built without a size hint in a loop bounded by O(len(pairings)); preallocate with make(map[K]V, O(len(pairings)))"
-    },
-    {
-      "target": "caddy",
-      "rule": "SM5",
-      "package": "github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile",
-      "file": "caddyconfig/httpcaddyfile/tlsapp.go",
-      "line": 236,
-      "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
+      "message": "map grown in a loop bounded by O(len(pairings)) without a size hint; preallocate with make(map[K]V, O(len(pairings)))"
     },
     {
       "target": "caddy",
@@ -46637,15 +46132,7 @@
       "package": "github.com/caddyserver/caddy/v2/cmd",
       "file": "cmd/packagesfuncs.go",
       "line": 308,
-      "message": "map built without a size hint in a loop bounded by O(len(modules)); preallocate with make(map[K]V, O(len(modules)))"
-    },
-    {
-      "target": "caddy",
-      "rule": "SM5",
-      "package": "github.com/caddyserver/caddy/v2/modules/caddyhttp",
-      "file": "modules/caddyhttp/autohttps.go",
-      "line": 424,
-      "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
+      "message": "map grown in a loop bounded by O(len(modules)) without a size hint; preallocate with make(map[K]V, O(len(modules)))"
     },
     {
       "target": "caddy",
@@ -46653,39 +46140,7 @@
       "package": "github.com/caddyserver/caddy/v2/modules/caddyhttp/encode",
       "file": "modules/caddyhttp/encode/encode.go",
       "line": 143,
-      "message": "map built without a size hint in a loop bounded by O(len(enc.Prefer)); preallocate with make(map[K]V, O(len(enc.Prefer)))"
-    },
-    {
-      "target": "caddy",
-      "rule": "SM4",
-      "package": "github.com/caddyserver/caddy/v2/modules/caddyhttp/headers",
-      "file": "modules/caddyhttp/headers/headers.go",
-      "line": 152,
-      "message": "regexp compiled inside a loop; hoist the pattern"
-    },
-    {
-      "target": "caddy",
-      "rule": "SM4",
-      "package": "github.com/caddyserver/caddy/v2/modules/caddyhttp/headers",
-      "file": "modules/caddyhttp/headers/headers.go",
-      "line": 302,
-      "message": "regexp compiled inside a loop; hoist the pattern"
-    },
-    {
-      "target": "caddy",
-      "rule": "SM4",
-      "package": "github.com/caddyserver/caddy/v2/modules/caddyhttp/headers",
-      "file": "modules/caddyhttp/headers/headers.go",
-      "line": 329,
-      "message": "regexp compiled inside a loop; hoist the pattern"
-    },
-    {
-      "target": "caddy",
-      "rule": "SM4",
-      "package": "github.com/caddyserver/caddy/v2/modules/caddyhttp/map",
-      "file": "modules/caddyhttp/map/map.go",
-      "line": 78,
-      "message": "regexp compiled inside a loop; hoist the pattern"
+      "message": "map grown in a loop bounded by O(len(enc.Prefer)) without a size hint; preallocate with make(map[K]V, O(len(enc.Prefer)))"
     },
     {
       "target": "caddy",
@@ -46693,7 +46148,7 @@
       "package": "github.com/caddyserver/caddy/v2/modules/caddyhttp/map",
       "file": "modules/caddyhttp/map/map.go",
       "line": 97,
-      "message": "map built without a size hint in a loop bounded by O(len(h.Mappings)); preallocate with make(map[K]V, O(len(h.Mappings)))"
+      "message": "map grown in a loop bounded by O(len(h.Mappings)) without a size hint; preallocate with make(map[K]V, O(len(h.Mappings)))"
     },
     {
       "target": "caddy",
@@ -46721,14 +46176,6 @@
     },
     {
       "target": "caddy",
-      "rule": "SM4",
-      "package": "github.com/caddyserver/caddy/v2/modules/caddyhttp/rewrite",
-      "file": "modules/caddyhttp/rewrite/rewrite.go",
-      "line": 114,
-      "message": "regexp compiled inside a loop; hoist the pattern"
-    },
-    {
-      "target": "caddy",
       "rule": "SM3",
       "package": "github.com/caddyserver/caddy/v2/modules/caddyhttp",
       "file": "modules/caddyhttp/server.go",
@@ -46741,7 +46188,7 @@
       "package": "github.com/caddyserver/caddy/v2/modules/caddytls",
       "file": "modules/caddytls/ech.go",
       "line": 824,
-      "message": "map built without a size hint in a loop bounded by O(len(innerNames)); preallocate with make(map[K]V, O(len(innerNames)))"
+      "message": "map grown in a loop bounded by O(len(innerNames)) without a size hint; preallocate with make(map[K]V, O(len(innerNames)))"
     },
     {
       "target": "caddy",
@@ -46749,15 +46196,7 @@
       "package": "github.com/caddyserver/caddy/v2/modules/caddytls",
       "file": "modules/caddytls/tls.go",
       "line": 376,
-      "message": "map built without a size hint in a loop bounded by O(len(t.Automation.Policies)); preallocate with make(map[K]V, O(len(t.Automation.Policies)))"
-    },
-    {
-      "target": "caddy",
-      "rule": "SM4",
-      "package": "github.com/caddyserver/caddy/v2/modules/logging",
-      "file": "modules/logging/filters.go",
-      "line": 750,
-      "message": "regexp compiled inside a loop; hoist the pattern"
+      "message": "map grown in a loop bounded by O(len(t.Automation.Policies)) without a size hint; preallocate with make(map[K]V, O(len(t.Automation.Policies)))"
     },
     {
       "target": "nats-server",
@@ -46765,7 +46204,7 @@
       "package": "github.com/nats-io/nats-server/v2/server",
       "file": "server/accounts.go",
       "line": 708,
-      "message": "map built without a size hint in a loop bounded by O(len(dests)); preallocate with make(map[K]V, O(len(dests)))"
+      "message": "map grown in a loop bounded by O(len(dests)) without a size hint; preallocate with make(map[K]V, O(len(dests)))"
     },
     {
       "target": "nats-server",
@@ -46782,14 +46221,6 @@
       "file": "server/certstore/certstore_windows.go",
       "line": 179,
       "message": "append in a loop bounded by O(len(caCertsMatch)) on a zero-capacity slice; preallocate with make(…, 0, O(len(caCertsMatch)))"
-    },
-    {
-      "target": "nats-server",
-      "rule": "SM3",
-      "package": "github.com/nats-io/nats-server/v2/server/certstore",
-      "file": "server/certstore/certstore_windows.go",
-      "line": 432,
-      "message": "append in a loop bounded by O(1) on a zero-capacity slice; preallocate with make(…, 0, O(1))"
     },
     {
       "target": "nats-server",
@@ -46837,7 +46268,7 @@
       "package": "github.com/nats-io/nats-server/v2/server",
       "file": "server/jetstream_cluster.go",
       "line": 7669,
-      "message": "map built without a size hint in a loop bounded by O(len(existing)); preallocate with make(map[K]V, O(len(existing)))"
+      "message": "map grown in a loop bounded by O(len(existing)) without a size hint; preallocate with make(map[K]V, O(len(existing)))"
     },
     {
       "target": "nats-server",
@@ -46845,7 +46276,7 @@
       "package": "github.com/nats-io/nats-server/v2/server",
       "file": "server/jetstream_cluster.go",
       "line": 7688,
-      "message": "map built without a size hint in a loop bounded by O(len(ignore)); preallocate with make(map[K]V, O(len(ignore)))"
+      "message": "map grown in a loop bounded by O(len(ignore)) without a size hint; preallocate with make(map[K]V, O(len(ignore)))"
     },
     {
       "target": "nats-server",
@@ -46861,7 +46292,7 @@
       "package": "github.com/nats-io/nats-server/v2/server",
       "file": "server/leafnode.go",
       "line": 375,
-      "message": "map built without a size hint in a loop bounded by O(len(o.LeafNode.Users)); preallocate with make(map[K]V, O(len(o.LeafNode.Users)))"
+      "message": "map grown in a loop bounded by O(len(o.LeafNode.Users)) without a size hint; preallocate with make(map[K]V, O(len(o.LeafNode.Users)))"
     },
     {
       "target": "nats-server",
@@ -46869,15 +46300,7 @@
       "package": "github.com/nats-io/nats-server/v2/server",
       "file": "server/mqtt.go",
       "line": 1618,
-      "message": "map built without a size hint in a loop bounded by O(len(msgs)); preallocate with make(map[K]V, O(len(msgs)))"
-    },
-    {
-      "target": "nats-server",
-      "rule": "SM5",
-      "package": "github.com/nats-io/nats-server/v2/server",
-      "file": "server/mqtt.go",
-      "line": 4576,
-      "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
+      "message": "map grown in a loop bounded by O(len(msgs)) without a size hint; preallocate with make(map[K]V, O(len(msgs)))"
     },
     {
       "target": "nats-server",
@@ -46917,7 +46340,7 @@
       "package": "github.com/nats-io/nats-server/v2/server",
       "file": "server/opts.go",
       "line": 2206,
-      "message": "map built without a size hint in a loop bounded by O(len(a)); preallocate with make(map[K]V, O(len(a)))"
+      "message": "map grown in a loop bounded by O(len(a)) without a size hint; preallocate with make(map[K]V, O(len(a)))"
     },
     {
       "target": "nats-server",
@@ -46926,14 +46349,6 @@
       "file": "server/opts.go",
       "line": 5188,
       "message": "regexp compiled inside a loop; hoist the pattern"
-    },
-    {
-      "target": "nats-server",
-      "rule": "SM5",
-      "package": "github.com/nats-io/nats-server/v2/server",
-      "file": "server/reload.go",
-      "line": 1548,
-      "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
     },
     {
       "target": "nats-server",
@@ -46993,14 +46408,6 @@
     },
     {
       "target": "hugo",
-      "rule": "SM4",
-      "package": "github.com/gohugoio/hugo/codegen",
-      "file": "codegen/methods.go",
-      "line": 381,
-      "message": "regexp compiled inside a loop; hoist the pattern"
-    },
-    {
-      "target": "hugo",
       "rule": "SM3",
       "package": "github.com/gohugoio/hugo/codegen",
       "file": "codegen/methods.go",
@@ -47021,7 +46428,7 @@
       "package": "github.com/gohugoio/hugo/codegen",
       "file": "codegen/methods.go",
       "line": 510,
-      "message": "map built without a size hint in a loop bounded by O(len(s)); preallocate with make(map[K]V, O(len(s)))"
+      "message": "map grown in a loop bounded by O(len(s)) without a size hint; preallocate with make(map[K]V, O(len(s)))"
     },
     {
       "target": "hugo",
@@ -47037,7 +46444,7 @@
       "package": "github.com/gohugoio/hugo/commands",
       "file": "commands/convert.go",
       "line": 206,
-      "message": "map built without a size hint in a loop bounded by O(len(pagesBackedByFile)); preallocate with make(map[K]V, O(len(pagesBackedByFile)))"
+      "message": "map grown in a loop bounded by O(len(pagesBackedByFile)) without a size hint; preallocate with make(map[K]V, O(len(pagesBackedByFile)))"
     },
     {
       "target": "hugo",
@@ -47089,14 +46496,6 @@
     },
     {
       "target": "hugo",
-      "rule": "SM4",
-      "package": "github.com/gohugoio/hugo/config/allconfig",
-      "file": "config/allconfig/allconfig.go",
-      "line": 373,
-      "message": "regexp compiled inside a loop; hoist the pattern"
-    },
-    {
-      "target": "hugo",
       "rule": "SM3",
       "package": "github.com/gohugoio/hugo/config/allconfig",
       "file": "config/allconfig/load.go",
@@ -47105,43 +46504,11 @@
     },
     {
       "target": "hugo",
-      "rule": "SM4",
-      "package": "github.com/gohugoio/hugo/config",
-      "file": "config/commonConfig.go",
-      "line": 275,
-      "message": "regexp compiled inside a loop; hoist the pattern"
-    },
-    {
-      "target": "hugo",
       "rule": "SM3",
       "package": "github.com/gohugoio/hugo/config/security",
       "file": "config/security/whitelist.go",
       "line": 74,
       "message": "append in a loop bounded by O(len(patterns)) on a zero-capacity slice; preallocate with make(…, 0, O(len(patterns)))"
-    },
-    {
-      "target": "hugo",
-      "rule": "SM4",
-      "package": "github.com/gohugoio/hugo/config/security",
-      "file": "config/security/whitelist.go",
-      "line": 89,
-      "message": "regexp compiled inside a loop; hoist the pattern"
-    },
-    {
-      "target": "hugo",
-      "rule": "SM4",
-      "package": "github.com/gohugoio/hugo/deploy/deployconfig",
-      "file": "deploy/deployconfig/deployConfig.go",
-      "line": 165,
-      "message": "regexp compiled inside a loop; hoist the pattern"
-    },
-    {
-      "target": "hugo",
-      "rule": "SM4",
-      "package": "github.com/gohugoio/hugo/deploy/deployconfig",
-      "file": "deploy/deployconfig/deployConfig.go",
-      "line": 171,
-      "message": "regexp compiled inside a loop; hoist the pattern"
     },
     {
       "target": "hugo",
@@ -47157,7 +46524,7 @@
       "package": "github.com/gohugoio/hugo/htesting",
       "file": "htesting/test_helpers.go",
       "line": 84,
-      "message": "map built without a size hint in a loop bounded by O(len(slice1)); preallocate with make(map[K]V, O(len(slice1)))"
+      "message": "map grown in a loop bounded by O(len(slice1)) without a size hint; preallocate with make(map[K]V, O(len(slice1)))"
     },
     {
       "target": "hugo",
@@ -47165,7 +46532,7 @@
       "package": "github.com/gohugoio/hugo/hugolib",
       "file": "hugolib/content_map_page_assembler.go",
       "line": 1375,
-      "message": "map built without a size hint in a loop bounded by O(len(a.h.sitesLanguages)); preallocate with make(map[K]V, O(len(a.h.sitesLanguages)))"
+      "message": "map grown in a loop bounded by O(len(a.h.sitesLanguages)) without a size hint; preallocate with make(map[K]V, O(len(a.h.sitesLanguages)))"
     },
     {
       "target": "hugo",
@@ -47189,7 +46556,7 @@
       "package": "github.com/gohugoio/hugo/hugolib",
       "file": "hugolib/hugo_sites.go",
       "line": 467,
-      "message": "map built without a size hint in a loop bounded by O(len(errs)); preallocate with make(map[K]V, O(len(errs)))"
+      "message": "map grown in a loop bounded by O(len(errs)) without a size hint; preallocate with make(map[K]V, O(len(errs)))"
     },
     {
       "target": "hugo",
@@ -47197,7 +46564,7 @@
       "package": "github.com/gohugoio/hugo/hugolib",
       "file": "hugolib/hugo_sites.go",
       "line": 495,
-      "message": "map built without a size hint in a loop bounded by O(len(h.Sites)); preallocate with make(map[K]V, O(len(h.Sites)))"
+      "message": "map grown in a loop bounded by O(len(h.Sites)) without a size hint; preallocate with make(map[K]V, O(len(h.Sites)))"
     },
     {
       "target": "hugo",
@@ -47229,7 +46596,7 @@
       "package": "github.com/gohugoio/hugo/hugolib",
       "file": "hugolib/shortcode.go",
       "line": 537,
-      "message": "map built without a size hint in a loop bounded by O(len(s.shortcodes)); preallocate with make(map[K]V, O(len(s.shortcodes)))"
+      "message": "map grown in a loop bounded by O(len(s.shortcodes)) without a size hint; preallocate with make(map[K]V, O(len(s.shortcodes)))"
     },
     {
       "target": "hugo",
@@ -47237,7 +46604,7 @@
       "package": "github.com/gohugoio/hugo/hugolib",
       "file": "hugolib/site.go",
       "line": 473,
-      "message": "map built without a size hint in a loop bounded by O(len(sitesVersionsRoles)); preallocate with make(map[K]V, O(len(sitesVersionsRoles)))"
+      "message": "map grown in a loop bounded by O(len(sitesVersionsRoles)) without a size hint; preallocate with make(map[K]V, O(len(sitesVersionsRoles)))"
     },
     {
       "target": "hugo",
@@ -47261,7 +46628,7 @@
       "package": "github.com/gohugoio/hugo/hugolib",
       "file": "hugolib/site.go",
       "line": 1314,
-      "message": "map built without a size hint in a loop bounded by O(len(events)); preallocate with make(map[K]V, O(len(events)))"
+      "message": "map grown in a loop bounded by O(len(events)) without a size hint; preallocate with make(map[K]V, O(len(events)))"
     },
     {
       "target": "hugo",
@@ -47301,7 +46668,7 @@
       "package": "github.com/gohugoio/hugo/langs",
       "file": "langs/language.go",
       "line": 198,
-      "message": "map built without a size hint in a loop bounded by O(len(l)); preallocate with make(map[K]V, O(len(l)))"
+      "message": "map grown in a loop bounded by O(len(l)) without a size hint; preallocate with make(map[K]V, O(len(l)))"
     },
     {
       "target": "hugo",
@@ -47309,7 +46676,7 @@
       "package": "github.com/gohugoio/hugo/langs",
       "file": "langs/language.go",
       "line": 208,
-      "message": "map built without a size hint in a loop bounded by O(len(l)); preallocate with make(map[K]V, O(len(l)))"
+      "message": "map grown in a loop bounded by O(len(l)) without a size hint; preallocate with make(map[K]V, O(len(l)))"
     },
     {
       "target": "hugo",
@@ -47333,7 +46700,7 @@
       "package": "github.com/gohugoio/hugo/modules",
       "file": "modules/client.go",
       "line": 846,
-      "message": "map built without a size hint in a loop bounded by O(len(mods)); preallocate with make(map[K]V, O(len(mods)))"
+      "message": "map grown in a loop bounded by O(len(mods)) without a size hint; preallocate with make(map[K]V, O(len(mods)))"
     },
     {
       "target": "hugo",
@@ -47357,7 +46724,7 @@
       "package": "github.com/gohugoio/hugo/modules/npm",
       "file": "modules/npm/package_builder.go",
       "line": 478,
-      "message": "map built without a size hint in a loop bounded by O(len(mods)); preallocate with make(map[K]V, O(len(mods)))"
+      "message": "map grown in a loop bounded by O(len(mods)) without a size hint; preallocate with make(map[K]V, O(len(mods)))"
     },
     {
       "target": "hugo",
@@ -47365,7 +46732,7 @@
       "package": "github.com/gohugoio/hugo/modules/npm",
       "file": "modules/npm/package_builder.go",
       "line": 595,
-      "message": "map built without a size hint in a loop bounded by O(len(mods)); preallocate with make(map[K]V, O(len(mods)))"
+      "message": "map grown in a loop bounded by O(len(mods)) without a size hint; preallocate with make(map[K]V, O(len(mods)))"
     },
     {
       "target": "hugo",
@@ -47397,15 +46764,7 @@
       "package": "github.com/gohugoio/hugo/related",
       "file": "related/inverted_index.go",
       "line": 181,
-      "message": "map built without a size hint in a loop bounded by O(len(cfg.Indices)); preallocate with make(map[K]V, O(len(cfg.Indices)))"
-    },
-    {
-      "target": "hugo",
-      "rule": "SM4",
-      "package": "github.com/gohugoio/hugo/releaser",
-      "file": "releaser/releaser.go",
-      "line": 222,
-      "message": "regexp compiled inside a loop; hoist the pattern"
+      "message": "map grown in a loop bounded by O(len(cfg.Indices)) without a size hint; preallocate with make(map[K]V, O(len(cfg.Indices)))"
     },
     {
       "target": "hugo",
@@ -47485,7 +46844,7 @@
       "package": "github.com/gohugoio/hugo/resources/resource",
       "file": "resources/resource/resources.go",
       "line": 227,
-      "message": "map built without a size hint in a loop bounded by O(len(r)); preallocate with make(map[K]V, O(len(r)))"
+      "message": "map grown in a loop bounded by O(len(r)) without a size hint; preallocate with make(map[K]V, O(len(r)))"
     },
     {
       "target": "hugo",
@@ -47509,7 +46868,7 @@
       "package": "github.com/gohugoio/hugo/tpl/collections",
       "file": "tpl/collections/reflect_helpers.go",
       "line": 58,
-      "message": "map built without a size hint in a loop bounded by O(len(seqs)); preallocate with make(map[K]V, O(len(seqs)))"
+      "message": "map grown in a loop bounded by O(len(seqs)) without a size hint; preallocate with make(map[K]V, O(len(seqs)))"
     },
     {
       "target": "hugo",
@@ -47517,7 +46876,7 @@
       "package": "github.com/gohugoio/hugo/tpl/internal/go_templates/htmltemplate",
       "file": "tpl/internal/go_templates/htmltemplate/escape.go",
       "line": 323,
-      "message": "map built without a size hint in a loop bounded by O(len(p.Cmds)); preallocate with make(map[K]V, O(len(p.Cmds)))"
+      "message": "map grown in a loop bounded by O(len(p.Cmds)) without a size hint; preallocate with make(map[K]V, O(len(p.Cmds)))"
     },
     {
       "target": "hugo",
@@ -47541,7 +46900,7 @@
       "package": "github.com/gohugoio/hugo/tpl/internal",
       "file": "tpl/internal/templatefuncsRegistry.go",
       "line": 155,
-      "message": "map built without a size hint in a loop bounded by O(len(namespaces)); preallocate with make(map[K]V, O(len(namespaces)))"
+      "message": "map grown in a loop bounded by O(len(namespaces)) without a size hint; preallocate with make(map[K]V, O(len(namespaces)))"
     },
     {
       "target": "hugo",
@@ -47549,7 +46908,7 @@
       "package": "github.com/gohugoio/hugo/tpl/internal",
       "file": "tpl/internal/templatefuncsRegistry.go",
       "line": 157,
-      "message": "map built without a size hint in a loop bounded by O(len(namespaces)); preallocate with make(map[K]V, O(len(namespaces)))"
+      "message": "map grown in a loop bounded by O(len(namespaces)) without a size hint; preallocate with make(map[K]V, O(len(namespaces)))"
     },
     {
       "target": "hugo",
@@ -47573,7 +46932,7 @@
       "package": "github.com/prometheus/prometheus/cmd/promtool",
       "file": "cmd/promtool/analyze.go",
       "line": 95,
-      "message": "map built without a size hint in a loop bounded by O(len(matchers)); preallocate with make(map[K]V, O(len(matchers)))"
+      "message": "map grown in a loop bounded by O(len(matchers)) without a size hint; preallocate with make(map[K]V, O(len(matchers)))"
     },
     {
       "target": "prometheus",
@@ -47581,39 +46940,7 @@
       "package": "github.com/prometheus/prometheus/cmd/promtool",
       "file": "cmd/promtool/analyze.go",
       "line": 287,
-      "message": "map built without a size hint in a loop bounded by O(len(series.Histograms)); preallocate with make(map[K]V, O(len(series.Histograms)))"
-    },
-    {
-      "target": "prometheus",
-      "rule": "SM5",
-      "package": "github.com/prometheus/prometheus/cmd/promtool",
-      "file": "cmd/promtool/unittest.go",
-      "line": 412,
-      "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
-    },
-    {
-      "target": "prometheus",
-      "rule": "SM5",
-      "package": "github.com/prometheus/prometheus/cmd/promtool",
-      "file": "cmd/promtool/unittest.go",
-      "line": 413,
-      "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
-    },
-    {
-      "target": "prometheus",
-      "rule": "SM5",
-      "package": "github.com/prometheus/prometheus/cmd/promtool",
-      "file": "cmd/promtool/unittest.go",
-      "line": 517,
-      "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
-    },
-    {
-      "target": "prometheus",
-      "rule": "SM5",
-      "package": "github.com/prometheus/prometheus/cmd/promtool",
-      "file": "cmd/promtool/unittest.go",
-      "line": 520,
-      "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
+      "message": "map grown in a loop bounded by O(len(series.Histograms)) without a size hint; preallocate with make(map[K]V, O(len(series.Histograms)))"
     },
     {
       "target": "prometheus",
@@ -47621,7 +46948,7 @@
       "package": "github.com/prometheus/prometheus/config",
       "file": "config/config.go",
       "line": 353,
-      "message": "map built without a size hint in a loop bounded by O(len(c.ScrapeConfigs)); preallocate with make(map[K]V, O(len(c.ScrapeConfigs)))"
+      "message": "map grown in a loop bounded by O(len(c.ScrapeConfigs)) without a size hint; preallocate with make(map[K]V, O(len(c.ScrapeConfigs)))"
     },
     {
       "target": "prometheus",
@@ -47629,7 +46956,7 @@
       "package": "github.com/prometheus/prometheus/config",
       "file": "config/config.go",
       "line": 616,
-      "message": "map built without a size hint in a loop bounded by O(len(sps)); preallocate with make(map[K]V, O(len(sps)))"
+      "message": "map grown in a loop bounded by O(len(sps)) without a size hint; preallocate with make(map[K]V, O(len(sps)))"
     },
     {
       "target": "prometheus",
@@ -47637,7 +46964,7 @@
       "package": "github.com/prometheus/prometheus/config",
       "file": "config/config.go",
       "line": 1297,
-      "message": "map built without a size hint in a loop bounded by O(len(a)); preallocate with make(map[K]V, O(len(a)))"
+      "message": "map grown in a loop bounded by O(len(a)) without a size hint; preallocate with make(map[K]V, O(len(a)))"
     },
     {
       "target": "prometheus",
@@ -47645,7 +46972,7 @@
       "package": "github.com/prometheus/prometheus/config",
       "file": "config/config.go",
       "line": 1773,
-      "message": "map built without a size hint in a loop bounded by O(len(attributes)); preallocate with make(map[K]V, O(len(attributes)))"
+      "message": "map grown in a loop bounded by O(len(attributes)) without a size hint; preallocate with make(map[K]V, O(len(attributes)))"
     },
     {
       "target": "prometheus",
@@ -47677,7 +47004,7 @@
       "package": "github.com/prometheus/prometheus/discovery/kubernetes",
       "file": "discovery/kubernetes/node.go",
       "line": 223,
-      "message": "map built without a size hint in a loop bounded by O(len(node.Status.Addresses)); preallocate with make(map[K]V, O(len(node.Status.Addresses)))"
+      "message": "map grown in a loop bounded by O(len(node.Status.Addresses)) without a size hint; preallocate with make(map[K]V, O(len(node.Status.Addresses)))"
     },
     {
       "target": "prometheus",
@@ -47685,15 +47012,7 @@
       "package": "github.com/prometheus/prometheus/discovery/marathon",
       "file": "discovery/marathon/marathon.go",
       "line": 384,
-      "message": "map built without a size hint in a loop bounded by O(len(apps.Apps)); preallocate with make(map[K]V, O(len(apps.Apps)))"
-    },
-    {
-      "target": "prometheus",
-      "rule": "SM5",
-      "package": "github.com/prometheus/prometheus/discovery/moby",
-      "file": "discovery/moby/docker.go",
-      "line": 258,
-      "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
+      "message": "map grown in a loop bounded by O(len(apps.Apps)) without a size hint; preallocate with make(map[K]V, O(len(apps.Apps)))"
     },
     {
       "target": "prometheus",
@@ -47717,7 +47036,7 @@
       "package": "github.com/prometheus/prometheus/discovery/scaleway",
       "file": "discovery/scaleway/instance.go",
       "line": 242,
-      "message": "map built without a size hint in a loop bounded by O(len(servers)); preallocate with make(map[K]V, O(len(servers)))"
+      "message": "map grown in a loop bounded by O(len(servers)) without a size hint; preallocate with make(map[K]V, O(len(servers)))"
     },
     {
       "target": "prometheus",
@@ -47726,14 +47045,6 @@
       "file": "discovery/xds/kuma.go",
       "line": 156,
       "message": "append in a loop bounded by O(len(resources)) on a zero-capacity slice; preallocate with make(…, 0, O(len(resources)))"
-    },
-    {
-      "target": "prometheus",
-      "rule": "SM5",
-      "package": "github.com/prometheus/prometheus/documentation/examples/custom-sd/adapter",
-      "file": "documentation/examples/custom-sd/adapter/adapter.go",
-      "line": 80,
-      "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
     },
     {
       "target": "prometheus",
@@ -47757,7 +47068,7 @@
       "package": "github.com/prometheus/prometheus/promql",
       "file": "promql/engine.go",
       "line": 1470,
-      "message": "map built without a size hint in a loop bounded by O(len(exprs)); preallocate with make(map[K]V, O(len(exprs)))"
+      "message": "map grown in a loop bounded by O(len(exprs)) without a size hint; preallocate with make(map[K]V, O(len(exprs)))"
     },
     {
       "target": "prometheus",
@@ -47765,23 +47076,7 @@
       "package": "github.com/prometheus/prometheus/promql",
       "file": "promql/engine.go",
       "line": 1597,
-      "message": "map built without a size hint in a loop bounded by O(len(inputMatrix)); preallocate with make(map[K]V, O(len(inputMatrix)))"
-    },
-    {
-      "target": "prometheus",
-      "rule": "SM5",
-      "package": "github.com/prometheus/prometheus/promql",
-      "file": "promql/engine.go",
-      "line": 4061,
-      "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
-    },
-    {
-      "target": "prometheus",
-      "rule": "SM5",
-      "package": "github.com/prometheus/prometheus/promql",
-      "file": "promql/engine.go",
-      "line": 4070,
-      "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
+      "message": "map grown in a loop bounded by O(len(inputMatrix)) without a size hint; preallocate with make(map[K]V, O(len(inputMatrix)))"
     },
     {
       "target": "prometheus",
@@ -47789,7 +47084,7 @@
       "package": "github.com/prometheus/prometheus/promql",
       "file": "promql/engine.go",
       "line": 4093,
-      "message": "map built without a size hint in a loop bounded by O(len(vec)); preallocate with make(map[K]V, O(len(vec)))"
+      "message": "map grown in a loop bounded by O(len(vec)) without a size hint; preallocate with make(map[K]V, O(len(vec)))"
     },
     {
       "target": "prometheus",
@@ -47797,23 +47092,7 @@
       "package": "github.com/prometheus/prometheus/promql",
       "file": "promql/engine.go",
       "line": 4176,
-      "message": "map built without a size hint in a loop bounded by O(len(mat)); preallocate with make(map[K]V, O(len(mat)))"
-    },
-    {
-      "target": "prometheus",
-      "rule": "SM5",
-      "package": "github.com/prometheus/prometheus/promql",
-      "file": "promql/engine.go",
-      "line": 4199,
-      "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
-    },
-    {
-      "target": "prometheus",
-      "rule": "SM5",
-      "package": "github.com/prometheus/prometheus/promql",
-      "file": "promql/engine.go",
-      "line": 4202,
-      "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
+      "message": "map grown in a loop bounded by O(len(mat)) without a size hint; preallocate with make(map[K]V, O(len(mat)))"
     },
     {
       "target": "prometheus",
@@ -47821,7 +47100,7 @@
       "package": "github.com/prometheus/prometheus/promql",
       "file": "promql/info.go",
       "line": 164,
-      "message": "map built without a size hint in a loop bounded by O(len(mat)); preallocate with make(map[K]V, O(len(mat)))"
+      "message": "map grown in a loop bounded by O(len(mat)) without a size hint; preallocate with make(map[K]V, O(len(mat)))"
     },
     {
       "target": "prometheus",
@@ -47829,7 +47108,7 @@
       "package": "github.com/prometheus/prometheus/promql",
       "file": "promql/info.go",
       "line": 178,
-      "message": "map built without a size hint in a loop bounded by O(len(mat)); preallocate with make(map[K]V, O(len(mat)))"
+      "message": "map grown in a loop bounded by O(len(mat)) without a size hint; preallocate with make(map[K]V, O(len(mat)))"
     },
     {
       "target": "prometheus",
@@ -47837,7 +47116,7 @@
       "package": "github.com/prometheus/prometheus/promql",
       "file": "promql/info.go",
       "line": 251,
-      "message": "map built without a size hint in a loop bounded by O(len(infoMat)); preallocate with make(map[K]V, O(len(infoMat)))"
+      "message": "map grown in a loop bounded by O(len(infoMat)) without a size hint; preallocate with make(map[K]V, O(len(infoMat)))"
     },
     {
       "target": "prometheus",
@@ -47845,7 +47124,7 @@
       "package": "github.com/prometheus/prometheus/promql",
       "file": "promql/info.go",
       "line": 426,
-      "message": "map built without a size hint in a loop bounded by O(len(base)); preallocate with make(map[K]V, O(len(base)))"
+      "message": "map grown in a loop bounded by O(len(base)) without a size hint; preallocate with make(map[K]V, O(len(base)))"
     },
     {
       "target": "prometheus",
@@ -47854,14 +47133,6 @@
       "file": "promql/parser/parse.go",
       "line": 117,
       "message": "append in a loop bounded by O(len(matchers)) on a zero-capacity slice; preallocate with make(…, 0, O(len(matchers)))"
-    },
-    {
-      "target": "prometheus",
-      "rule": "SM5",
-      "package": "github.com/prometheus/prometheus/promql/promqltest",
-      "file": "promql/promqltest/test.go",
-      "line": 1020,
-      "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
     },
     {
       "target": "prometheus",
@@ -47901,7 +47172,7 @@
       "package": "github.com/prometheus/prometheus/rules",
       "file": "rules/manager.go",
       "line": 350,
-      "message": "map built without a size hint in a loop bounded by O(len(filenames)); preallocate with make(map[K]V, O(len(filenames)))"
+      "message": "map grown in a loop bounded by O(len(filenames)) without a size hint; preallocate with make(map[K]V, O(len(filenames)))"
     },
     {
       "target": "prometheus",
@@ -47917,7 +47188,7 @@
       "package": "github.com/prometheus/prometheus/rules",
       "file": "rules/manager.go",
       "line": 629,
-      "message": "map built without a size hint in a loop bounded by O(len(patterns)); preallocate with make(map[K]V, O(len(patterns)))"
+      "message": "map grown in a loop bounded by O(len(patterns)) without a size hint; preallocate with make(map[K]V, O(len(patterns)))"
     },
     {
       "target": "prometheus",
@@ -47925,7 +47196,7 @@
       "package": "github.com/prometheus/prometheus/scrape",
       "file": "scrape/scrape.go",
       "line": 443,
-      "message": "map built without a size hint in a loop bounded by O(len(targets)); preallocate with make(map[K]V, O(len(targets)))"
+      "message": "map grown in a loop bounded by O(len(targets)) without a size hint; preallocate with make(map[K]V, O(len(targets)))"
     },
     {
       "target": "prometheus",
@@ -47942,22 +47213,6 @@
       "file": "scrape/scrape.go",
       "line": 721,
       "message": "append in a loop bounded by O(len(sps)) on a zero-capacity slice; preallocate with make(…, 0, O(len(sps)))"
-    },
-    {
-      "target": "prometheus",
-      "rule": "SM5",
-      "package": "github.com/prometheus/prometheus/scrape",
-      "file": "scrape/scrape.go",
-      "line": 1836,
-      "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
-    },
-    {
-      "target": "prometheus",
-      "rule": "SM5",
-      "package": "github.com/prometheus/prometheus/scrape",
-      "file": "scrape/scrape_append_v2.go",
-      "line": 294,
-      "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
     },
     {
       "target": "prometheus",
@@ -48029,7 +47284,7 @@
       "package": "github.com/prometheus/prometheus/tsdb",
       "file": "tsdb/compact.go",
       "line": 446,
-      "message": "map built without a size hint in a loop bounded by O(len(blocks)); preallocate with make(map[K]V, O(len(blocks)))"
+      "message": "map grown in a loop bounded by O(len(blocks)) without a size hint; preallocate with make(map[K]V, O(len(blocks)))"
     },
     {
       "target": "prometheus",
@@ -48053,7 +47308,7 @@
       "package": "github.com/prometheus/prometheus/tsdb",
       "file": "tsdb/db.go",
       "line": 1949,
-      "message": "map built without a size hint in a loop bounded by O(len(blocks)); preallocate with make(map[K]V, O(len(blocks)))"
+      "message": "map grown in a loop bounded by O(len(blocks)) without a size hint; preallocate with make(map[K]V, O(len(blocks)))"
     },
     {
       "target": "prometheus",
@@ -48061,7 +47316,7 @@
       "package": "github.com/prometheus/prometheus/tsdb",
       "file": "tsdb/db.go",
       "line": 1990,
-      "message": "map built without a size hint in a loop bounded by O(len(blocks)); preallocate with make(map[K]V, O(len(blocks)))"
+      "message": "map grown in a loop bounded by O(len(blocks)) without a size hint; preallocate with make(map[K]V, O(len(blocks)))"
     },
     {
       "target": "prometheus",
@@ -48069,7 +47324,7 @@
       "package": "github.com/prometheus/prometheus/tsdb",
       "file": "tsdb/db.go",
       "line": 2030,
-      "message": "map built without a size hint in a loop bounded by O(len(blocks)); preallocate with make(map[K]V, O(len(blocks)))"
+      "message": "map grown in a loop bounded by O(len(blocks)) without a size hint; preallocate with make(map[K]V, O(len(blocks)))"
     },
     {
       "target": "prometheus",
@@ -48093,7 +47348,7 @@
       "package": "github.com/prometheus/prometheus/tsdb",
       "file": "tsdb/head.go",
       "line": 2250,
-      "message": "map built without a size hint in a loop bounded by O(len(refs)); preallocate with make(map[K]V, O(len(refs)))"
+      "message": "map grown in a loop bounded by O(len(refs)) without a size hint; preallocate with make(map[K]V, O(len(refs)))"
     },
     {
       "target": "prometheus",
@@ -48102,14 +47357,6 @@
       "file": "tsdb/head_append_v2.go",
       "line": 317,
       "message": "append in a loop bounded by O(len(exemplar)) on a zero-capacity slice; preallocate with make(…, 0, O(len(exemplar)))"
-    },
-    {
-      "target": "prometheus",
-      "rule": "SM5",
-      "package": "github.com/prometheus/prometheus/tsdb/index",
-      "file": "tsdb/index/index.go",
-      "line": 812,
-      "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
     },
     {
       "target": "prometheus",
@@ -48165,7 +47412,7 @@
       "package": "github.com/prometheus/prometheus/web/api/testhelpers",
       "file": "web/api/testhelpers/mocks.go",
       "line": 78,
-      "message": "map built without a size hint in a loop bounded by O(len(f.series)); preallocate with make(map[K]V, O(len(f.series)))"
+      "message": "map grown in a loop bounded by O(len(f.series)) without a size hint; preallocate with make(map[K]V, O(len(f.series)))"
     },
     {
       "target": "prometheus",
@@ -48173,7 +47420,7 @@
       "package": "github.com/prometheus/prometheus/web/api/testhelpers",
       "file": "web/api/testhelpers/mocks.go",
       "line": 121,
-      "message": "map built without a size hint in a loop bounded by O(len(f.series)); preallocate with make(map[K]V, O(len(f.series)))"
+      "message": "map grown in a loop bounded by O(len(f.series)) without a size hint; preallocate with make(map[K]V, O(len(f.series)))"
     },
     {
       "target": "grpc-go",
@@ -48181,7 +47428,7 @@
       "package": "google.golang.org/grpc/authz",
       "file": "authz/rbac_translator.go",
       "line": 271,
-      "message": "map built without a size hint in a loop bounded by O(len(rules)); preallocate with make(map[K]V, O(len(rules)))"
+      "message": "map grown in a loop bounded by O(len(rules)) without a size hint; preallocate with make(map[K]V, O(len(rules)))"
     },
     {
       "target": "grpc-go",
@@ -48197,7 +47444,7 @@
       "package": "google.golang.org/grpc/balancer/grpclb",
       "file": "balancer/grpclb/grpclb_remote_balancer.go",
       "line": 174,
-      "message": "map built without a size hint in a loop bounded by O(len(backendAddrs)); preallocate with make(map[K]V, O(len(backendAddrs)))"
+      "message": "map grown in a loop bounded by O(len(backendAddrs)) without a size hint; preallocate with make(map[K]V, O(len(backendAddrs)))"
     },
     {
       "target": "grpc-go",
@@ -48205,7 +47452,7 @@
       "package": "google.golang.org/grpc/balancer/pickfirst/pickfirstleaf",
       "file": "balancer/pickfirst/pickfirstleaf/pickfirstleaf.go",
       "line": 422,
-      "message": "map built without a size hint in a loop bounded by O(len(addrs)); preallocate with make(map[K]V, O(len(addrs)))"
+      "message": "map grown in a loop bounded by O(len(addrs)) without a size hint; preallocate with make(map[K]V, O(len(addrs)))"
     },
     {
       "target": "grpc-go",
@@ -48221,7 +47468,7 @@
       "package": "google.golang.org/grpc/balancer/rls/internal/keys",
       "file": "balancer/rls/internal/keys/builder.go",
       "line": 238,
-      "message": "map built without a size hint in a loop bounded by O(len(b.headerKeys)); preallocate with make(map[K]V, O(len(b.headerKeys)))"
+      "message": "map grown in a loop bounded by O(len(b.headerKeys)) without a size hint; preallocate with make(map[K]V, O(len(b.headerKeys)))"
     },
     {
       "target": "grpc-go",
@@ -48229,7 +47476,7 @@
       "package": "google.golang.org/grpc/internal/hierarchy",
       "file": "internal/hierarchy/hierarchy.go",
       "line": 112,
-      "message": "map built without a size hint in a loop bounded by O(len(addrs)); preallocate with make(map[K]V, O(len(addrs)))"
+      "message": "map grown in a loop bounded by O(len(addrs)) without a size hint; preallocate with make(map[K]V, O(len(addrs)))"
     },
     {
       "target": "grpc-go",
@@ -48237,7 +47484,7 @@
       "package": "google.golang.org/grpc/internal/hierarchy",
       "file": "internal/hierarchy/hierarchy.go",
       "line": 159,
-      "message": "map built without a size hint in a loop bounded by O(len(endpoints)); preallocate with make(map[K]V, O(len(endpoints)))"
+      "message": "map grown in a loop bounded by O(len(endpoints)) without a size hint; preallocate with make(map[K]V, O(len(endpoints)))"
     },
     {
       "target": "grpc-go",
@@ -48269,7 +47516,7 @@
       "package": "google.golang.org/grpc/internal/testutils",
       "file": "internal/testutils/balancer.go",
       "line": 333,
-      "message": "map built without a size hint in a loop bounded by O(len(want)); preallocate with make(map[K]V, O(len(want)))"
+      "message": "map grown in a loop bounded by O(len(want)) without a size hint; preallocate with make(map[K]V, O(len(want)))"
     },
     {
       "target": "grpc-go",
@@ -48285,7 +47532,7 @@
       "package": "google.golang.org/grpc/internal/testutils/roundrobin",
       "file": "internal/testutils/roundrobin/roundrobin.go",
       "line": 96,
-      "message": "map built without a size hint in a loop bounded by O(len(addrs)); preallocate with make(map[K]V, O(len(addrs)))"
+      "message": "map grown in a loop bounded by O(len(addrs)) without a size hint; preallocate with make(map[K]V, O(len(addrs)))"
     },
     {
       "target": "grpc-go",
@@ -48293,7 +47540,7 @@
       "package": "google.golang.org/grpc/internal/testutils/roundrobin",
       "file": "internal/testutils/roundrobin/roundrobin.go",
       "line": 148,
-      "message": "map built without a size hint in a loop bounded by O(len(addrs)); preallocate with make(map[K]V, O(len(addrs)))"
+      "message": "map grown in a loop bounded by O(len(addrs)) without a size hint; preallocate with make(map[K]V, O(len(addrs)))"
     },
     {
       "target": "grpc-go",
@@ -48301,7 +47548,7 @@
       "package": "google.golang.org/grpc/internal/testutils/roundrobin",
       "file": "internal/testutils/roundrobin/roundrobin.go",
       "line": 176,
-      "message": "map built without a size hint in a loop bounded by O(len(addrs)); preallocate with make(map[K]V, O(len(addrs)))"
+      "message": "map grown in a loop bounded by O(len(addrs)) without a size hint; preallocate with make(map[K]V, O(len(addrs)))"
     },
     {
       "target": "grpc-go",
@@ -48325,7 +47572,7 @@
       "package": "google.golang.org/grpc/internal/transport",
       "file": "internal/transport/http2_client.go",
       "line": 659,
-      "message": "map built without a size hint in a loop bounded by O(len(t.perRPCCreds)); preallocate with make(map[K]V, O(len(t.perRPCCreds)))"
+      "message": "map grown in a loop bounded by O(len(t.perRPCCreds)) without a size hint; preallocate with make(map[K]V, O(len(t.perRPCCreds)))"
     },
     {
       "target": "grpc-go",
@@ -48357,15 +47604,7 @@
       "package": "google.golang.org/grpc/metadata",
       "file": "metadata/metadata.go",
       "line": 150,
-      "message": "map built without a size hint in a loop bounded by O(len(mds)); preallocate with make(map[K]V, O(len(mds)))"
-    },
-    {
-      "target": "grpc-go",
-      "rule": "SM5",
-      "package": "google.golang.org/grpc/profiling/cmd",
-      "file": "profiling/cmd/catapult.go",
-      "line": 324,
-      "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
+      "message": "map grown in a loop bounded by O(len(mds)) without a size hint; preallocate with make(map[K]V, O(len(mds)))"
     },
     {
       "target": "grpc-go",
@@ -48373,7 +47612,7 @@
       "package": "google.golang.org/grpc/resolver",
       "file": "resolver/map.go",
       "line": 159,
-      "message": "map built without a size hint in a loop bounded by O(len(endpoint.Addresses)); preallocate with make(map[K]V, O(len(endpoint.Addresses)))"
+      "message": "map grown in a loop bounded by O(len(endpoint.Addresses)) without a size hint; preallocate with make(map[K]V, O(len(endpoint.Addresses)))"
     },
     {
       "target": "grpc-go",
@@ -48381,7 +47620,7 @@
       "package": "google.golang.org/grpc/stats",
       "file": "stats/metrics.go",
       "line": 33,
-      "message": "map built without a size hint in a loop bounded by O(len(metricNames)); preallocate with make(map[K]V, O(len(metricNames)))"
+      "message": "map grown in a loop bounded by O(len(metricNames)) without a size hint; preallocate with make(map[K]V, O(len(metricNames)))"
     },
     {
       "target": "grpc-go",
@@ -48389,7 +47628,7 @@
       "package": "google.golang.org/grpc/stats",
       "file": "stats/metrics.go",
       "line": 49,
-      "message": "map built without a size hint in a loop bounded by O(len(metricNames)); preallocate with make(map[K]V, O(len(metricNames)))"
+      "message": "map grown in a loop bounded by O(len(metricNames)) without a size hint; preallocate with make(map[K]V, O(len(metricNames)))"
     },
     {
       "target": "grpc-go",
@@ -48421,7 +47660,7 @@
       "package": "google.golang.org/grpc/xds/internal/balancer/clusterresolver",
       "file": "xds/internal/balancer/clusterresolver/configbuilder.go",
       "line": 211,
-      "message": "map built without a size hint in a loop bounded by O(len(localities)); preallocate with make(map[K]V, O(len(localities)))"
+      "message": "map grown in a loop bounded by O(len(localities)) without a size hint; preallocate with make(map[K]V, O(len(localities)))"
     },
     {
       "target": "grpc-go",
@@ -48437,7 +47676,7 @@
       "package": "google.golang.org/grpc/xds/internal/balancer/clusterresolver",
       "file": "xds/internal/balancer/clusterresolver/configbuilder_childname.go",
       "line": 57,
-      "message": "map built without a size hint in a loop bounded by O(len(priorities)); preallocate with make(map[K]V, O(len(priorities)))"
+      "message": "map grown in a loop bounded by O(len(priorities)) without a size hint; preallocate with make(map[K]V, O(len(priorities)))"
     },
     {
       "target": "grpc-go",
@@ -48445,7 +47684,7 @@
       "package": "google.golang.org/grpc/xds/internal/balancer/clusterresolver",
       "file": "xds/internal/balancer/clusterresolver/configbuilder_childname.go",
       "line": 58,
-      "message": "map built without a size hint in a loop bounded by O(len(priorities)); preallocate with make(map[K]V, O(len(priorities)))"
+      "message": "map grown in a loop bounded by O(len(priorities)) without a size hint; preallocate with make(map[K]V, O(len(priorities)))"
     },
     {
       "target": "grpc-go",
@@ -48461,7 +47700,7 @@
       "package": "google.golang.org/grpc/xds/internal/balancer/clusterresolver",
       "file": "xds/internal/balancer/clusterresolver/resource_resolver.go",
       "line": 172,
-      "message": "map built without a size hint in a loop bounded by O(len(mechanisms)); preallocate with make(map[K]V, O(len(mechanisms)))"
+      "message": "map grown in a loop bounded by O(len(mechanisms)) without a size hint; preallocate with make(map[K]V, O(len(mechanisms)))"
     },
     {
       "target": "grpc-go",
@@ -48477,7 +47716,7 @@
       "package": "google.golang.org/grpc/xds/internal/balancer/ringhash",
       "file": "xds/internal/balancer/ringhash/picker.go",
       "line": 38,
-      "message": "map built without a size hint in a loop bounded by O(len(ring.items)); preallocate with make(map[K]V, O(len(ring.items)))"
+      "message": "map grown in a loop bounded by O(len(ring.items)) without a size hint; preallocate with make(map[K]V, O(len(ring.items)))"
     },
     {
       "target": "grpc-go",
@@ -48485,7 +47724,7 @@
       "package": "google.golang.org/grpc/xds/internal/balancer/wrrlocality",
       "file": "xds/internal/balancer/wrrlocality/balancer.go",
       "line": 164,
-      "message": "map built without a size hint in a loop bounded by O(len(s.ResolverState.Addresses)); preallocate with make(map[K]V, O(len(s.ResolverState.Addresses)))"
+      "message": "map grown in a loop bounded by O(len(s.ResolverState.Addresses)) without a size hint; preallocate with make(map[K]V, O(len(s.ResolverState.Addresses)))"
     },
     {
       "target": "grpc-go",
@@ -48493,7 +47732,7 @@
       "package": "google.golang.org/grpc/xds/internal/test/e2e",
       "file": "xds/internal/test/e2e/e2e_utils.go",
       "line": 29,
-      "message": "map built without a size hint in a loop bounded by O(len(scs)); preallocate with make(map[K]V, O(len(scs)))"
+      "message": "map grown in a loop bounded by O(len(scs)) without a size hint; preallocate with make(map[K]V, O(len(scs)))"
     },
     {
       "target": "grpc-go",
@@ -48501,7 +47740,7 @@
       "package": "google.golang.org/grpc/xds/internal/xdsclient",
       "file": "xds/internal/xdsclient/channel.go",
       "line": 268,
-      "message": "map built without a size hint in a loop bounded by O(len(resp.Resources)); preallocate with make(map[K]V, O(len(resp.Resources)))"
+      "message": "map grown in a loop bounded by O(len(resp.Resources)) without a size hint; preallocate with make(map[K]V, O(len(resp.Resources)))"
     },
     {
       "target": "grpc-go",
@@ -48509,7 +47748,7 @@
       "package": "google.golang.org/grpc/xds/internal/xdsclient",
       "file": "xds/internal/xdsclient/channel.go",
       "line": 269,
-      "message": "map built without a size hint in a loop bounded by O(len(resp.Resources)); preallocate with make(map[K]V, O(len(resp.Resources)))"
+      "message": "map grown in a loop bounded by O(len(resp.Resources)) without a size hint; preallocate with make(map[K]V, O(len(resp.Resources)))"
     },
     {
       "target": "grpc-go",
@@ -48525,7 +47764,7 @@
       "package": "google.golang.org/grpc/xds/internal/xdsclient/xdsresource",
       "file": "xds/internal/xdsclient/xdsresource/unmarshal_rds.go",
       "line": 123,
-      "message": "map built without a size hint in a loop bounded by O(len(csps)); preallocate with make(map[K]V, O(len(csps)))"
+      "message": "map grown in a loop bounded by O(len(csps)) without a size hint; preallocate with make(map[K]V, O(len(csps)))"
     },
     {
       "target": "grpc-go",
@@ -48533,23 +47772,7 @@
       "package": "google.golang.org/grpc/xds/internal/xdsclient/xdsresource",
       "file": "xds/internal/xdsclient/xdsresource/unmarshal_rds.go",
       "line": 211,
-      "message": "map built without a size hint in a loop bounded by O(len(routes)); preallocate with make(map[K]V, O(len(routes)))"
-    },
-    {
-      "target": "grpc-go",
-      "rule": "SM4",
-      "package": "google.golang.org/grpc/xds/internal/xdsclient/xdsresource",
-      "file": "xds/internal/xdsclient/xdsresource/unmarshal_rds.go",
-      "line": 237,
-      "message": "regexp compiled inside a loop; hoist the pattern"
-    },
-    {
-      "target": "grpc-go",
-      "rule": "SM4",
-      "package": "google.golang.org/grpc/xds/internal/xdsclient/xdsresource",
-      "file": "xds/internal/xdsclient/xdsresource/unmarshal_rds.go",
-      "line": 257,
-      "message": "regexp compiled inside a loop; hoist the pattern"
+      "message": "map grown in a loop bounded by O(len(routes)) without a size hint; preallocate with make(map[K]V, O(len(routes)))"
     },
     {
       "target": "grpc-go",
@@ -48558,14 +47781,6 @@
       "file": "xds/internal/xdsclient/xdsresource/unmarshal_rds.go",
       "line": 400,
       "message": "append in a loop bounded by O(len(routes)) on a zero-capacity slice; preallocate with make(…, 0, O(len(routes)))"
-    },
-    {
-      "target": "grpc-go",
-      "rule": "SM4",
-      "package": "google.golang.org/grpc/xds/internal/xdsclient/xdsresource",
-      "file": "xds/internal/xdsclient/xdsresource/unmarshal_rds.go",
-      "line": 415,
-      "message": "regexp compiled inside a loop; hoist the pattern"
     },
     {
       "target": "grpc-go",
@@ -48581,7 +47796,7 @@
       "package": "github.com/jackc/pgx/v5",
       "file": "conn.go",
       "line": 1082,
-      "message": "map built without a size hint in a loop bounded by O(len(b.QueuedQueries)); preallocate with make(map[K]V, O(len(b.QueuedQueries)))"
+      "message": "map grown in a loop bounded by O(len(b.QueuedQueries)) without a size hint; preallocate with make(map[K]V, O(len(b.QueuedQueries)))"
     },
     {
       "target": "pgx",
@@ -48589,7 +47804,7 @@
       "package": "github.com/jackc/pgx/v5",
       "file": "conn.go",
       "line": 1114,
-      "message": "map built without a size hint in a loop bounded by O(len(b.QueuedQueries)); preallocate with make(map[K]V, O(len(b.QueuedQueries)))"
+      "message": "map grown in a loop bounded by O(len(b.QueuedQueries)) without a size hint; preallocate with make(map[K]V, O(len(b.QueuedQueries)))"
     },
     {
       "target": "pgx",
@@ -48597,7 +47812,7 @@
       "package": "github.com/jackc/pgx/v5",
       "file": "conn.go",
       "line": 1141,
-      "message": "map built without a size hint in a loop bounded by O(len(b.QueuedQueries)); preallocate with make(map[K]V, O(len(b.QueuedQueries)))"
+      "message": "map grown in a loop bounded by O(len(b.QueuedQueries)) without a size hint; preallocate with make(map[K]V, O(len(b.QueuedQueries)))"
     },
     {
       "target": "pgx",
@@ -48621,7 +47836,7 @@
       "package": "github.com/yuin/goldmark/testutil",
       "file": "testutil/testutil.go",
       "line": 257,
-      "message": "map built without a size hint in a loop bounded by O(len(v1lines)); preallocate with make(map[K]V, O(len(v1lines)))"
+      "message": "map grown in a loop bounded by O(len(v1lines)) without a size hint; preallocate with make(map[K]V, O(len(v1lines)))"
     },
     {
       "target": "goldmark",
@@ -48629,7 +47844,7 @@
       "package": "github.com/yuin/goldmark/testutil",
       "file": "testutil/testutil.go",
       "line": 270,
-      "message": "map built without a size hint in a loop bounded by O(len(v2lines)); preallocate with make(map[K]V, O(len(v2lines)))"
+      "message": "map grown in a loop bounded by O(len(v2lines)) without a size hint; preallocate with make(map[K]V, O(len(v2lines)))"
     },
     {
       "target": "goldmark",
@@ -48649,19 +47864,11 @@
     },
     {
       "target": "cel-go",
-      "rule": "SM5",
-      "package": "github.com/google/cel-go/cel",
-      "file": "cel/prompt.go",
-      "line": 159,
-      "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
-    },
-    {
-      "target": "cel-go",
       "rule": "SM6",
       "package": "github.com/google/cel-go/common/decls",
       "file": "common/decls/decls.go",
       "line": 233,
-      "message": "map built without a size hint in a loop bounded by O(len(f.overloadOrdinals)); preallocate with make(map[K]V, O(len(f.overloadOrdinals)))"
+      "message": "map grown in a loop bounded by O(len(f.overloadOrdinals)) without a size hint; preallocate with make(map[K]V, O(len(f.overloadOrdinals)))"
     },
     {
       "target": "cel-go",
@@ -48693,7 +47900,7 @@
       "package": "github.com/google/cel-go/interpreter",
       "file": "interpreter/attribute_patterns.go",
       "line": 256,
-      "message": "map built without a size hint in a loop bounded by O(len(variableNames)); preallocate with make(map[K]V, O(len(variableNames)))"
+      "message": "map grown in a loop bounded by O(len(variableNames)) without a size hint; preallocate with make(map[K]V, O(len(variableNames)))"
     },
     {
       "target": "delve",
@@ -48709,7 +47916,7 @@
       "package": "github.com/go-delve/delve/pkg/logflags",
       "file": "pkg/logflags/logflags.go",
       "line": 38,
-      "message": "map built without a size hint in a loop bounded by O(len(attrs)); preallocate with make(map[K]V, O(len(attrs)))"
+      "message": "map grown in a loop bounded by O(len(attrs)) without a size hint; preallocate with make(map[K]V, O(len(attrs)))"
     },
     {
       "target": "delve",
@@ -48717,15 +47924,7 @@
       "package": "github.com/go-delve/delve/pkg/logflags",
       "file": "pkg/logflags/logflags.go",
       "line": 277,
-      "message": "map built without a size hint in a loop bounded by O(len(attrs)); preallocate with make(map[K]V, O(len(attrs)))"
-    },
-    {
-      "target": "delve",
-      "rule": "SM5",
-      "package": "github.com/go-delve/delve/pkg/proc",
-      "file": "pkg/proc/bininfo.go",
-      "line": 268,
-      "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
+      "message": "map grown in a loop bounded by O(len(attrs)) without a size hint; preallocate with make(map[K]V, O(len(attrs)))"
     },
     {
       "target": "delve",
@@ -48733,7 +47932,7 @@
       "package": "github.com/go-delve/delve/pkg/proc",
       "file": "pkg/proc/bininfo.go",
       "line": 971,
-      "message": "map built without a size hint in a loop bounded by O(len(linenos)); preallocate with make(map[K]V, O(len(linenos)))"
+      "message": "map grown in a loop bounded by O(len(linenos)) without a size hint; preallocate with make(map[K]V, O(len(linenos)))"
     },
     {
       "target": "delve",
@@ -48749,7 +47948,7 @@
       "package": "github.com/go-delve/delve/pkg/proc",
       "file": "pkg/proc/bininfo.go",
       "line": 2434,
-      "message": "map built without a size hint in a loop bounded by O(len(image.symTable.Funcs)); preallocate with make(map[K]V, O(len(image.symTable.Funcs)))"
+      "message": "map grown in a loop bounded by O(len(image.symTable.Funcs)) without a size hint; preallocate with make(map[K]V, O(len(image.symTable.Funcs)))"
     },
     {
       "target": "delve",
@@ -48769,27 +47968,11 @@
     },
     {
       "target": "delve",
-      "rule": "SM5",
-      "package": "github.com/go-delve/delve/pkg/terminal",
-      "file": "pkg/terminal/command.go",
-      "line": 945,
-      "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
-    },
-    {
-      "target": "delve",
       "rule": "SM6",
       "package": "github.com/go-delve/delve/service/dap",
       "file": "service/dap/server.go",
       "line": 2015,
-      "message": "map built without a size hint in a loop bounded by O(len(request.Arguments.Filters)); preallocate with make(map[K]V, O(len(request.Arguments.Filters)))"
-    },
-    {
-      "target": "delve",
-      "rule": "SM5",
-      "package": "github.com/go-delve/delve/service/dap",
-      "file": "service/dap/server.go",
-      "line": 2222,
-      "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
+      "message": "map grown in a loop bounded by O(len(request.Arguments.Filters)) without a size hint; preallocate with make(map[K]V, O(len(request.Arguments.Filters)))"
     },
     {
       "target": "delve",
@@ -48805,7 +47988,7 @@
       "package": "github.com/go-delve/delve/service/debugger",
       "file": "service/debugger/debugger.go",
       "line": 1860,
-      "message": "map built without a size hint in a loop bounded by O(len(gs)); preallocate with make(map[K]V, O(len(gs)))"
+      "message": "map grown in a loop bounded by O(len(gs)) without a size hint; preallocate with make(map[K]V, O(len(gs)))"
     },
     {
       "target": "delve",
@@ -48813,7 +47996,7 @@
       "package": "github.com/go-delve/delve/service/debugger",
       "file": "service/debugger/debugger.go",
       "line": 1861,
-      "message": "map built without a size hint in a loop bounded by O(len(gs)); preallocate with make(map[K]V, O(len(gs)))"
+      "message": "map grown in a loop bounded by O(len(gs)) without a size hint; preallocate with make(map[K]V, O(len(gs)))"
     },
     {
       "target": "delve",
@@ -48821,7 +48004,7 @@
       "package": "github.com/go-delve/delve/service/debugger",
       "file": "service/debugger/debugger.go",
       "line": 2653,
-      "message": "map built without a size hint in a loop bounded by O(len(bins)); preallocate with make(map[K]V, O(len(bins)))"
+      "message": "map grown in a loop bounded by O(len(bins)) without a size hint; preallocate with make(map[K]V, O(len(bins)))"
     },
     {
       "target": "delve",
@@ -48829,15 +48012,7 @@
       "package": "github.com/go-delve/delve/service/debugger",
       "file": "service/debugger/debugger.go",
       "line": 2655,
-      "message": "map built without a size hint in a loop bounded by O(len(bins)); preallocate with make(map[K]V, O(len(bins)))"
-    },
-    {
-      "target": "delve",
-      "rule": "SM5",
-      "package": "github.com/go-delve/delve/service/rpc2",
-      "file": "service/rpc2/server.go",
-      "line": 980,
-      "message": "sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure"
+      "message": "map grown in a loop bounded by O(len(bins)) without a size hint; preallocate with make(map[K]V, O(len(bins)))"
     },
     {
       "target": "chi",
@@ -48845,7 +48020,7 @@
       "package": "github.com/go-chi/chi/v5/middleware",
       "file": "middleware/compress.go",
       "line": 66,
-      "message": "map built without a size hint in a loop bounded by O(len(types)); preallocate with make(map[K]V, O(len(types)))"
+      "message": "map grown in a loop bounded by O(len(types)) without a size hint; preallocate with make(map[K]V, O(len(types)))"
     },
     {
       "target": "chi",
@@ -48853,7 +48028,7 @@
       "package": "github.com/go-chi/chi/v5/middleware",
       "file": "middleware/compress.go",
       "line": 67,
-      "message": "map built without a size hint in a loop bounded by O(len(types)); preallocate with make(map[K]V, O(len(types)))"
+      "message": "map grown in a loop bounded by O(len(types)) without a size hint; preallocate with make(map[K]V, O(len(types)))"
     }
   ]
 }

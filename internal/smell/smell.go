@@ -104,15 +104,45 @@ func classifyLoops(lp *loopnest.Loop, ctx *fnContext) {
 	tc := tripcount.Of(lp, ctx.stab)
 	constTrip := constantTrip(lp)
 	ctx.dataDep[lp] = !constTrip // ⊤ and named bounds both count as data-dependent
-	if !tc.IsTop() && !constTrip {
-		// Non-⊤ trip count that is NOT a constant — the loop has a nameable bound.
-		// (tripcount never returns Constant() for `i < 10`, so the constTrip check
-		// is belt-and-suspenders; the main gate is !tc.IsTop().)
+	// SM3/SM6 must NAME the bound in their fix, so a resolvable-but-constant
+	// trip count is useless to them: "preallocate with make(…, 0, O(1))" is not
+	// advice, and the probe found exactly that message in the wild.
+	//
+	// The bound itself is the gate, not the structural constantTrip check.
+	// Before v1.36.0 the two agreed, and this code's previous comment said so:
+	// "tripcount never returns Constant() for `i < 10`". v1.36.0 taught R1–R4
+	// to resolve constant guards, including shapes constantTrip does not
+	// recognise structurally — a geometric step is not an ADD/SUB phi, and
+	// `range array` / `len(array)` fold to *ssa.Const. constantTrip stays,
+	// because dataDep asks a different question (is the loop data-dependent)
+	// from the one resolvable asks (does the bound have a nameable name).
+	if !tc.IsTop() && !constTrip && !isConstantBound(tc) {
 		ctx.resolvable[lp] = tc
 	}
 	for _, c := range lp.Children {
 		classifyLoops(c, ctx)
 	}
+}
+
+// isConstantBound reports whether b names no size variable — that is, whether
+// it is O(1).
+//
+// The test is exact rather than a comparison against bound.Constant(): that
+// value is Of(One()), One()'s factor map is empty, and reduce keeps an
+// antichain, so a One() term can never survive beside a variable term. A bound
+// with no named variable in any monomial is therefore constant and nothing
+// else. ⊤ has no terms at all, so it is excluded explicitly rather than read
+// as constant.
+func isConstantBound(b bound.Bound) bool {
+	if b.IsTop() {
+		return false
+	}
+	for _, m := range b.Terms() {
+		if len(m.Vars()) > 0 {
+			return false
+		}
+	}
+	return true
 }
 
 // constantTrip reports whether lp has a compile-time constant trip count. It

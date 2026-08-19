@@ -557,10 +557,10 @@ the fixed `smell(SMn):` prefix so golangci-lint users can filter on the class.
 |---|---|---|
 | **SM1** | string built by `+=` (or `fmt.Sprintf` self-accumulation) in a data-dependent loop | `strings.Builder`; constant-trip loop |
 | **SM2** | repeated `slices.Contains`/`Index` over a parameter slice with a loop-varying needle | loop-invariant needle; rebuilt scan target |
-| **SM3** | `append` into a zero-capacity slice bounded by a resolvable loop | `make([]T, 0, n)` with capacity given |
-| **SM4** | `regexp.Compile`/`MustCompile` inside any loop | compile hoisted before the loop |
-| **SM5** | sorting inside a data-dependent loop | constant-trip loop; sort outside any loop |
-| **SM6** | `make(map[K]V)` without a size hint, grown in a resolvable loop | `make(map[K]V, n)` with a hint |
+| **SM3** | `append` into a zero-capacity slice bounded by a resolvable loop with a *named* bound | `make([]T, 0, n)` with capacity given; a constant loop bound (there is no size to name) |
+| **SM4** | `regexp.Compile`/`MustCompile` inside any loop, from a pattern invariant across the innermost enclosing loop | pattern built per iteration (nothing to hoist); compile already hoisted before the loop |
+| **SM5** | sorting inside a data-dependent loop, on a slice that is stable across iterations and not written to inside the loop | slice rebuilt or mutated per iteration (the sort is necessary work); `sort.Sort`/`sort.Stable` (a `sort.Interface` exposes no slice to check); constant-trip loop; sort outside any loop |
+| **SM6** | `make(map[K]V)` without a size hint, grown in a resolvable loop with a *named* bound | `make(map[K]V, n)` with a hint; a constant loop bound |
 | **SM7** | a redundant second lookup the first already answered (map comma-ok then plain; `slices.Contains` then `slices.Index`) | a single lookup; a map mutated between them |
 | **SM8** | provably exponential recursion (Θ(aⁿ), a ≥ 2 — naive Fibonacci) | linear countdown (a=1); divisive binary search; unguarded recursion; **memoized recursion** (a comma-ok cache hit dominating the self-calls — O(n), not exponential) |
 

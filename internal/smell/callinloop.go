@@ -43,54 +43,108 @@ func init() {
 }
 
 // smCompileInLoop fires when regexp.Compile/MustCompile is called inside any
-// natural loop — recompiling even a constant number of times is the bug.
-func smCompileInLoop(_ *ssa.Function, ctx *fnContext) []Finding {
-	return callsInLoops(nil, ctx, sm4Names, false, "SM4",
-		"regexp compiled inside a loop; hoist the pattern")
+// natural loop FROM A LOOP-INVARIANT PATTERN — recompiling the same pattern
+// even a constant number of times is the bug, and the pattern being invariant
+// is what makes "hoist" true advice. A pattern built per iteration has nothing
+// to hoist, so the rule stays silent rather than emit an impossible fix.
+func smCompileInLoop(fn *ssa.Function, ctx *fnContext) []Finding {
+	return callsInLoops(fn, ctx, sm4Names, false, "SM4",
+		"regexp compiled inside a loop; hoist the pattern",
+		func(c *ssa.Call, lp *loopnest.Loop) bool {
+			args := c.Call.Args
+			return len(args) > 0 && loopInvariant(args[0], lp)
+		})
 }
 
 // smSortInLoop fires when a sorting function is called inside a data-dependent
-// loop — composed O(n·m log m).
-func smSortInLoop(_ *ssa.Function, ctx *fnContext) []Finding {
-	return callsInLoops(nil, ctx, sm5Names, true, "SM5",
-		"sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure")
+// loop ON A SLICE THAT IS BOTH STABLE ACROSS ITERATIONS AND UNTOUCHED BY THE
+// LOOP — the only condition under which the 2nd..nth sorts are redundant and
+// "hoist or restructure" is true advice. A slice rebuilt, appended to, or
+// written through inside the loop must be re-sorted, so the rule stays silent.
+//
+// This is the same test smLinearScan (SM2) applies below, extended with the
+// non-mutation half that a mutable operand needs and an immutable one does not.
+func smSortInLoop(fn *ssa.Function, ctx *fnContext) []Finding {
+	return callsInLoops(fn, ctx, sm5Names, true, "SM5",
+		"sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure",
+		func(c *ssa.Call, lp *loopnest.Loop) bool {
+			s, ok := sortedSliceOperand(&c.Call)
+			if !ok {
+				return false
+			}
+			return loopInvariant(s, lp) && unmutatedIn(s, lp)
+		})
 }
 
-// callsInLoops walks every instruction in every loop body and fires once per
-// call whose callee origin matches names. When needDataDep is true, only
-// data-dependent loops qualify.
-func callsInLoops(_ *ssa.Function, ctx *fnContext, names map[string]bool, needDataDep bool, rule, msg string) []Finding {
+// operandOK decides whether a matched call is actionable with respect to lp,
+// the innermost loop enclosing it. Returning false keeps the rule silent — the
+// smell analogue of ⊤.
+type operandOK func(c *ssa.Call, lp *loopnest.Loop) bool
+
+// callsInLoops scans every call in fn whose callee origin matches names and is
+// enclosed by at least one natural loop, and fires when ok accepts it.
+//
+// The structure mirrors smLinearScan (SM2) rather than walking the loop forest:
+// scanning blocks visits each call exactly once, so no dedup set is needed, and
+// it makes the enclosing-loop chain available per call.
+//
+// The gate and the predicate read DIFFERENT loops on purpose. needDataDep asks
+// whether ANY enclosing loop is data-dependent — a sort in a constant-trip loop
+// nested inside a data-dependent one is still repeated a data-dependent number
+// of times. The predicate is evaluated against the INNERMOST enclosing loop
+// (by Depth — EnclosingLoops does not guarantee an order),
+// because hoisting out of that loop is already a win and requiring invariance
+// across every enclosing loop would discard those cases.
+func callsInLoops(fn *ssa.Function, ctx *fnContext, names map[string]bool, needDataDep bool, rule, msg string, ok operandOK) []Finding {
 	var out []Finding
-	seen := map[*ssa.Call]bool{} // fire at most once per call site
-	for _, root := range ctx.forest.Roots {
-		walkLoopCalls(root, ctx, names, needDataDep, rule, msg, &out, seen)
+	for _, b := range fn.Blocks {
+		for _, instr := range b.Instrs {
+			call, isCall := instr.(*ssa.Call)
+			if !isCall {
+				continue
+			}
+			origin, resolved := calleeOrigin(&call.Call)
+			if !resolved || !names[origin] {
+				continue
+			}
+			encl := ctx.forest.EnclosingLoops(b)
+			if len(encl) == 0 {
+				continue
+			}
+			if needDataDep && !anyDataDep(encl, ctx) {
+				continue
+			}
+			if !ok(call, innermost(encl)) {
+				continue
+			}
+			out = append(out, Finding{Pos: call.Pos(), Rule: rule, Message: msg})
+		}
 	}
 	return out
 }
 
-func walkLoopCalls(lp *loopnest.Loop, ctx *fnContext, names map[string]bool, needDataDep bool, rule, msg string, out *[]Finding, seen map[*ssa.Call]bool) {
-	if !needDataDep || ctx.dataDep[lp] {
-		for b := range lp.Blocks {
-			for _, instr := range b.Instrs {
-				call, ok := instr.(*ssa.Call)
-				if !ok {
-					continue
-				}
-				if seen[call] {
-					continue
-				}
-				origin, ok := calleeOrigin(&call.Call)
-				if !ok || !names[origin] {
-					continue
-				}
-				seen[call] = true
-				*out = append(*out, Finding{Pos: call.Pos(), Rule: rule, Message: msg})
-			}
+// innermost returns the deepest loop in the chain. EnclosingLoops explicitly
+// does NOT guarantee an order — its doc directs callers that need one to sort
+// by Depth — and the slice is built from a map, so indexing it positionally
+// picks a different loop from run to run.
+func innermost(loops []*loopnest.Loop) *loopnest.Loop {
+	best := loops[0]
+	for _, lp := range loops[1:] {
+		if lp.Depth > best.Depth {
+			best = lp
 		}
 	}
-	for _, c := range lp.Children {
-		walkLoopCalls(c, ctx, names, needDataDep, rule, msg, out, seen)
+	return best
+}
+
+// anyDataDep reports whether any loop in the chain is data-dependent.
+func anyDataDep(loops []*loopnest.Loop, ctx *fnContext) bool {
+	for _, lp := range loops {
+		if ctx.dataDep[lp] {
+			return true
+		}
 	}
+	return false
 }
 
 // smLinearScan fires (SM2) on a linear-scan helper (slices.Contains/Index and
