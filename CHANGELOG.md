@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.48.0](https://github.com/RomanAgaltsev/bigo/compare/v1.47.0...v1.48.0) (2026-08-19)
+
+
+### Features
+
+* **smell:** SM4/SM5 require a hoistable operand ([#153](https://github.com/RomanAgaltsev/bigo/issues/153)) ([10aed33](https://github.com/RomanAgaltsev/bigo/commit/10aed336ed7229428aa7b3d913136012cfb84f26))
+
 ## [1.47.0](https://github.com/RomanAgaltsev/bigo/compare/v1.46.0...v1.47.0) (2026-08-19)
 
 
