@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.48.1](https://github.com/RomanAgaltsev/bigo/compare/v1.48.0...v1.48.1) (2026-08-19)
+
+
+### Bug Fixes
+
+* **engine:** loop causes carry a position, and one cause per loop ([#155](https://github.com/RomanAgaltsev/bigo/issues/155)) ([84a7988](https://github.com/RomanAgaltsev/bigo/commit/84a7988295758a0467f9bf1ac494d7cfa76f7bc2))
+
 ## [1.48.0](https://github.com/RomanAgaltsev/bigo/compare/v1.47.0...v1.48.0) (2026-08-19)
 
 
