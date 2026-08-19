@@ -96,3 +96,39 @@ func TestDistanceOrderIsNumericNotRanked(t *testing.T) {
 // TestMarkdownRendersBothBlockerTables pins that the graduation table is the one
 // labelled as the deliverable, and that the sites table survives as an
 // explicitly-labelled concentration measure rather than being deleted.
+
+func TestMarkdownRendersSmellsByRule(t *testing.T) {
+	r := Report{
+		Generated:   "2026-08-18",
+		BigoVersion: "1.46.0",
+		AggSmellsByRule: map[string]int{
+			"SM3": 120,
+			"SM1": 40,
+			"SM8": 2,
+		},
+		Targets: []Target{{Name: "caddy", Module: "example.com/caddy"}},
+	}
+	md := string(r.Markdown())
+
+	if !strings.Contains(md, "## Advisory smells by rule") {
+		t.Fatal("no advisory-smells section; the contribution lane reads this table")
+	}
+	// Ranked by count, so the highest-volume rule leads.
+	iSM3, iSM1 := strings.Index(md, "| SM3 |"), strings.Index(md, "| SM1 |")
+	if iSM3 == -1 || iSM1 == -1 {
+		t.Fatalf("rule rows missing: SM3 at %d, SM1 at %d", iSM3, iSM1)
+	}
+	if iSM3 > iSM1 {
+		t.Errorf("SM3 (120) must rank above SM1 (40); got %d then %d", iSM3, iSM1)
+	}
+	if !strings.Contains(md, "| SM8 | 2 |") {
+		t.Error("low-volume rule dropped; SM8 is the differentiator and must stay visible")
+	}
+}
+
+func TestMarkdownOmitsSmellSectionWhenEmpty(t *testing.T) {
+	r := Report{Generated: "2026-08-18", BigoVersion: "1.46.0"}
+	if strings.Contains(string(r.Markdown()), "## Advisory smells by rule") {
+		t.Error("empty smell table rendered a section header with no rows")
+	}
+}
