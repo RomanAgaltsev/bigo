@@ -418,3 +418,73 @@ func GeometricConst() []int {
 `
 	wantRuleCount(t, detectOne(t, src, "GeometricConst", ruleset("SM3")), "SM3", 0)
 }
+
+// TestSM5NoFireTwoDifferentOrders is review finding F1. Two sorts imposing
+// DIFFERENT orders on one slice each undo the other, so neither is redundant
+// and both are necessary work every iteration.
+//
+// The rule used to accept any in-loop call from sm5Names as non-mutating, on
+// the argument that sorting "permutes but does not change the multiset, so a
+// following sort is still redundant". The first clause is true and the second
+// does not follow: what matters is not whether the CONTENTS change but whether
+// the order the next sort wants is already established.
+func TestSM5NoFireTwoDifferentOrders(t *testing.T) {
+	src := `package input
+import "slices"
+func desc(a, b int) int { return b - a }
+func TwoOrders(s []int, xs []string) {
+	for range xs {
+		slices.Sort(s)
+		slices.SortFunc(s, desc)
+	}
+}
+
+// OneSort is the positive control: a single sort of a stable slice is still
+// redundant after the first iteration, and must keep firing.
+func OneSort(s []int, xs []string) {
+	for range xs {
+		slices.Sort(s)
+	}
+}
+`
+	wantRuleCount(t, detectOne(t, src, "TwoOrders", ruleset("SM5")), "SM5", 0)
+	wantRuleCount(t, detectOne(t, src, "OneSort", ruleset("SM5")), "SM5", 1)
+}
+
+// TestSM2NoFireMutatedScanTarget is review finding F3. SM2 advises building a
+// map once before the loop, which is wrong if the loop rewrites the slice's
+// contents: the map would answer for a slice that no longer exists.
+//
+// SM2 checked that the needle varies and that the scan target is a parameter,
+// but never that the loop leaves the contents alone - the same half SM5 gained
+// in v1.48.0, and SM2 was the template that fix was built from.
+func TestSM2NoFireMutatedScanTarget(t *testing.T) {
+	src := `package input
+import "slices"
+
+// MutatedScan must NOT fire: the loop writes through the scanned slice.
+func MutatedScan(s []int, xs []int) int {
+	n := 0
+	for i, x := range xs {
+		s[i%len(s)] = x
+		if slices.Contains(s, x) {
+			n++
+		}
+	}
+	return n
+}
+
+// ReadOnlyScan is the positive control and must keep firing.
+func ReadOnlyScan(s []int, xs []int) int {
+	n := 0
+	for _, x := range xs {
+		if slices.Contains(s, x) {
+			n++
+		}
+	}
+	return n
+}
+`
+	wantRuleCount(t, detectOne(t, src, "MutatedScan", ruleset("SM2")), "SM2", 0)
+	wantRuleCount(t, detectOne(t, src, "ReadOnlyScan", ruleset("SM2")), "SM2", 1)
+}

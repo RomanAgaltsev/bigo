@@ -72,7 +72,7 @@ func smSortInLoop(fn *ssa.Function, ctx *fnContext) []Finding {
 			if !ok {
 				return false
 			}
-			return loopInvariant(s, lp) && unmutatedIn(s, lp)
+			return loopInvariant(s, lp) && unmutatedIn(s, lp, c)
 		})
 }
 
@@ -187,6 +187,14 @@ func smLinearScan(fn *ssa.Function, ctx *fnContext) []Finding {
 			if !needleLoopVarying(needle, lp) {
 				continue
 			}
+			// (d) the loop leaves the scanned slice's CONTENTS alone. Building the
+			// map once is only sound if the slice the map stands for is still the
+			// same slice on every iteration; a loop that writes through it would
+			// get answers for a slice that no longer exists. Entry-stability (b)
+			// proves the VALUE is the same, never the contents.
+			if !unmutatedIn(sliceArg, lp, call) {
+				continue
+			}
 			out = append(out, Finding{
 				Pos:     call.Pos(),
 				Rule:    "SM2",
@@ -212,13 +220,24 @@ func needleLoopVarying(v ssa.Value, lp *loopnest.Loop) bool {
 	return false
 }
 
-// enclosingDataDepLoop returns the nearest data-dependent natural loop containing
-// b, or nil.
+// enclosingDataDepLoop returns the INNERMOST data-dependent natural loop
+// containing b, or nil.
+//
+// Selected by maximum Depth, never by position: EnclosingLoops documents that
+// its order is NOT guaranteed and directs callers that need one to sort by
+// Depth. The slice is built from a map, so taking the first match returned a
+// different loop from run to run whenever two data-dependent loops enclosed the
+// same block - making SM2's needle and mutation checks nondeterministic. The
+// same defect appeared in callsInLoops and is fixed there the same way.
 func enclosingDataDepLoop(b *ssa.BasicBlock, ctx *fnContext) *loopnest.Loop {
+	var best *loopnest.Loop
 	for _, lp := range ctx.forest.EnclosingLoops(b) {
-		if ctx.dataDep[lp] {
-			return lp
+		if !ctx.dataDep[lp] {
+			continue
+		}
+		if best == nil || lp.Depth > best.Depth {
+			best = lp
 		}
 	}
-	return nil
+	return best
 }

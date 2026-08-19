@@ -67,3 +67,37 @@ jobs:
         with:
           fail-on: none
           bigo-version: latest
+
+  # Review finding F2. The delegator in this repo's action.yml forwards to
+  # RomanAgaltsev/bigo-action@v1 and is the migration path for consumers of the
+  # old `uses: RomanAgaltsev/bigo@v1` line - a population we said we cannot
+  # enumerate, and therefore one that cannot tell us it is broken. Nothing else
+  # runs `uses: ./` any more, so without this job the delegator's correctness
+  # is assumed: that a composite action may `uses:` another, that all six
+  # inputs forward, and that `findings` threads back out.
+  #
+  # Deleted together with the delegator in the next minor.
+  delegator:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      - id: deprecated
+        uses: ./
+        with:
+          fail-on: none
+          bigo-version: latest
+          comment: "false"
+
+      - name: The findings output must thread back through the delegator
+        run: |
+          if [ -z "${{ steps.deprecated.outputs.findings }}" ]; then
+            echo "::error::the delegator produced no findings output; the forwarding is broken"
+            exit 1
+          fi

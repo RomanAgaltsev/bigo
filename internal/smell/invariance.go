@@ -59,22 +59,31 @@ func sortedSliceOperand(c *ssa.CallCommon) (ssa.Value, bool) {
 	}
 }
 
-// unmutatedIn reports whether nothing inside lp can change v's contents.
+// unmutatedIn reports whether nothing inside lp can change v's contents, and
+// nothing else inside lp re-orders them either.
 //
 // Conservative by construction: a referrer inside the loop is accepted only
 // when it provably cannot write. Everything else — an append, a store, a Send,
-// a pass to any function outside sm5Names — is treated as a possible write,
-// because if the contents change then the next sort is necessary work rather
-// than a redundant one, and the rule's advice would be wrong.
+// a pass to any other function — is treated as a possible write, because if the
+// contents change then the next sort is necessary work rather than a redundant
+// one, and the rule's advice would be wrong.
+//
+// `self` is the call being judged, and is the ONLY sort accepted. An earlier
+// version accepted any call from sm5Names, arguing that sorting "permutes but
+// does not change the multiset, so a following sort is still redundant". That
+// is true in its first clause and does not follow: two sorts imposing DIFFERENT
+// orders each undo the other, so neither is redundant and both are necessary
+// work. What matters is not whether the CONTENTS change but whether the order
+// the next sort wants is already established.
 //
 // The walk carries a seen set rather than a depth cap: retyping chains are
 // short but may share values, and a cap would truncate exactly the cases that
 // need the answer.
-func unmutatedIn(v ssa.Value, lp *loopnest.Loop) bool {
-	return unmutatedRefs(v, lp, map[ssa.Value]bool{})
+func unmutatedIn(v ssa.Value, lp *loopnest.Loop, self *ssa.Call) bool {
+	return unmutatedRefs(v, lp, self, map[ssa.Value]bool{})
 }
 
-func unmutatedRefs(v ssa.Value, lp *loopnest.Loop, seen map[ssa.Value]bool) bool {
+func unmutatedRefs(v ssa.Value, lp *loopnest.Loop, self *ssa.Call, seen map[ssa.Value]bool) bool {
 	if seen[v] {
 		return true
 	}
@@ -89,15 +98,15 @@ func unmutatedRefs(v ssa.Value, lp *loopnest.Loop, seen map[ssa.Value]bool) bool
 		}
 		switch r := ref.(type) {
 		case *ssa.MakeInterface:
-			if !unmutatedRefs(r, lp, seen) {
+			if !unmutatedRefs(r, lp, self, seen) {
 				return false
 			}
 		case *ssa.ChangeType:
-			if !unmutatedRefs(r, lp, seen) {
+			if !unmutatedRefs(r, lp, self, seen) {
 				return false
 			}
 		case *ssa.Convert:
-			if !unmutatedRefs(r, lp, seen) {
+			if !unmutatedRefs(r, lp, self, seen) {
 				return false
 			}
 		case *ssa.IndexAddr:
@@ -106,7 +115,7 @@ func unmutatedRefs(v ssa.Value, lp *loopnest.Loop, seen map[ssa.Value]bool) bool
 				return false
 			}
 		case *ssa.Call:
-			if !nonMutatingCall(r) {
+			if !nonMutatingCall(r, self) {
 				return false
 			}
 		default:
@@ -131,13 +140,13 @@ func onlyLoaded(v ssa.Value) bool {
 	return true
 }
 
-// nonMutatingCall reports whether c provably cannot write through its slice
-// argument: a sort from sm5Names (which permutes but does not change the
-// multiset, so a following sort is still redundant), or the len/cap builtins.
-func nonMutatingCall(c *ssa.Call) bool {
+// nonMutatingCall reports whether c provably cannot write through, or re-order,
+// its slice argument: the len/cap builtins, or the one call being judged.
+//
+// Any OTHER call is refused, including another sort. See unmutatedIn.
+func nonMutatingCall(c *ssa.Call, self *ssa.Call) bool {
 	if bi, ok := c.Call.Value.(*ssa.Builtin); ok {
 		return bi.Name() == "len" || bi.Name() == "cap"
 	}
-	origin, resolved := calleeOrigin(&c.Call)
-	return resolved && sm5Names[origin]
+	return c == self
 }
