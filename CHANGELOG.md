@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.49.1](https://github.com/RomanAgaltsev/bigo/compare/v1.49.0...v1.49.1) (2026-08-19)
+
+
+### Bug Fixes
+
+* **mod:** drop the ignore directive, which did nothing ([#161](https://github.com/RomanAgaltsev/bigo/issues/161)) ([ddfc30a](https://github.com/RomanAgaltsev/bigo/commit/ddfc30a6ef6109a704ad2a1ab36a6f6a63ed2e4a))
+
 ## [1.49.0](https://github.com/RomanAgaltsev/bigo/compare/v1.48.2...v1.49.0) (2026-08-19)
 
 
