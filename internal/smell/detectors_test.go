@@ -400,3 +400,21 @@ func Nested(s []int, xs []string) {
 `
 	wantRuleCount(t, detectOne(t, src, "Nested", ruleset("SM5")), "SM5", 1)
 }
+
+// TestSM3NoFireConstantBound pins that a resolvable but CONSTANT trip count is
+// useless to SM3/SM6: "preallocate with make(…, 0, O(1))" is not advice. Since
+// v1.36.0 the trip-count rules resolve constant guards, including shapes the
+// structural constantTrip helper does not recognise — a geometric step is not
+// an ADD/SUB phi, so constantTrip returns false while tripcount returns O(1).
+func TestSM3NoFireConstantBound(t *testing.T) {
+	src := `package input
+func GeometricConst() []int {
+	var out []int
+	for i := 1; i < 256; i *= 2 {
+		out = append(out, i)
+	}
+	return out
+}
+`
+	wantRuleCount(t, detectOne(t, src, "GeometricConst", ruleset("SM3")), "SM3", 0)
+}

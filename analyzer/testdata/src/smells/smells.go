@@ -142,7 +142,7 @@ func SM3NoFirePrealloc(xs []int) []int {
 
 // SM6Map fires: make(map) without size hint, grown in a resolvable loop.
 func SM6Map(ks []string, vs []int) map[string]int {
-	m := make(map[string]int) // want `smell\(SM6\): map built without a size hint in a loop bounded by`
+	m := make(map[string]int) // want `smell\(SM6\): map grown in a loop bounded by`
 	for i, k := range ks {
 		m[k] = vs[i]
 	}

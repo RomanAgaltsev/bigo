@@ -81,7 +81,7 @@ func smMapNoSizeHint(fn *ssa.Function, ctx *fnContext) []Finding {
 		out = append(out, Finding{
 			Pos:     m.pos,
 			Rule:    "SM6",
-			Message: "map built without a size hint in a loop bounded by " + tc.String() + "; preallocate with make(map[K]V, " + tc.String() + ")",
+			Message: "map grown in a loop bounded by " + tc.String() + " without a size hint; preallocate with make(map[K]V, " + tc.String() + ")",
 		})
 	}
 	return out

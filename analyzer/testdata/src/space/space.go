@@ -76,7 +76,7 @@ func RecSum(xs []int) int {
 
 //bigo:space O(1)
 func MapGrowth(modules []string) map[string]bool { // want `cannot verify space budget O\(1\): inferred space O\(len\(modules\)\) is a total-allocation upper bound`
-	out := map[string]bool{} // want `smell\(SM6\): map built without a size hint in a loop bounded by`
+	out := map[string]bool{} // want `smell\(SM6\): map grown in a loop bounded by`
 	for _, m := range modules {
 		out[m] = true
 	}
@@ -87,7 +87,7 @@ func MapGrowth(modules []string) map[string]bool { // want `cannot verify space 
 
 //bigo:space O(n) where n = len(modules)
 func MapGrowthBudgeted(modules []string) map[string]bool {
-	out := map[string]bool{} // want `smell\(SM6\): map built without a size hint in a loop bounded by`
+	out := map[string]bool{} // want `smell\(SM6\): map grown in a loop bounded by`
 	for _, m := range modules {
 		out[m] = true
 	}
