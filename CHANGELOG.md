@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.49.0](https://github.com/RomanAgaltsev/bigo/compare/v1.48.2...v1.49.0) (2026-08-19)
+
+
+### Features
+
+* **action:** split the Action into bigo-action, slim the module ([#159](https://github.com/RomanAgaltsev/bigo/issues/159)) ([85abcf5](https://github.com/RomanAgaltsev/bigo/commit/85abcf5c4dd8d7d4d3fb7fc6ca81cdd7f31bf396))
+
 ## [1.48.2](https://github.com/RomanAgaltsev/bigo/compare/v1.48.1...v1.48.2) (2026-08-19)
 
 
