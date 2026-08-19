@@ -44,53 +44,75 @@ func init() {
 
 // smCompileInLoop fires when regexp.Compile/MustCompile is called inside any
 // natural loop — recompiling even a constant number of times is the bug.
-func smCompileInLoop(_ *ssa.Function, ctx *fnContext) []Finding {
-	return callsInLoops(nil, ctx, sm4Names, false, "SM4",
-		"regexp compiled inside a loop; hoist the pattern")
+func smCompileInLoop(fn *ssa.Function, ctx *fnContext) []Finding {
+	return callsInLoops(fn, ctx, sm4Names, false, "SM4",
+		"regexp compiled inside a loop; hoist the pattern",
+		func(*ssa.Call, *loopnest.Loop) bool { return true })
 }
 
 // smSortInLoop fires when a sorting function is called inside a data-dependent
 // loop — composed O(n·m log m).
-func smSortInLoop(_ *ssa.Function, ctx *fnContext) []Finding {
-	return callsInLoops(nil, ctx, sm5Names, true, "SM5",
-		"sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure")
+func smSortInLoop(fn *ssa.Function, ctx *fnContext) []Finding {
+	return callsInLoops(fn, ctx, sm5Names, true, "SM5",
+		"sort inside a data-dependent loop (composed O(n·m log m)); hoist or restructure",
+		func(*ssa.Call, *loopnest.Loop) bool { return true })
 }
 
-// callsInLoops walks every instruction in every loop body and fires once per
-// call whose callee origin matches names. When needDataDep is true, only
-// data-dependent loops qualify.
-func callsInLoops(_ *ssa.Function, ctx *fnContext, names map[string]bool, needDataDep bool, rule, msg string) []Finding {
+// operandOK decides whether a matched call is actionable with respect to lp,
+// the innermost loop enclosing it. Returning false keeps the rule silent — the
+// smell analogue of ⊤.
+type operandOK func(c *ssa.Call, lp *loopnest.Loop) bool
+
+// callsInLoops scans every call in fn whose callee origin matches names and is
+// enclosed by at least one natural loop, and fires when ok accepts it.
+//
+// The structure mirrors smLinearScan (SM2) rather than walking the loop forest:
+// scanning blocks visits each call exactly once, so no dedup set is needed, and
+// it makes the enclosing-loop chain available per call.
+//
+// The gate and the predicate read DIFFERENT loops on purpose. needDataDep asks
+// whether ANY enclosing loop is data-dependent — a sort in a constant-trip loop
+// nested inside a data-dependent one is still repeated a data-dependent number
+// of times. The predicate is evaluated against the INNERMOST enclosing loop,
+// because hoisting out of that loop is already a win and requiring invariance
+// across every enclosing loop would discard those cases.
+func callsInLoops(fn *ssa.Function, ctx *fnContext, names map[string]bool, needDataDep bool, rule, msg string, ok operandOK) []Finding {
 	var out []Finding
-	seen := map[*ssa.Call]bool{} // fire at most once per call site
-	for _, root := range ctx.forest.Roots {
-		walkLoopCalls(root, ctx, names, needDataDep, rule, msg, &out, seen)
+	for _, b := range fn.Blocks {
+		for _, instr := range b.Instrs {
+			call, isCall := instr.(*ssa.Call)
+			if !isCall {
+				continue
+			}
+			origin, resolved := calleeOrigin(&call.Call)
+			if !resolved || !names[origin] {
+				continue
+			}
+			// EnclosingLoops is outermost-first.
+			encl := ctx.forest.EnclosingLoops(b)
+			if len(encl) == 0 {
+				continue
+			}
+			if needDataDep && !anyDataDep(encl, ctx) {
+				continue
+			}
+			if !ok(call, encl[len(encl)-1]) {
+				continue
+			}
+			out = append(out, Finding{Pos: call.Pos(), Rule: rule, Message: msg})
+		}
 	}
 	return out
 }
 
-func walkLoopCalls(lp *loopnest.Loop, ctx *fnContext, names map[string]bool, needDataDep bool, rule, msg string, out *[]Finding, seen map[*ssa.Call]bool) {
-	if !needDataDep || ctx.dataDep[lp] {
-		for b := range lp.Blocks {
-			for _, instr := range b.Instrs {
-				call, ok := instr.(*ssa.Call)
-				if !ok {
-					continue
-				}
-				if seen[call] {
-					continue
-				}
-				origin, ok := calleeOrigin(&call.Call)
-				if !ok || !names[origin] {
-					continue
-				}
-				seen[call] = true
-				*out = append(*out, Finding{Pos: call.Pos(), Rule: rule, Message: msg})
-			}
+// anyDataDep reports whether any loop in the chain is data-dependent.
+func anyDataDep(loops []*loopnest.Loop, ctx *fnContext) bool {
+	for _, lp := range loops {
+		if ctx.dataDep[lp] {
+			return true
 		}
 	}
-	for _, c := range lp.Children {
-		walkLoopCalls(c, ctx, names, needDataDep, rule, msg, out, seen)
-	}
+	return false
 }
 
 // smLinearScan fires (SM2) on a linear-scan helper (slices.Contains/Index and

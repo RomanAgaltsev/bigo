@@ -274,3 +274,22 @@ func FibMemo(n int, memo map[int]int) int {
 	// Memoized recursion is O(n), not exponential — SM8 must stay silent.
 	wantRuleCount(t, detectOne(t, src, "FibMemo", ruleset("SM8")), "SM8", 0)
 }
+
+// TestSM5NestedConstTripInsideDataDep pins the gate: SM5 asks whether ANY
+// enclosing loop is data-dependent, not whether the innermost one is. The
+// operand predicate is evaluated against the innermost loop, but the gate is
+// not — otherwise a sort in a constant-trip inner loop would escape even though
+// the outer loop repeats it a data-dependent number of times.
+func TestSM5NestedConstTripInsideDataDep(t *testing.T) {
+	src := `package input
+import "slices"
+func Nested(s []int, xs []string) {
+	for range xs {
+		for i := 0; i < 3; i++ {
+			slices.Sort(s)
+		}
+	}
+}
+`
+	wantRuleCount(t, detectOne(t, src, "Nested", ruleset("SM5")), "SM5", 1)
+}
