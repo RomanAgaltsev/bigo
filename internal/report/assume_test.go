@@ -21,8 +21,11 @@ func TestCollectWithAssumptions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if doc.SchemaVersion != "1.3.0" {
-		t.Errorf("schema = %s, want 1.3.0", doc.SchemaVersion)
+	// Compared against the constant, not a literal: this is an incidental
+	// "the document is stamped" check, and pinning the literal here made every
+	// additive minor bump break a test about assumptions.
+	if doc.SchemaVersion != SchemaVersion {
+		t.Errorf("schema = %s, want %s", doc.SchemaVersion, SchemaVersion)
 	}
 	byName := map[string]Function{}
 	for _, f := range doc.Functions {
@@ -209,8 +212,8 @@ func TestCauseCarriesCalleeKey(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if doc.SchemaVersion != "1.3.0" {
-		t.Errorf("schema_version = %q, want 1.3.0", doc.SchemaVersion)
+	if doc.SchemaVersion != SchemaVersion {
+		t.Errorf("schema_version = %q, want %q", doc.SchemaVersion, SchemaVersion)
 	}
 	byName := map[string]Function{}
 	for _, f := range doc.Functions {

@@ -159,3 +159,30 @@ func TestSchemaVersionIsMinorBump(t *testing.T) {
 		t.Error("SchemaVersion still 1.0.0; an additive field requires a minor bump")
 	}
 }
+
+func TestCollectSmellsCarryPackage(t *testing.T) {
+	doc, err := Collect("testdata/reportfix", []string{"./..."}, Options{Version: "test", Now: fixedNow})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(doc.Smells) == 0 {
+		t.Fatal("no smells collected; reportfix declares a deliberate one")
+	}
+	for _, s := range doc.Smells {
+		if s.Package == "" {
+			t.Errorf("smell %s at %s:%d has no package; first-party filtering is impossible without it",
+				s.Rule, s.File, s.Line)
+		}
+	}
+}
+
+func TestSchemaVersionIsMinorBumpFor14(t *testing.T) {
+	// Adding smells[].package is additive: the major must not move, and the
+	// version must actually advance or the frozen 1.3.0 golden is meaningless.
+	if !strings.HasPrefix(SchemaVersion, "1.") {
+		t.Errorf("SchemaVersion = %q; an additive field must not bump the major", SchemaVersion)
+	}
+	if SchemaVersion == "1.3.0" {
+		t.Error("SchemaVersion still 1.3.0; an additive field requires a minor bump")
+	}
+}

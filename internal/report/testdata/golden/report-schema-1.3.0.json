@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.4.0",
+  "schema_version": "1.3.0",
   "bigo_version": "test",
   "module": "example.com/reportfix",
   "generated": "2026-01-02T03:04:05Z",
@@ -303,7 +303,6 @@
   ],
   "smells": [
     {
-      "package": "example.com/reportfix",
       "rule": "SM1",
       "message": "string built by repeated concatenation in a loop (quadratic); use strings.Builder",
       "file": "fix.go",
