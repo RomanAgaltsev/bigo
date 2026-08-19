@@ -1,16 +1,26 @@
 name: diff-selftest
 
-# Runs the bigo Action on bigo's own PRs — the end-to-end smoke test for the
-# Action itself (spec §10: "an end-to-end Action smoke test on the bigo repo").
-# report-only: this must never block a bigo PR.
+# Contract test, side 1 — adoption-artifacts spec §5.
 #
-# EXPECTED RED until the first release that ships `bigo diff -fail-on`.
-# bigo-version: latest installs the *released* CLI, and the action passes
-# -fail-on, which v1.20.0 does not define — so the job exits 2 until that
-# release lands, after which `latest` resolves it and this goes green on its
-# own. Deliberate: pointing this at the PR's own binary would test the action
-# against an unreleased bigo and mask exactly the release breakage this job
-# exists to catch.
+# The Action now lives at RomanAgaltsev/bigo-action. This repo consumes the
+# PUBLISHED action, so the side that can break the CLI contract is the side
+# that fails. Two jobs, because there are two different things to test and
+# merging them tests neither properly:
+#
+#   contract — builds THIS PR's bigo and runs the published action against it
+#              with `bigo-version: none`. A PR that renames a flag, changes an
+#              exit code or moves the report schema fails HERE, before merge.
+#              With `latest` it would run against the last RELEASE — the old,
+#              still-working binary — and pass.
+#
+#   released — runs the published action against bigo@latest. This is what this
+#              job originally existed for: breakage that only appears once a
+#              release ships. Its old comment made the point that pointing the
+#              job at the PR's own binary "would mask exactly the release
+#              breakage this job exists to catch" — which is why that case is
+#              kept rather than replaced.
+#
+# Report-only throughout: neither job may block a bigo PR.
 
 on:
   pull_request:
@@ -20,7 +30,7 @@ permissions:
   pull-requests: write
 
 jobs:
-  diff:
+  contract:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -31,9 +41,29 @@ jobs:
         with:
           go-version-file: go.mod
 
-      # Exercise the action from this checkout, not from a published tag, so a
-      # PR tests the action.yml it ships.
-      - uses: ./
+      - name: Build this PR's bigo onto PATH
+        run: go install ./cmd/bigo
+
+      # comment: false — the `released` job owns the PR comment; two actions
+      # writing the same marker would fight over it.
+      - uses: RomanAgaltsev/bigo-action@v1
+        with:
+          fail-on: none
+          bigo-version: none
+          comment: "false"
+
+  released:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      - uses: RomanAgaltsev/bigo-action@v1
         with:
           fail-on: none
           bigo-version: latest
