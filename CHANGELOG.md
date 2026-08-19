@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.47.0](https://github.com/RomanAgaltsev/bigo/compare/v1.46.0...v1.47.0) (2026-08-19)
+
+
+### Features
+
+* **survey:** advisory-smell aggregation, a stratified triage sample, and schema 1.4.0 ([#150](https://github.com/RomanAgaltsev/bigo/issues/150)) ([858be14](https://github.com/RomanAgaltsev/bigo/commit/858be14ed8db4d489f0373419d7fdfb44a274e46))
+
+
+### Bug Fixes
+
+* bump the toolchain to go1.26.6 for the net/url stdlib fix ([#151](https://github.com/RomanAgaltsev/bigo/issues/151)) ([8e6e145](https://github.com/RomanAgaltsev/bigo/commit/8e6e14529c6e996e9ef633b1f3ac7d8e0a14f392))
+
 ## [1.46.0](https://github.com/RomanAgaltsev/bigo/compare/v1.45.1...v1.46.0) (2026-08-12)
 
 
