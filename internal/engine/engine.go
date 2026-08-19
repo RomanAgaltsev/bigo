@@ -10,7 +10,6 @@ import (
 	"github.com/RomanAgaltsev/bigo/internal/costtable"
 	"github.com/RomanAgaltsev/bigo/internal/fieldpath"
 	"github.com/RomanAgaltsev/bigo/internal/loopnest"
-	"github.com/RomanAgaltsev/bigo/internal/tripcount"
 )
 
 // causeText distinguishes a priced callee whose argument size is unresolved
@@ -115,18 +114,11 @@ func InferDetailed(fn *ssa.Function, model CostModel) (bound.Bound, []Cause) {
 	var causes []Cause
 	total := bound.Constant()
 	started := false
+	lf := newLoopFactor(fn, stab)
 	for _, b := range fn.Blocks {
 		factor := bound.Constant()
 		for _, lp := range forest.EnclosingLoops(b) {
-			tc := tripcount.Of(lp, stab)
-			if tc.IsTop() {
-				causes = append(causes, Cause{
-					Pos:  lp.Header.Instrs[len(lp.Header.Instrs)-1].Pos(),
-					Kind: CauseLoop,
-					What: "loop with unrecognized trip count",
-				})
-			}
-			factor = factor.Mul(tc)
+			factor = factor.Mul(lf.of(lp, &causes))
 		}
 		bc, bcauses := blockCost(b, model)
 		causes = append(causes, bcauses...)
