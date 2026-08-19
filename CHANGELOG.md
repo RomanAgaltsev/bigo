@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.49.2](https://github.com/RomanAgaltsev/bigo/compare/v1.49.1...v1.49.2) (2026-08-19)
+
+
+### Bug Fixes
+
+* **smell:** review findings F1-F4 from the v1.49.1 review ([#163](https://github.com/RomanAgaltsev/bigo/issues/163)) ([98e1548](https://github.com/RomanAgaltsev/bigo/commit/98e1548c131f1782d1d340960d675845b9167ade))
+
 ## [1.49.1](https://github.com/RomanAgaltsev/bigo/compare/v1.49.0...v1.49.1) (2026-08-19)
 
 
