@@ -558,7 +558,7 @@ the fixed `smell(SMn):` prefix so golangci-lint users can filter on the class.
 | **SM1** | string built by `+=` (or `fmt.Sprintf` self-accumulation) in a data-dependent loop | `strings.Builder`; constant-trip loop |
 | **SM2** | repeated `slices.Contains`/`Index` over a parameter slice with a loop-varying needle | loop-invariant needle; rebuilt scan target |
 | **SM3** | `append` into a zero-capacity slice bounded by a resolvable loop | `make([]T, 0, n)` with capacity given |
-| **SM4** | `regexp.Compile`/`MustCompile` inside any loop | compile hoisted before the loop |
+| **SM4** | `regexp.Compile`/`MustCompile` inside any loop, from a pattern invariant across the innermost enclosing loop | pattern built per iteration (nothing to hoist); compile already hoisted before the loop |
 | **SM5** | sorting inside a data-dependent loop | constant-trip loop; sort outside any loop |
 | **SM6** | `make(map[K]V)` without a size hint, grown in a resolvable loop | `make(map[K]V, n)` with a hint |
 | **SM7** | a redundant second lookup the first already answered (map comma-ok then plain; `slices.Contains` then `slices.Index`) | a single lookup; a map mutated between them |

@@ -43,11 +43,17 @@ func init() {
 }
 
 // smCompileInLoop fires when regexp.Compile/MustCompile is called inside any
-// natural loop — recompiling even a constant number of times is the bug.
+// natural loop FROM A LOOP-INVARIANT PATTERN — recompiling the same pattern
+// even a constant number of times is the bug, and the pattern being invariant
+// is what makes "hoist" true advice. A pattern built per iteration has nothing
+// to hoist, so the rule stays silent rather than emit an impossible fix.
 func smCompileInLoop(fn *ssa.Function, ctx *fnContext) []Finding {
 	return callsInLoops(fn, ctx, sm4Names, false, "SM4",
 		"regexp compiled inside a loop; hoist the pattern",
-		func(*ssa.Call, *loopnest.Loop) bool { return true })
+		func(c *ssa.Call, lp *loopnest.Loop) bool {
+			args := c.Call.Args
+			return len(args) > 0 && loopInvariant(args[0], lp)
+		})
 }
 
 // smSortInLoop fires when a sorting function is called inside a data-dependent

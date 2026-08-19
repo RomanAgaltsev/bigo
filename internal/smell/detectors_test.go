@@ -102,31 +102,81 @@ func S(xs []string) string {
 func TestSM4CompileInLoop(t *testing.T) {
 	src := `package input
 import "regexp"
-func InLoop(patterns []string) []bool {
-	out := []bool{}
-	for _, p := range patterns {
-		re := regexp.MustCompile(p)
-		out = append(out, re.MatchString("x"))
-	}
-	return out
-}
-func ConstTrip() []bool {
-	out := []bool{}
+
+// ConstPattern: a literal recompiled every iteration. Hoistable — the rule's
+// primary positive control.
+func ConstPattern() int {
+	c := 0
 	for i := 0; i < 10; i++ {
 		re := regexp.MustCompile("x")
-		out = append(out, re.MatchString("x"))
+		if re.MatchString("x") {
+			c++
+		}
 	}
-	return out
+	return c
 }
-func Hoisted(patterns []string) []bool {
+
+// ParamPattern: invariant across the loop because a parameter cannot be
+// redefined inside it.
+func ParamPattern(pat string, xs []string) int {
+	c := 0
+	for _, x := range xs {
+		re := regexp.MustCompile(pat)
+		if re.MatchString(x) {
+			c++
+		}
+	}
+	return c
+}
+
+// InnerInvariant: pat varies across the OUTER loop but is constant across the
+// inner one, so the compile hoists out of the inner loop. This fixture is the
+// discriminator for evaluating invariance against the innermost enclosing
+// loop; an outermost check silences it.
+func InnerInvariant(xs, ys []string) int {
+	c := 0
+	for _, x := range xs {
+		pat := "^" + x
+		for _, y := range ys {
+			re := regexp.MustCompile(pat)
+			if re.MatchString(y) {
+				c++
+			}
+		}
+	}
+	return c
+}
+
+// VaryingPattern: NOTHING to hoist — the pattern is the range variable. This
+// was the rule's positive fixture before the invariance analysis landed, and
+// it is the shape that made 12 of 12 sampled real-world findings unactionable.
+func VaryingPattern(patterns []string) int {
+	c := 0
+	for _, p := range patterns {
+		re := regexp.MustCompile(p)
+		if re.MatchString("x") {
+			c++
+		}
+	}
+	return c
+}
+
+// Hoisted: already correct.
+func Hoisted(patterns []string) int {
 	re := regexp.MustCompile("x")
-	out := []bool{}
-	for _, p := range patterns { out = append(out, re.MatchString(p)) }
-	return out
+	c := 0
+	for _, p := range patterns {
+		if re.MatchString(p) {
+			c++
+		}
+	}
+	return c
 }
 `
-	wantRuleCount(t, detectOne(t, src, "InLoop", ruleset("SM4")), "SM4", 1)
-	wantRuleCount(t, detectOne(t, src, "ConstTrip", ruleset("SM4")), "SM4", 1) // any loop
+	wantRuleCount(t, detectOne(t, src, "ConstPattern", ruleset("SM4")), "SM4", 1)
+	wantRuleCount(t, detectOne(t, src, "ParamPattern", ruleset("SM4")), "SM4", 1)
+	wantRuleCount(t, detectOne(t, src, "InnerInvariant", ruleset("SM4")), "SM4", 1)
+	wantRuleCount(t, detectOne(t, src, "VaryingPattern", ruleset("SM4")), "SM4", 0)
 	wantRuleCount(t, detectOne(t, src, "Hoisted", ruleset("SM4")), "SM4", 0)
 }
 
