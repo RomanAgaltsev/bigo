@@ -73,32 +73,46 @@ func SummarizeSmells(doc report.Document, isGen func(string) bool) SmellTotals {
 }
 
 // Sample draws the probe's triage sample: the first n findings in the input's
-// order, admitting at most perRule from any one rule.
+// order, admitting at most perRule from any one rule and at most perTarget from
+// any one target. A cap of zero or less means that axis is uncapped; n of zero
+// or less draws nothing.
 //
 // This is the anti-cherry-picking control, and it is code rather than judgment
-// on purpose. The order and both parameters are pre-registered in
+// on purpose. The order and all three parameters are pre-registered in
 // investigations/2026-08-18-contribution-lane-thresholds.md; implementing them
 // as a pure function is what stops the registered rule and the executed rule
 // from drifting apart.
 //
-// The cap matters because rule volume is wildly uneven — SM3 is predicted to
-// dominate — and an uncapped draw would measure that one rule's precision while
-// claiming to measure the ruleset's. Returns a new slice; the input is not
-// modified, because Run keeps the full list for the JSON artifact.
-func Sample(findings []SmellFinding, n, perRule int) []SmellFinding {
-	if n <= 0 || perRule <= 0 {
+// Both caps exist because finding volume is uneven along two INDEPENDENT axes,
+// and an uncapped draw on either one measures something narrower than it claims:
+//
+//   - By rule: SM3 was predicted to dominate and did, 122 of 304.
+//   - By target: the first scan's draw put 28 of 40 rows in caddy alone, because
+//     it sits first in the config and had findings under most rules. That is
+//     Amendment 1 to the thresholds — the per-rule cap guards one axis and did
+//     nothing for the other.
+//
+// Returns a new slice; the input is not modified, because Run keeps the full
+// list for the JSON artifact.
+func Sample(findings []SmellFinding, n, perRule, perTarget int) []SmellFinding {
+	if n <= 0 {
 		return nil
 	}
 	out := make([]SmellFinding, 0, min(n, len(findings)))
-	seen := make(map[string]int, 8)
+	byRule := make(map[string]int, 8)
+	byTarget := make(map[string]int, 16)
 	for _, f := range findings {
 		if len(out) == n {
 			break
 		}
-		if seen[f.Rule] >= perRule {
+		if perRule > 0 && byRule[f.Rule] >= perRule {
 			continue
 		}
-		seen[f.Rule]++
+		if perTarget > 0 && byTarget[f.Target] >= perTarget {
+			continue
+		}
+		byRule[f.Rule]++
+		byTarget[f.Target]++
 		out = append(out, f)
 	}
 	return out

@@ -5,13 +5,18 @@ import (
 	"fmt"
 )
 
-// SampleSize and SamplePerRule are the probe's pre-registered sampling
-// parameters, from investigations/2026-08-18-contribution-lane-thresholds.md.
-// They are constants here so the executed draw and the registered rule are the
-// same number in one place.
+// SampleSize, SamplePerRule, and SamplePerTarget are the probe's pre-registered
+// sampling parameters, from
+// investigations/2026-08-18-contribution-lane-thresholds.md. They are constants
+// here so the executed draw and the registered rule are the same number in one
+// place.
+//
+// SamplePerTarget arrived with Amendment 1: the per-rule cap alone let one
+// target supply 28 of 40 rows.
 const (
-	SampleSize    = 40
-	SamplePerRule = 8
+	SampleSize      = 40
+	SamplePerRule   = 8
+	SamplePerTarget = 6
 )
 
 // RenderContribQueue renders the triage queue: the per-rule counts, the skipped
@@ -30,11 +35,12 @@ func RenderContribQueue(r Report, sample []SmellFinding) string {
 	b.WriteString("they happen to sit; compare runs only via the per-target commit below.\n\n")
 	fmt.Fprintf(&b, "Run %s with bigo %s.\n\n", r.Generated, r.BigoVersion)
 
-	fmt.Fprintf(&b, "**Sample: %d findings, at most %d per rule**, drawn in target order then "+
-		"file, line, rule. The rule was registered in "+
+	fmt.Fprintf(&b, "**Sample: %d findings, at most %d per rule and %d per target**, drawn in "+
+		"target order then file, line, rule. The rule was registered in "+
 		"`docs/bigo/investigations/2026-08-18-contribution-lane-thresholds.md` before this "+
-		"scan ran, and is implemented in `survey.Sample` so the two cannot drift.\n\n",
-		SampleSize, SamplePerRule)
+		"scan ran, and is implemented in `survey.Sample` so the two cannot drift. The "+
+		"per-target cap is Amendment 1, made before any verdict was assigned.\n\n",
+		SampleSize, SamplePerRule, SamplePerTarget)
 
 	b.WriteString("Population: first-party, hand-written. Generated code is excluded — nobody\n")
 	b.WriteString("hand-tunes it, so a finding there is not a contribution.\n\n")

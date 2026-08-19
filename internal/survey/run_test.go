@@ -141,7 +141,7 @@ func TestContribScan(t *testing.T) {
 	}
 
 	r := Run(cfg, version(t, root), func(f string, a ...any) { t.Logf(f, a...) })
-	sample := Sample(r.SmellFindings, SampleSize, SamplePerRule)
+	sample := Sample(r.SmellFindings, SampleSize, SamplePerRule, SamplePerTarget)
 
 	outDir := filepath.Join(root, "survey")
 	if err := os.MkdirAll(outDir, 0o755); err != nil {

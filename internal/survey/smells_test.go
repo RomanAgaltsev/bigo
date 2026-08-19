@@ -118,7 +118,7 @@ func TestSampleCapsPerRule(t *testing.T) {
 		findings = append(findings, SmellFinding{Rule: "SM8", File: "b.go", Line: i})
 	}
 
-	got := Sample(findings, 40, 8)
+	got := Sample(findings, 40, 8, 0)
 
 	if len(got) != 13 {
 		t.Fatalf("len = %d, want 13 (8 SM3 capped + 5 SM8)", len(got))
@@ -146,7 +146,7 @@ func TestSampleStopsAtN(t *testing.T) {
 			})
 		}
 	}
-	if got := Sample(findings, 40, 8); len(got) != 40 {
+	if got := Sample(findings, 40, 8, 0); len(got) != 40 {
 		t.Errorf("len = %d, want exactly 40 from a 64-finding pool", len(got))
 	}
 }
@@ -160,7 +160,7 @@ func TestSampleIsDeterministic(t *testing.T) {
 			Rule: []string{"SM1", "SM3", "SM8"}[i%3], File: "a.go", Line: i,
 		})
 	}
-	a, b := Sample(findings, 20, 8), Sample(findings, 20, 8)
+	a, b := Sample(findings, 20, 8, 0), Sample(findings, 20, 8, 0)
 	if len(a) != len(b) {
 		t.Fatalf("lengths differ: %d vs %d", len(a), len(b))
 	}
@@ -180,10 +180,63 @@ func TestSampleDoesNotMutateInput(t *testing.T) {
 		{Rule: "SM3", File: "b.go", Line: 3},
 	}
 	before := append([]SmellFinding(nil), findings...)
-	Sample(findings, 2, 1)
+	Sample(findings, 2, 1, 0)
 	for i := range before {
 		if findings[i] != before[i] {
 			t.Errorf("input mutated at %d: %+v became %+v", i, before[i], findings[i])
 		}
+	}
+}
+
+// TestSampleCapsPerTarget is Amendment 1 to the probe thresholds. Volume is
+// uneven along two independent axes: the per-rule cap stops one prolific RULE
+// from filling the sample, and this one stops one prolific TARGET. The first
+// scan drew 28 of 40 rows from caddy alone without it.
+func TestSampleCapsPerTarget(t *testing.T) {
+	var findings []SmellFinding
+	// One dominant target with plenty of every rule.
+	for i := 0; i < 30; i++ {
+		findings = append(findings, SmellFinding{
+			Target: "big", Rule: []string{"SM1", "SM3", "SM5"}[i%3], File: "a.go", Line: i,
+		})
+	}
+	for i := 0; i < 10; i++ {
+		findings = append(findings, SmellFinding{
+			Target: "small", Rule: "SM6", File: "b.go", Line: i,
+		})
+	}
+
+	got := Sample(findings, 40, 8, 6)
+
+	byTarget := map[string]int{}
+	for _, f := range got {
+		byTarget[f.Target]++
+	}
+	if byTarget["big"] != 6 {
+		t.Errorf("big = %d, want 6 (capped)", byTarget["big"])
+	}
+	if byTarget["small"] != 6 {
+		t.Errorf("small = %d, want 6 (capped)", byTarget["small"])
+	}
+	if len(got) != 12 {
+		t.Errorf("len = %d, want 12; both targets capped at 6", len(got))
+	}
+}
+
+// TestSampleBothCapsBind: whichever cap is reached first must exclude the
+// finding, so neither axis can be starved by the other.
+func TestSampleBothCapsBind(t *testing.T) {
+	var findings []SmellFinding
+	// One target, one rule: the RULE cap is the tighter of the two here.
+	for i := 0; i < 20; i++ {
+		findings = append(findings, SmellFinding{
+			Target: "t", Rule: "SM3", File: "a.go", Line: i,
+		})
+	}
+	if got := Sample(findings, 40, 3, 6); len(got) != 3 {
+		t.Errorf("len = %d, want 3 — the per-rule cap is tighter and must bind", len(got))
+	}
+	if got := Sample(findings, 40, 8, 2); len(got) != 2 {
+		t.Errorf("len = %d, want 2 — the per-target cap is tighter and must bind", len(got))
 	}
 }
