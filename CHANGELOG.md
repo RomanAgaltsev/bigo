@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.48.2](https://github.com/RomanAgaltsev/bigo/compare/v1.48.1...v1.48.2) (2026-08-19)
+
+
+### Bug Fixes
+
+* **engine:** anchor a loop cause inside the loop, not on a declaration ([#157](https://github.com/RomanAgaltsev/bigo/issues/157)) ([75d2082](https://github.com/RomanAgaltsev/bigo/commit/75d2082c1d407351a6d589a03b95147aca672b1f))
+
 ## [1.48.1](https://github.com/RomanAgaltsev/bigo/compare/v1.48.0...v1.48.1) (2026-08-19)
 
 
