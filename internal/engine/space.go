@@ -8,7 +8,6 @@ import (
 	"github.com/RomanAgaltsev/bigo/internal/loopnest"
 	"github.com/RomanAgaltsev/bigo/internal/size"
 	"github.com/RomanAgaltsev/bigo/internal/sizefacts"
-	"github.com/RomanAgaltsev/bigo/internal/tripcount"
 )
 
 // SpaceModel resolves the space cost of a call in canonical size variables.
@@ -40,6 +39,7 @@ func InferSpace(fn *ssa.Function, model SpaceModel) (Space, []Cause) {
 	stab := fieldpath.Analyze(fn)
 	var causes []Cause
 	total, started := bound.Constant(), false
+	lf := newLoopFactor(fn, stab)
 	for _, b := range fn.Blocks {
 		bc, allocated, bcauses := blockAlloc(b, model, stab)
 		causes = append(causes, bcauses...)
@@ -51,7 +51,7 @@ func InferSpace(fn *ssa.Function, model SpaceModel) (Space, []Cause) {
 		if allocated {
 			factor := bound.Constant()
 			for _, lp := range forest.EnclosingLoops(b) {
-				factor = factor.Mul(tripFactor(lp, stab, &causes))
+				factor = factor.Mul(lf.of(lp, &causes))
 			}
 			contrib = bc.Mul(factor)
 		}
@@ -66,20 +66,6 @@ func InferSpace(fn *ssa.Function, model SpaceModel) (Space, []Cause) {
 		return sp, causes
 	}
 	return sp, nil
-}
-
-// tripFactor is InferDetailed's per-loop trip-count computation, extracted so
-// the space walk records the same CauseLoop diagnostic on an unrecognized loop.
-func tripFactor(lp *loopnest.Loop, stab *fieldpath.Stability, causes *[]Cause) bound.Bound {
-	tc := tripcount.Of(lp, stab)
-	if tc.IsTop() {
-		*causes = append(*causes, Cause{
-			Pos:  lp.Header.Instrs[len(lp.Header.Instrs)-1].Pos(),
-			Kind: CauseLoop,
-			What: "loop with unrecognized trip count",
-		})
-	}
-	return tc
 }
 
 // blockAlloc scores one block's allocation and reports whether the block
