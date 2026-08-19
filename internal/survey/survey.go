@@ -105,6 +105,10 @@ type Target struct {
 	// which two 2026-07-20 probes proved finds where ⊤ concentrates rather than
 	// where ⊤ is removable (ROADMAP §1).
 	SoleBlocker map[string]int `json:"sole_blocker,omitempty"`
+
+	// Smells are the OUTWARD-facing measurement: what this target's code could
+	// be told about, as opposed to what it tells bigo to build.
+	Smells SmellTotals `json:"smells,omitempty"`
 }
 
 // Report is the committed record of one survey run.
@@ -117,6 +121,13 @@ type Report struct {
 	AggByCause     map[string]int `json:"aggregate_by_cause"`
 	AggByDetail    map[string]int `json:"aggregate_by_detail"`
 	AggSoleBlocker map[string]int `json:"aggregate_sole_blocker"`
+
+	AggSmellsByRule map[string]int `json:"aggregate_smells_by_rule,omitempty"`
+
+	// SmellFindings is every first-party hand-written finding across all
+	// targets, in target order then report.Collect's file/line/rule order. Flat
+	// and target-stamped so Sample can walk it once without knowing the config.
+	SmellFindings []SmellFinding `json:"smell_findings,omitempty"`
 }
 
 // pct renders a coverage percentage with one decimal. Zero functions yields
@@ -214,11 +225,12 @@ func Run(cfg Config, version string, progress func(string, ...any)) Report {
 		progress = func(string, ...any) {}
 	}
 	r := Report{
-		Generated:      time.Now().UTC().Format("2006-01-02"),
-		BigoVersion:    version,
-		AggByCause:     map[string]int{},
-		AggByDetail:    map[string]int{},
-		AggSoleBlocker: map[string]int{},
+		Generated:       time.Now().UTC().Format("2006-01-02"),
+		BigoVersion:     version,
+		AggByCause:      map[string]int{},
+		AggByDetail:     map[string]int{},
+		AggSoleBlocker:  map[string]int{},
+		AggSmellsByRule: map[string]int{},
 	}
 	r.Aggregate.DistanceHist = map[string]int{}
 	for _, tc := range cfg.Targets {
@@ -236,6 +248,17 @@ func Run(cfg Config, version string, progress func(string, ...any)) Report {
 			continue
 		}
 		totals, byCause, byDetail, soleBlocker := Summarize(doc, newGeneratedDetector(tc.Path).isGenerated)
+
+		smells := SummarizeSmells(doc, newGeneratedDetector(tc.Path).isGenerated)
+		for i := range smells.Findings {
+			smells.Findings[i].Target = tc.Name
+		}
+		t.Smells = smells
+		for k, v := range smells.ByRule {
+			r.AggSmellsByRule[k] += v
+		}
+		r.SmellFindings = append(r.SmellFindings, smells.Findings...)
+
 		t.Module, t.Commit, t.Totals = doc.Module, commitOf(tc.Path), totals
 		t.ByCause, t.ByDetail = byCause, byDetail
 		for k, v := range byCause {

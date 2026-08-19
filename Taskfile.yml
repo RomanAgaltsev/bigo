@@ -16,6 +16,11 @@ tasks:
     cmds:
       - go test ./internal/survey/ -run TestWhatIf -whatif {{.CLI_ARGS}} -timeout 120m -v
 
+  contrib-scan:
+    desc: Run the contribution scan over survey/contribution-targets.json (MANUAL — not a CI gate)
+    cmds:
+      - go test ./internal/survey/ -run TestContribScan -contrib -timeout 60m -v
+
   corpus:
     desc: Regenerate the canonical-corpus oracle golden (corpus/corpus.json + corpus/CORPUS.md)
     cmds:

@@ -236,7 +236,7 @@ func (l *Loaded) Document(opts Options) (Document, error) {
 			}
 			if !ignored[decl] {
 				for _, sf := range smell.Detect(fn, enabledSmells) {
-					sj := SmellJSON{Rule: sf.Rule, Message: sf.Message}
+					sj := SmellJSON{Package: p.PkgPath, Rule: sf.Rule, Message: sf.Message}
 					if sf.Pos.IsValid() {
 						sp := p.Fset.Position(sf.Pos)
 						sj.File = relPath(root, sp.Filename)
