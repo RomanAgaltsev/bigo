@@ -1,0 +1,57 @@
+# bigo kata profile — the cost model of an algorithm-kata grading rubric.
+#
+# THIS FILE DELIBERATELY CONTRADICTS the curated cost table, and it wins over
+# it (see callsummary.UseOverlay). The table states worst-case truth. This file
+# states what a kata is graded on. Both are correct; they answer different
+# questions. It applies ONLY under -kata.
+#
+# K-1  I/O is not work. Reading input, writing output and the scaffolding
+#      around them lie outside the evaluated region. This is the rubric's own
+#      rule, stated in every solution these entries were measured against:
+#      "Чтение входящего массива, его обработка до поиска и вывод результата
+#      не оценивается."
+# K-2  An element operation costs unit. Comparing two records is O(1).
+#
+# Keys use costtable.FuncKey vocabulary. Add an entry only with a reason: an
+# entry with no justification is a bound nobody has reasoned about.
+
+# --- K-1: input scanning -------------------------------------------------
+bufio.NewScanner O(1)
+# Allocates a scanner. The reading it enables is input, not algorithm work.
+bufio.NewWriter O(1)
+# Mirror of NewScanner on the output side.
+(*bufio.Scanner).Scan O(1)
+# Advances to the next token of INPUT. The real cost is linear in the line
+# read, and under K-1 the input is not part of what is graded.
+(*bufio.Scanner).Text O(1)
+# Returns the token Scan already read.
+(*bufio.Scanner).Buffer O(1)
+# Configures capacity before scanning; no traversal.
+(*bufio.Writer).WriteString O(1)
+# Emits a result. Output is not graded.
+(*bufio.Writer).Flush O(1)
+# Emits buffered output.
+
+# --- K-1: parsing the input text ----------------------------------------
+strconv.Atoi O(1)
+# Curated linear in the string, correctly. That string is an INPUT token, so
+# under K-1 its length is not a size the algorithm is graded on.
+strings.Split O(1)
+# Same reason: splitting an input line is input handling.
+strings.Fields O(1)
+# The other common way the same input line gets split.
+
+# --- K-2: element operations --------------------------------------------
+cmp.Compare O(1)
+# One comparison of two elements is one element operation.
+strings.Compare O(1)
+# Curated linear in the operand, correctly. Under K-2 a comparison inside a
+# comparator is one element operation — which is what these solutions assert
+# by hand: "сравнение участников - это O(1)".
+
+# --- convention ----------------------------------------------------------
+math/rand.Intn O(1)
+# bigo deliberately refuses this family: Int31n rejects and retries, so there
+# is an EXPECTED iteration count and no worst-case one. Randomized pivot
+# selection is conventionally O(1). The expected-versus-worst-case split is a
+# separate feature and is not smuggled in here.

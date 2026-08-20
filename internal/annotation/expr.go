@@ -188,6 +188,15 @@ func (p *parser) parseFactor() (bound.Monomial, error) {
 		if t.text == "log" {
 			return p.parseLog()
 		}
+		if name, ok, err := p.parseSizeName(); err != nil {
+			return bound.Monomial{}, err
+		} else if ok {
+			pow, err := p.optExponent()
+			if err != nil {
+				return bound.Monomial{}, err
+			}
+			return bound.Mono(bound.Var(name), pow, 0), nil
+		}
 		v := bound.Var(t.text)
 		p.next()
 		pow, err := p.optExponent()
@@ -200,16 +209,52 @@ func (p *parser) parseFactor() (bound.Monomial, error) {
 	}
 }
 
+// parseSizeName parses a len(x) or cap(x) term and returns the variable name
+// exactly as bound.Var renders it — "len(x)", parentheses included — so that a
+// bound printed by -report round-trips when pasted into a //bigo:max budget.
+//
+// It reports ok=false without consuming anything when the current token is not
+// a size term, so a plain variable coincidentally named len or cap still parses
+// as a variable.
+func (p *parser) parseSizeName() (string, bool, error) {
+	t := p.cur()
+	if t.kind != tIdent || (t.text != "len" && t.text != "cap") {
+		return "", false, nil
+	}
+	// Safe: the stream always ends with tEOF and cur is a tIdent, so pos+1 exists.
+	if p.toks[p.pos+1].kind != tLParen {
+		return "", false, nil // bare identifier, not a call
+	}
+	fn := t.text
+	p.next() // consume len/cap
+	p.next() // consume (
+	if p.cur().kind != tIdent {
+		return "", false, fmt.Errorf("expected variable after '%s('", fn)
+	}
+	inner := p.cur().text
+	p.next()
+	if !p.accept(tRParen) {
+		return "", false, fmt.Errorf("expected ')' after %s argument", fn)
+	}
+	return fn + "(" + inner + ")", true, nil
+}
+
 func (p *parser) parseLog() (bound.Monomial, error) {
 	p.next() // consume 'log'
 	var v string
 	switch {
 	case p.accept(tLParen):
-		if p.cur().kind != tIdent {
-			return bound.Monomial{}, fmt.Errorf("expected variable after 'log('")
+		if name, ok, err := p.parseSizeName(); err != nil {
+			return bound.Monomial{}, err
+		} else if ok {
+			v = name
+		} else {
+			if p.cur().kind != tIdent {
+				return bound.Monomial{}, fmt.Errorf("expected variable after 'log('")
+			}
+			v = p.cur().text
+			p.next()
 		}
-		v = p.cur().text
-		p.next()
 		if !p.accept(tRParen) {
 			return bound.Monomial{}, fmt.Errorf("expected ')' after log argument")
 		}

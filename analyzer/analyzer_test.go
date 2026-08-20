@@ -157,3 +157,117 @@ func TestReportModeUsesStdoutNotDiagnostics(t *testing.T) {
 		t.Errorf("report output should name unverifiable functions, got: %q", out)
 	}
 }
+
+func TestReportEmitsBothAxesInSourceOrder(t *testing.T) {
+	if err := Analyzer.Flags.Set("report", "true"); err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = Analyzer.Flags.Set("report", "false") }()
+
+	old := os.Stdout
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	os.Stdout = w
+	analysistest.Run(t, analysistest.TestData(), Analyzer, "reportaxes")
+	_ = w.Close()
+	os.Stdout = old
+	raw, err := io.ReadAll(r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	out := string(raw)
+
+	// Space is reported for a function with no space directive: it used to be
+	// printed by the budget checker, so only annotated functions ever got it.
+	for _, want := range []string{
+		"Zed: inferred complexity O(len(xs))",
+		"Zed: space ",
+		"Alpha: inferred complexity O(len(xs))",
+		"Alpha: space ",
+	} {
+		if !strings.Contains(out, want) {
+			t.Errorf("report missing %q\ngot:\n%s", want, out)
+		}
+	}
+
+	// Source order, not map order: Zed is declared first though it sorts last.
+	if i, j := strings.Index(out, "Zed:"), strings.Index(out, "Alpha:"); i < 0 || j < 0 || i > j {
+		t.Errorf("report not in source order: Zed at %d, Alpha at %d\ngot:\n%s", i, j, out)
+	}
+
+	// A function's two axes must be adjacent so a reader can scan them in pairs.
+	zt := strings.Index(out, "Zed: inferred complexity")
+	zs := strings.Index(out, "Zed: space")
+	if zt < 0 || zs < zt || strings.Count(out[zt:zs], "\n") != 1 {
+		t.Errorf("time and space lines for Zed are not adjacent\ngot:\n%s", out)
+	}
+}
+
+func TestKataModeAppliesTheOverlay(t *testing.T) {
+	run := func(t *testing.T, kata bool) string {
+		t.Helper()
+		if err := Analyzer.Flags.Set("report", "true"); err != nil {
+			t.Fatal(err)
+		}
+		defer func() { _ = Analyzer.Flags.Set("report", "false") }()
+		if kata {
+			if err := Analyzer.Flags.Set("kata", "true"); err != nil {
+				t.Fatal(err)
+			}
+			defer func() { _ = Analyzer.Flags.Set("kata", "false") }()
+		}
+		old := os.Stdout
+		r, w, err := os.Pipe()
+		if err != nil {
+			t.Fatal(err)
+		}
+		os.Stdout = w
+		analysistest.Run(t, analysistest.TestData(), Analyzer, "katamode")
+		_ = w.Close()
+		os.Stdout = old
+		raw, err := io.ReadAll(r)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return string(raw)
+	}
+
+	// The regression guard. A test that only checked the -kata path would pass
+	// even if the overlay were always on, which would move every user's bounds.
+	t.Run("off by default the curated bounds stand", func(t *testing.T) {
+		out := run(t, false)
+		for _, want := range []string{
+			"Convert: inferred complexity O(len(s))",
+			"Compare: inferred complexity O(len(a))",
+		} {
+			if !strings.Contains(out, want) {
+				t.Errorf("without -kata, expected %q\ngot:\n%s", want, out)
+			}
+		}
+	})
+
+	t.Run("with -kata the curated bounds are overridden", func(t *testing.T) {
+		out := run(t, true)
+		for _, want := range []string{
+			"Convert: inferred complexity O(1)",
+			"Compare: inferred complexity O(1)",
+		} {
+			if !strings.Contains(out, want) {
+				t.Errorf("with -kata, expected %q\ngot:\n%s", want, out)
+			}
+		}
+	})
+
+	// The overlay answers call COSTS and does not invent SIZES: a loop over a
+	// call result has no nameable trip count either way. Pinned so a later
+	// widening of the profile cannot be mistaken for fixing this class.
+	t.Run("the overlay does not resolve sizes", func(t *testing.T) {
+		for _, kata := range []bool{false, true} {
+			if out := run(t, kata); !strings.Contains(out, "ParseLine: unverifiable") {
+				t.Errorf("ParseLine should be unverifiable with kata=%v\ngot:\n%s", kata, out)
+			}
+		}
+	})
+}

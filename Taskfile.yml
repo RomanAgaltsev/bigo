@@ -31,6 +31,11 @@ tasks:
     cmds:
       - go test ./internal/report/ -run TestGolden -update
 
+  build:
+    desc: Rebuild bin/bigo-dev.exe from the working tree — run this BEFORE measuring behaviour
+    cmds:
+      - go build -o bin/bigo-dev.exe ./cmd/bigo
+
   test:
     desc: Run all tests with the race detector
     cmds:

@@ -1,12 +1,12 @@
 {
-  "total": 246,
-  "bounded": 137,
-  "coverage_pct": "55.7",
+  "total": 251,
+  "bounded": 141,
+  "coverage_pct": "56.2",
   "by_cause": {
     "call": 60,
     "go": 3,
     "irreducible": 1,
-    "loop": 37,
+    "loop": 38,
     "nobody": 8
   },
   "per_package": {
@@ -46,6 +46,10 @@
       "total": 6,
       "bounded": 4
     },
+    "katamode": {
+      "total": 3,
+      "bounded": 2
+    },
     "multivar": {
       "total": 3,
       "bounded": 3
@@ -65,6 +69,10 @@
     "recursion": {
       "total": 16,
       "bounded": 9
+    },
+    "reportaxes": {
+      "total": 2,
+      "bounded": 2
     },
     "smells": {
       "total": 27,
@@ -907,6 +915,24 @@
       "bound": "O(1)"
     },
     {
+      "pkg": "katamode",
+      "func": "Compare",
+      "verdict": "bounded",
+      "bound": "O(len(a))"
+    },
+    {
+      "pkg": "katamode",
+      "func": "Convert",
+      "verdict": "bounded",
+      "bound": "O(len(s))"
+    },
+    {
+      "pkg": "katamode",
+      "func": "ParseLine",
+      "verdict": "unverifiable",
+      "cause": "loop"
+    },
+    {
       "pkg": "multivar",
       "func": "Pairs",
       "verdict": "bounded",
@@ -1181,6 +1207,18 @@
       "func": "Unguarded",
       "verdict": "unverifiable",
       "cause": "call"
+    },
+    {
+      "pkg": "reportaxes",
+      "func": "Alpha",
+      "verdict": "bounded",
+      "bound": "O(len(xs))"
+    },
+    {
+      "pkg": "reportaxes",
+      "func": "Zed",
+      "verdict": "bounded",
+      "bound": "O(len(xs))"
     },
     {
       "pkg": "smells",

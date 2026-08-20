@@ -262,3 +262,62 @@ func B(m map[int]int) { Run(func() {}, m) }`
 		t.Errorf("B-then-A: tainted B=%v A=%v, want both true", tb2, ta2)
 	}
 }
+
+// inferWithOverlay is inferWith for a cost-model overlay instead of an
+// assumption set: same shape, opposite precedence.
+func inferWithOverlay(t *testing.T, src, overlay string) (string, *Resolver) {
+	t.Helper()
+	pkg, _, err := ssasupport.Build(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fn := ssasupport.Func(pkg, "f")
+	if fn == nil {
+		t.Fatal("f not found")
+	}
+	r := New(nil)
+	es, err := assume.ParseText(overlay)
+	if err != nil {
+		t.Fatal(err)
+	}
+	r.UseOverlay(assume.NewSet(es))
+	return engine.Infer(fn, r).String(), r
+}
+
+// An overlay entry must beat a curated entry — that is its entire purpose —
+// while a plain assumption must still lose to one.
+func TestOverlayOutranksCuratedTable(t *testing.T) {
+	// strings.Compare is curated linear in its first operand.
+	const src = `package input
+import "strings"
+func f(a, b string) int { return strings.Compare(a, b) }`
+	const entry = "strings.Compare O(1)\n"
+
+	t.Run("no overlay: curated bound stands", func(t *testing.T) {
+		got, _ := inferWith(t, src, "")
+		if got == "O(1)" {
+			t.Fatalf("default precedence moved: got %q, want the curated bound", got)
+		}
+	})
+
+	t.Run("assumption loses to curated", func(t *testing.T) {
+		got, _ := inferWith(t, src, entry)
+		if got == "O(1)" {
+			t.Fatalf("assumption beat the curated entry: got %q", got)
+		}
+	})
+
+	t.Run("overlay beats curated", func(t *testing.T) {
+		got, _ := inferWithOverlay(t, src, entry)
+		if got != "O(1)" {
+			t.Fatalf("overlay did not beat the curated entry: got %q, want O(1)", got)
+		}
+	})
+
+	t.Run("overlay does not warn about shadowing", func(t *testing.T) {
+		_, r := inferWithOverlay(t, src, entry)
+		if w := r.AssumeWarnings(); len(w) != 0 {
+			t.Fatalf("overlay keys must not warn: shadowing is the point, got %v", w)
+		}
+	})
+}
