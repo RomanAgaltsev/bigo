@@ -133,22 +133,52 @@ func run(pass *analysis.Pass) (any, error) {
 		}
 		return inferred, causes
 	}
+	// One pass over every analyzable function, in source order. -report is the
+	// exploratory surface: a function must never be silently absent from it,
+	// and its two axes must sit together, so both are emitted here rather than
+	// from the budget checkers — printing space from checkSpace made it
+	// conditional on carrying a //bigo:space directive.
+	type reportable struct {
+		decl *ast.FuncDecl
+		fn   *ssa.Function
+		fd   *directive.FuncDirectives // nil when the function carries no directive
+	}
+	ordered := make([]reportable, 0, len(fns.Plain)+len(fns.Directives))
 	for _, decl := range fns.Plain {
-		if fn := byDecl[decl]; fn != nil {
-			report(decl, fn)
+		// ssaFor, not a bare byDecl lookup: a decl missing from SrcFuncs
+		// resolves through the same fallback the directive path already used,
+		// instead of vanishing from the report with no diagnostic.
+		if fn := ssaFor(decl); fn != nil {
+			ordered = append(ordered, reportable{decl: decl, fn: fn})
 		}
 	}
-	for _, fd := range fns.Directives {
-		if fd.Fn == nil {
+	for i := range fns.Directives {
+		if fns.Directives[i].Fn != nil {
+			ordered = append(ordered, reportable{
+				decl: fns.Directives[i].Decl,
+				fn:   fns.Directives[i].Fn,
+				fd:   &fns.Directives[i],
+			})
+		}
+	}
+	sort.Slice(ordered, func(i, j int) bool { return ordered[i].decl.Pos() < ordered[j].decl.Pos() })
+
+	for _, r := range ordered {
+		inferred, causes := report(r.decl, r.fn)
+		if reportMode {
+			sp, _ := spaceResolver.SpaceOf(r.fn, resolver)
+			p := pass.Fset.Position(r.decl.Pos())
+			_, _ = fmt.Fprintf(os.Stdout, "%s:%d: %s: space %s\n",
+				p.Filename, p.Line, r.decl.Name.Name, sp.Heap.Join(sp.Stack).String())
+		}
+		if r.fd == nil {
 			continue
 		}
-		maxDir, hasMax := directive.Verb(fd.Dirs, annotation.Max)
-		inferred, causes := report(fd.Decl, fd.Fn)
-		if hasMax {
-			checkBudget(pass, fd.Decl, fd.Fn, inferred, causes, maxDir)
+		if maxDir, hasMax := directive.Verb(r.fd.Dirs, annotation.Max); hasMax {
+			checkBudget(pass, r.decl, r.fn, inferred, causes, maxDir)
 		}
-		if spaceDir, hasSpace := directive.Verb(fd.Dirs, annotation.Space); hasSpace {
-			checkSpace(pass, fd.Decl, fd.Fn, spaceResolver, resolver, spaceDir)
+		if spaceDir, hasSpace := directive.Verb(r.fd.Dirs, annotation.Space); hasSpace {
+			checkSpace(pass, r.decl, r.fn, spaceResolver, resolver, spaceDir)
 		}
 	}
 
@@ -203,10 +233,9 @@ func run(pass *analysis.Pass) (any, error) {
 func checkSpace(pass *analysis.Pass, decl *ast.FuncDecl, fn *ssa.Function, spaceResolver *callsummary.SpaceResolver, timeModel engine.CostModel, dir annotation.Directive) {
 	sp, causes := spaceResolver.SpaceOf(fn, timeModel)
 	inferred := sp.Heap.Join(sp.Stack)
-	if reportMode {
-		p := pass.Fset.Position(decl.Pos())
-		_, _ = fmt.Fprintf(os.Stdout, "%s:%d: %s: space %s\n", p.Filename, p.Line, decl.Name.Name, inferred.String())
-	}
+	// Reporting is NOT done here: the unified report pass in run() emits both
+	// axes for every function, annotated or not, so that printing space from
+	// the budget checker cannot make it conditional on an annotation again.
 	budget, err := normalize.Budget(dir, fn)
 	if err != nil {
 		pass.Reportf(decl.Pos(), "invalid //bigo:space: %v", err)

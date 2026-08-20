@@ -157,3 +157,50 @@ func TestReportModeUsesStdoutNotDiagnostics(t *testing.T) {
 		t.Errorf("report output should name unverifiable functions, got: %q", out)
 	}
 }
+
+func TestReportEmitsBothAxesInSourceOrder(t *testing.T) {
+	if err := Analyzer.Flags.Set("report", "true"); err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = Analyzer.Flags.Set("report", "false") }()
+
+	old := os.Stdout
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	os.Stdout = w
+	analysistest.Run(t, analysistest.TestData(), Analyzer, "reportaxes")
+	_ = w.Close()
+	os.Stdout = old
+	raw, err := io.ReadAll(r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	out := string(raw)
+
+	// Space is reported for a function with no space directive: it used to be
+	// printed by the budget checker, so only annotated functions ever got it.
+	for _, want := range []string{
+		"Zed: inferred complexity O(len(xs))",
+		"Zed: space ",
+		"Alpha: inferred complexity O(len(xs))",
+		"Alpha: space ",
+	} {
+		if !strings.Contains(out, want) {
+			t.Errorf("report missing %q\ngot:\n%s", want, out)
+		}
+	}
+
+	// Source order, not map order: Zed is declared first though it sorts last.
+	if i, j := strings.Index(out, "Zed:"), strings.Index(out, "Alpha:"); i < 0 || j < 0 || i > j {
+		t.Errorf("report not in source order: Zed at %d, Alpha at %d\ngot:\n%s", i, j, out)
+	}
+
+	// A function's two axes must be adjacent so a reader can scan them in pairs.
+	zt := strings.Index(out, "Zed: inferred complexity")
+	zs := strings.Index(out, "Zed: space")
+	if zt < 0 || zs < zt || strings.Count(out[zt:zs], "\n") != 1 {
+		t.Errorf("time and space lines for Zed are not adjacent\ngot:\n%s", out)
+	}
+}
