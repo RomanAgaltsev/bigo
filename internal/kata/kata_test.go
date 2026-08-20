@@ -30,3 +30,43 @@ func TestProfileParses(t *testing.T) {
 		}
 	}
 }
+
+func TestSpaceProfileParses(t *testing.T) {
+	s, err := SpaceProfile()
+	if err != nil {
+		t.Fatalf("embedded kata space profile does not parse: %v", err)
+	}
+	if err := s.Err(); err != nil {
+		t.Fatalf("kata space profile has a bound that does not compile: %v", err)
+	}
+	for _, key := range []string{
+		"strconv.Atoi",
+		"strings.Compare",
+		"bufio.NewScanner",
+		"(*bufio.Scanner).Text",
+		"strings.Split",
+	} {
+		if !s.Has(key) {
+			t.Errorf("kata space profile is missing measured key %q", key)
+		}
+	}
+}
+
+// The two profiles are separate claims, but a key priced for time and left
+// unpriced for space would report a bound on one axis and unverifiable on the
+// other — the exact half-delivered state this file exists to fix.
+func TestSpaceProfileCoversTheTimeProfile(t *testing.T) {
+	timeSet, err := Profile()
+	if err != nil {
+		t.Fatal(err)
+	}
+	spaceSet, err := SpaceProfile()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, e := range timeSet.Entries() {
+		if !spaceSet.Has(e.Key) {
+			t.Errorf("key %q is priced for time but not for space", e.Key)
+		}
+	}
+}

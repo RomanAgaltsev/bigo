@@ -131,6 +131,16 @@ func run(pass *analysis.Pass) (any, error) {
 		resolver.UseOverlay(profile)
 	}
 	spaceResolver := callsummary.NewSpace(nil)
+	if kataMode {
+		// The space model is a SEPARATE file and a separate claim per entry:
+		// what a call costs and what it allocates are two assertions. Both are
+		// attached here so -kata answers both graded axes, never just one.
+		spaceProfile, err := kata.SpaceProfile()
+		if err != nil {
+			return nil, fmt.Errorf("kata space profile: %w", err)
+		}
+		spaceResolver.UseOverlay(spaceProfile)
+	}
 
 	// Pass 3: infer and check.
 	report := func(decl *ast.FuncDecl, fn *ssa.Function) (bound.Bound, []engine.Cause) {

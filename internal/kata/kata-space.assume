@@ -1,0 +1,45 @@
+# bigo kata profile, SPACE axis. Companion to kata.assume, loaded by -kata.
+#
+# A SEPARATE FILE ON PURPOSE. An entry in kata.assume claims what a call
+# COSTS; an entry here claims what it ALLOCATES. Letting one line assert both
+# would make half of every entry a claim nobody reasoned about, which is the
+# shape behind most of this project's wrong bounds. Writing them apart forces
+# the second question to be asked out loud — and the answers genuinely differ:
+# several entries below are constant on ANY model, while others are constant
+# only because K-1 says input is not graded. That distinction is marked.
+#
+# Space here is HEAP. An external callee has no body to analyze, so without
+# an entry every stdlib call is unverifiable heap.
+
+# --- constant on ANY model: these allocate nothing at all ----------------
+strconv.Atoi O(1)
+# Returns an int. No allocation, K-1 or not.
+strings.Compare O(1)
+# Returns an int. Reads both operands, allocates nothing.
+cmp.Compare O(1)
+# Returns an int.
+math/rand.Intn O(1)
+# Returns an int.
+(*bufio.Scanner).Buffer O(1)
+# Takes a caller-supplied buffer and stores it; allocates nothing itself.
+(*bufio.Writer).WriteString O(1)
+# Copies into the existing buffer, flushing when full. No growth.
+(*bufio.Writer).Flush O(1)
+# Drains the existing buffer.
+
+# --- constant because of K-1: these DO allocate, and it is input ---------
+bufio.NewScanner O(1)
+# Allocates a Scanner. Its buffer is sized by the input it will read, and
+# under K-1 the input is not part of what is graded.
+bufio.NewWriter O(1)
+# Allocates a fixed 4096-byte buffer, so constant in the program's sizes.
+(*bufio.Scanner).Scan O(1)
+# May grow the token buffer up to its configured maximum. That maximum is a
+# property of the input, not of the algorithm.
+(*bufio.Scanner).Text O(1)
+# Allocates a string copy of the token just read. Linear in that token, which
+# is input.
+strings.Split O(1)
+# Allocates a slice of substrings, linear in the input line being split.
+strings.Fields O(1)
+# The other common way the same input line gets split.

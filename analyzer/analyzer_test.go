@@ -205,33 +205,62 @@ func TestReportEmitsBothAxesInSourceOrder(t *testing.T) {
 	}
 }
 
+// runKataReport captures -report output for pkg, with -kata on or off.
+func runKataReport(t *testing.T, pkg string, kata bool) string {
+	t.Helper()
+	if err := Analyzer.Flags.Set("report", "true"); err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = Analyzer.Flags.Set("report", "false") }()
+	if kata {
+		if err := Analyzer.Flags.Set("kata", "true"); err != nil {
+			t.Fatal(err)
+		}
+		defer func() { _ = Analyzer.Flags.Set("kata", "false") }()
+	}
+	old := os.Stdout
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	os.Stdout = w
+	analysistest.Run(t, analysistest.TestData(), Analyzer, pkg)
+	_ = w.Close()
+	os.Stdout = old
+	raw, err := io.ReadAll(r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(raw)
+}
+
+// The kata cost model answers BOTH graded axes. Space is a separate profile
+// and a separate claim per entry: an external callee has no body to analyze,
+// so without an overlay every stdlib call is unverifiable heap.
+func TestKataModeAnswersSpace(t *testing.T) {
+	t.Run("off by default space stays unverifiable", func(t *testing.T) {
+		out := runKataReport(t, "katamode", false)
+		for _, want := range []string{"Convert: space unverifiable", "Compare: space unverifiable"} {
+			if !strings.Contains(out, want) {
+				t.Errorf("without -kata, expected %q\ngot:\n%s", want, out)
+			}
+		}
+	})
+
+	t.Run("with -kata space is answered", func(t *testing.T) {
+		out := runKataReport(t, "katamode", true)
+		for _, want := range []string{"Convert: space O(1)", "Compare: space O(1)"} {
+			if !strings.Contains(out, want) {
+				t.Errorf("with -kata, expected %q\ngot:\n%s", want, out)
+			}
+		}
+	})
+}
+
 func TestKataModeAppliesTheOverlay(t *testing.T) {
 	run := func(t *testing.T, kata bool) string {
 		t.Helper()
-		if err := Analyzer.Flags.Set("report", "true"); err != nil {
-			t.Fatal(err)
-		}
-		defer func() { _ = Analyzer.Flags.Set("report", "false") }()
-		if kata {
-			if err := Analyzer.Flags.Set("kata", "true"); err != nil {
-				t.Fatal(err)
-			}
-			defer func() { _ = Analyzer.Flags.Set("kata", "false") }()
-		}
-		old := os.Stdout
-		r, w, err := os.Pipe()
-		if err != nil {
-			t.Fatal(err)
-		}
-		os.Stdout = w
-		analysistest.Run(t, analysistest.TestData(), Analyzer, "katamode")
-		_ = w.Close()
-		os.Stdout = old
-		raw, err := io.ReadAll(r)
-		if err != nil {
-			t.Fatal(err)
-		}
-		return string(raw)
+		return runKataReport(t, "katamode", kata)
 	}
 
 	// The regression guard. A test that only checked the -kata path would pass

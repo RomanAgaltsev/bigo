@@ -15,11 +15,25 @@ import (
 //go:embed kata.assume
 var profile string
 
-// Profile parses the embedded kata cost model. A malformed profile is a hard
-// error, never a skip: a silently dropped entry would make bigo report a bound
-// under a cost model the user did not get.
-func Profile() (*assume.Set, error) {
-	es, err := assume.ParseText(profile)
+//go:embed kata-space.assume
+var spaceProfile string
+
+// Profile parses the embedded kata TIME cost model. A malformed profile is a
+// hard error, never a skip: a silently dropped entry would make bigo report a
+// bound under a cost model the user did not get.
+func Profile() (*assume.Set, error) { return parse(profile) }
+
+// SpaceProfile parses the embedded kata SPACE model.
+//
+// Deliberately a second file rather than a second column on each time entry:
+// what a call costs and what it allocates are two claims, and one line
+// asserting both would leave half of every entry unreasoned. The answers do
+// diverge — strconv.Atoi allocates nothing on any model, while strings.Split
+// is constant here only because K-1 says input is not graded.
+func SpaceProfile() (*assume.Set, error) { return parse(spaceProfile) }
+
+func parse(text string) (*assume.Set, error) {
+	es, err := assume.ParseText(text)
 	if err != nil {
 		return nil, err
 	}

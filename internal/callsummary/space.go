@@ -1,9 +1,13 @@
 package callsummary
 
 import (
+	"go/types"
+
 	"golang.org/x/tools/go/ssa"
 
+	"github.com/RomanAgaltsev/bigo/internal/assume"
 	"github.com/RomanAgaltsev/bigo/internal/bound"
+	"github.com/RomanAgaltsev/bigo/internal/costtable"
 	"github.com/RomanAgaltsev/bigo/internal/engine"
 	"github.com/RomanAgaltsev/bigo/internal/recurrence"
 )
@@ -17,6 +21,7 @@ type SpaceResolver struct {
 	memo      map[*ssa.Function]bound.Bound
 	onStack   map[*ssa.Function]bool
 	timeModel engine.CostModel // set by SpaceOf; resolves work for recurrence depth
+	overlay   *assume.Set      // heap claims for callees with no body to analyze
 }
 
 // NewSpace returns a heap-space resolver. The parameter mirrors New's overrides
@@ -26,6 +31,39 @@ func NewSpace(_ map[*ssa.Function]bound.Bound) *SpaceResolver {
 		memo:    map[*ssa.Function]bound.Bound{},
 		onStack: map[*ssa.Function]bool{},
 	}
+}
+
+// UseOverlay attaches heap claims for callees the walk cannot analyze. It is
+// the space counterpart of Resolver.UseOverlay and carries the same contract:
+// every entry is a written, justified claim, never generated and never a
+// wildcard. The claims live in their own file because what a call COSTS and
+// what it ALLOCATES are two different assertions.
+func (r *SpaceResolver) UseOverlay(s *assume.Set) { r.overlay = s }
+
+// overlaySpace answers a call's heap from the overlay set.
+func (r *SpaceResolver) overlaySpace(c *ssa.CallCommon) (bound.Bound, bool) {
+	if r.overlay == nil {
+		return bound.Bound{}, false
+	}
+	key, ok := costtable.CalleeKey(c)
+	if !ok {
+		return bound.Bound{}, false
+	}
+	var sig *types.Signature
+	switch {
+	case c.StaticCallee() != nil:
+		sig = c.StaticCallee().Signature
+	case c.Method != nil:
+		sig, _ = c.Method.Type().(*types.Signature)
+	}
+	if sig == nil {
+		return bound.Bound{}, false
+	}
+	b, names, ok := r.overlay.For(key, sig)
+	if !ok {
+		return bound.Bound{}, false
+	}
+	return substArgs(b, names, c.Args), true
 }
 
 // SpaceOf returns fn's full Space: the heap upper bound plus, for a self-recursive
@@ -64,6 +102,13 @@ func (r *SpaceResolver) SpaceOf(fn *ssa.Function, timeModel engine.CostModel) (e
 // channel (never the Exceeds-driving Stack term), so omitting it can never make a
 // budget falsely pass. Depth needs a time model; absent one it is skipped.
 func (r *SpaceResolver) CallSpace(c *ssa.CallCommon) bound.Bound {
+	// An overlay entry outranks everything below, mirroring the time
+	// resolver's precedence. It is the only mechanism that can answer an
+	// EXTERNAL callee's heap at all — there is no curated table on this axis,
+	// so without one every stdlib call falls to the ⊤ below.
+	if b, ok := r.overlaySpace(c); ok {
+		return b
+	}
 	callee := c.StaticCallee()
 	if callee == nil || len(callee.Blocks) == 0 {
 		return bound.Top() // closures / external: unknown space
