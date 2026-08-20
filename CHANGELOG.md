@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.50.0](https://github.com/RomanAgaltsev/bigo/compare/v1.49.2...v1.50.0) (2026-08-20)
+
+
+### Features
+
+* the kata loop — both axes, round-tripping budgets, and a --kata cost model ([#165](https://github.com/RomanAgaltsev/bigo/issues/165)) ([655ca30](https://github.com/RomanAgaltsev/bigo/commit/655ca3032c9bad8c87359432def428b3673d5bd1))
+
 ## [1.49.2](https://github.com/RomanAgaltsev/bigo/compare/v1.49.1...v1.49.2) (2026-08-19)
 
 
