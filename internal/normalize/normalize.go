@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"go/types"
+	"strings"
 
 	"github.com/RomanAgaltsev/bigo/internal/annotation"
 	"github.com/RomanAgaltsev/bigo/internal/bound"
@@ -57,9 +58,48 @@ func budget(d annotation.Directive, ps []param) (bound.Bound, error) {
 			rename[v] = p
 			continue
 		}
+		// Already canonical: -report prints len(p)/cap(p), and a bound the tool
+		// printed must be pastable back as a budget without a 'where' clause.
+		// It needs no rename — the inferred bound names the identical variable.
+		if canonicalSizeVar(v, ps) {
+			continue
+		}
 		return bound.Bound{}, fmt.Errorf("unbound size variable %q (add a 'where' clause)", v)
 	}
 	return d.Budget.Subst(rename), nil
+}
+
+// canonicalSizeVar reports whether v is already the canonical size variable of
+// one of ps — len(p) or cap(p) for a parameter whose type has a length.
+//
+// Deliberately strict: a name that is not a parameter, or a parameter with no
+// length (an int), stays an error. Accepting those would let a budget mention a
+// variable no inferred bound can ever contain, and the comparison against it
+// would be meaningless rather than merely loose.
+func canonicalSizeVar(v bound.Var, ps []param) bool {
+	s := string(v)
+	name, ok := strings.CutPrefix(s, "len(")
+	if !ok {
+		if name, ok = strings.CutPrefix(s, "cap("); !ok {
+			return false
+		}
+	}
+	name, ok = strings.CutSuffix(name, ")")
+	if !ok || name == "" {
+		return false
+	}
+	for _, p := range ps {
+		if p.name != name {
+			continue
+		}
+		switch p.typ.Underlying().(type) {
+		case *types.Slice, *types.Map, *types.Array:
+			return true
+		}
+		b, isBasic := p.typ.Underlying().(*types.Basic)
+		return isBasic && b.Info()&types.IsString != 0
+	}
+	return false
 }
 
 // primarySize returns the canonical size var of the first slice/map/string/
