@@ -25,10 +25,11 @@ type Resolver struct {
 	methodCosts map[*types.Func]bound.Bound
 	paramMemo   map[*ssa.Function]ParamSummary
 
-	assume *assume.Set
-	shadow map[string]bool
-	stack  []*ssa.Function
-	taint  map[*ssa.Function]bool
+	assume  *assume.Set
+	overlay *assume.Set
+	shadow  map[string]bool
+	stack   []*ssa.Function
+	taint   map[*ssa.Function]bool
 }
 
 // New returns a resolver. overrides maps functions to asserted summaries (from
@@ -65,6 +66,20 @@ func (r *Resolver) UseAssumptions(s *assume.Set) {
 	r.shadow = map[string]bool{}
 }
 
+// UseOverlay attaches a cost-model overlay that OUTRANKS the curated cost
+// table. This is the reverse of UseAssumptions, whose entries lose to a curated
+// entry, and it exists because a cost model may deliberately contradict the
+// worst-case truth the table encodes: strings.Compare really is linear in its
+// operand, and one record comparison really is one element operation when what
+// is being graded is an algorithm. Both are correct; they answer different
+// questions, and only the caller knows which is being asked.
+//
+// Overlay entries therefore produce NO shadowing warning — shadowing a curated
+// entry is the mechanism, not an accident. Every entry is still a written,
+// justified claim: an overlay must never be generated or wildcarded, for the
+// same reason the trust file refuses both.
+func (r *Resolver) UseOverlay(s *assume.Set) { r.overlay = s }
+
 // AssumeWarnings returns shadowing warnings (an assumption whose target is
 // already answered by a directive or a curated entry), sorted and unique.
 // Silent shadowing is forbidden by the spec: it means the assumption is
@@ -82,6 +97,42 @@ func (r *Resolver) noteShadow(kind string, key string) {
 	if r.assume != nil && r.assume.Has(key) {
 		r.shadow["assumption for "+key+" is shadowed by a "+kind] = true
 	}
+}
+
+// overlayCost answers a call from the overlay set. Identical to assumeCost
+// except for the set it reads and its position in CallCost's precedence chain,
+// which is ahead of the curated table rather than behind it.
+//
+// It handles interface method calls too — assumeCost cannot, because it is
+// reached only where a static callee exists — since a cost model that meant to
+// neutralize a method must not silently miss the invoke-mode call sites.
+func (r *Resolver) overlayCost(c *ssa.CallCommon) (bound.Bound, bool) {
+	if r.overlay == nil {
+		return bound.Bound{}, false
+	}
+	key, ok := costtable.CalleeKey(c)
+	if !ok {
+		return bound.Bound{}, false
+	}
+	var sig *types.Signature
+	switch {
+	case c.StaticCallee() != nil:
+		sig = c.StaticCallee().Signature
+	case c.Method != nil:
+		sig, _ = c.Method.Type().(*types.Signature)
+	}
+	if sig == nil {
+		return bound.Bound{}, false
+	}
+	b, names, ok := r.overlay.For(key, sig)
+	if !ok {
+		return bound.Bound{}, false
+	}
+	// Tainted exactly as an assumption-derived bound is: provenance and diff
+	// keep working unchanged, and an overlay bound is no more proven than any
+	// other externally asserted one.
+	r.markTaint()
+	return substArgs(b, names, c.Args), true
 }
 
 // assumeCost answers a call from the assumption set, in the same way the
@@ -147,6 +198,13 @@ func (r *Resolver) CallCost(c *ssa.CallCommon) bound.Bound {
 	// this walk order, but their key spaces cannot collide (directives sit on
 	// user functions, the table on builtins/stdlib), so the observable order
 	// is the specified one.
+	//
+	// An overlay, when one is attached, sits ahead of all of it — see
+	// UseOverlay. With no overlay this call is a nil check and the chain below
+	// is exactly what it has always been.
+	if b, ok := r.overlayCost(c); ok {
+		return b
+	}
 	if b, ok := costtable.Lookup(c); ok {
 		if key, kok := costtable.CalleeKey(c); kok {
 			r.noteShadow("curated cost-table entry", key)
