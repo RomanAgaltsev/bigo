@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.51.0](https://github.com/RomanAgaltsev/bigo/compare/v1.50.0...v1.51.0) (2026-08-20)
+
+
+### Features
+
+* **kata:** answer the space axis too, from a separate profile ([#167](https://github.com/RomanAgaltsev/bigo/issues/167)) ([c472a23](https://github.com/RomanAgaltsev/bigo/commit/c472a23950a948b8023002aca03b278074171348))
+
 ## [1.50.0](https://github.com/RomanAgaltsev/bigo/compare/v1.49.2...v1.50.0) (2026-08-20)
 
 
