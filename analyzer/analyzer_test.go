@@ -204,3 +204,70 @@ func TestReportEmitsBothAxesInSourceOrder(t *testing.T) {
 		t.Errorf("time and space lines for Zed are not adjacent\ngot:\n%s", out)
 	}
 }
+
+func TestKataModeAppliesTheOverlay(t *testing.T) {
+	run := func(t *testing.T, kata bool) string {
+		t.Helper()
+		if err := Analyzer.Flags.Set("report", "true"); err != nil {
+			t.Fatal(err)
+		}
+		defer func() { _ = Analyzer.Flags.Set("report", "false") }()
+		if kata {
+			if err := Analyzer.Flags.Set("kata", "true"); err != nil {
+				t.Fatal(err)
+			}
+			defer func() { _ = Analyzer.Flags.Set("kata", "false") }()
+		}
+		old := os.Stdout
+		r, w, err := os.Pipe()
+		if err != nil {
+			t.Fatal(err)
+		}
+		os.Stdout = w
+		analysistest.Run(t, analysistest.TestData(), Analyzer, "katamode")
+		_ = w.Close()
+		os.Stdout = old
+		raw, err := io.ReadAll(r)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return string(raw)
+	}
+
+	// The regression guard. A test that only checked the -kata path would pass
+	// even if the overlay were always on, which would move every user's bounds.
+	t.Run("off by default the curated bounds stand", func(t *testing.T) {
+		out := run(t, false)
+		for _, want := range []string{
+			"Convert: inferred complexity O(len(s))",
+			"Compare: inferred complexity O(len(a))",
+		} {
+			if !strings.Contains(out, want) {
+				t.Errorf("without -kata, expected %q\ngot:\n%s", want, out)
+			}
+		}
+	})
+
+	t.Run("with -kata the curated bounds are overridden", func(t *testing.T) {
+		out := run(t, true)
+		for _, want := range []string{
+			"Convert: inferred complexity O(1)",
+			"Compare: inferred complexity O(1)",
+		} {
+			if !strings.Contains(out, want) {
+				t.Errorf("with -kata, expected %q\ngot:\n%s", want, out)
+			}
+		}
+	})
+
+	// The overlay answers call COSTS and does not invent SIZES: a loop over a
+	// call result has no nameable trip count either way. Pinned so a later
+	// widening of the profile cannot be mistaken for fixing this class.
+	t.Run("the overlay does not resolve sizes", func(t *testing.T) {
+		for _, kata := range []bool{false, true} {
+			if out := run(t, kata); !strings.Contains(out, "ParseLine: unverifiable") {
+				t.Errorf("ParseLine should be unverifiable with kata=%v\ngot:\n%s", kata, out)
+			}
+		}
+	})
+}

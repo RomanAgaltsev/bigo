@@ -21,6 +21,7 @@ import (
 	"github.com/RomanAgaltsev/bigo/internal/callsummary"
 	"github.com/RomanAgaltsev/bigo/internal/directive"
 	"github.com/RomanAgaltsev/bigo/internal/engine"
+	"github.com/RomanAgaltsev/bigo/internal/kata"
 	"github.com/RomanAgaltsev/bigo/internal/normalize"
 	"github.com/RomanAgaltsev/bigo/internal/smell"
 )
@@ -33,6 +34,8 @@ var (
 	assumeFile string
 	trustFile  string
 )
+
+var kataMode bool
 
 // Analyzer is the bigo complexity analyzer.
 var Analyzer = newAnalyzer()
@@ -50,6 +53,8 @@ func newAnalyzer() *analysis.Analyzer {
 		"load external assumptions from this file (whole-module key validation runs only under `bigo json`/survey)")
 	a.Flags.StringVar(&trustFile, "trust", "",
 		"load a trust file: bounds you assert for code you cannot edit (whole-module key validation runs only under `bigo json`/survey)")
+	a.Flags.BoolVar(&kataMode, "kata", false,
+		"apply the algorithm-kata cost model: I/O is not work and an element operation costs unit (deliberately overrides curated stdlib costs)")
 	return a
 }
 
@@ -115,6 +120,15 @@ func run(pass *analysis.Pass) (any, error) {
 	}
 	if set != nil {
 		resolver.UseAssumptions(set)
+	}
+	if kataMode {
+		profile, err := kata.Profile()
+		if err != nil {
+			// Hard error, never a skip: reporting bounds under a cost model the
+			// user did not actually get is worse than refusing to run.
+			return nil, fmt.Errorf("kata profile: %w", err)
+		}
+		resolver.UseOverlay(profile)
 	}
 	spaceResolver := callsummary.NewSpace(nil)
 

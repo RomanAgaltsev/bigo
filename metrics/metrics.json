@@ -1,12 +1,12 @@
 {
-  "total": 248,
-  "bounded": 139,
-  "coverage_pct": "56.0",
+  "total": 251,
+  "bounded": 141,
+  "coverage_pct": "56.2",
   "by_cause": {
     "call": 60,
     "go": 3,
     "irreducible": 1,
-    "loop": 37,
+    "loop": 38,
     "nobody": 8
   },
   "per_package": {
@@ -45,6 +45,10 @@
     "iterator": {
       "total": 6,
       "bounded": 4
+    },
+    "katamode": {
+      "total": 3,
+      "bounded": 2
     },
     "multivar": {
       "total": 3,
@@ -909,6 +913,24 @@
       "func": "recSeq",
       "verdict": "bounded",
       "bound": "O(1)"
+    },
+    {
+      "pkg": "katamode",
+      "func": "Compare",
+      "verdict": "bounded",
+      "bound": "O(len(a))"
+    },
+    {
+      "pkg": "katamode",
+      "func": "Convert",
+      "verdict": "bounded",
+      "bound": "O(len(s))"
+    },
+    {
+      "pkg": "katamode",
+      "func": "ParseLine",
+      "verdict": "unverifiable",
+      "cause": "loop"
     },
     {
       "pkg": "multivar",
