@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.52.1](https://github.com/RomanAgaltsev/bigo/compare/v1.52.0...v1.52.1) (2026-08-22)
+
+
+### Bug Fixes
+
+* trust init and json can ask for the kata cost model ([#173](https://github.com/RomanAgaltsev/bigo/issues/173)) ([6477d3d](https://github.com/RomanAgaltsev/bigo/commit/6477d3d5a5d1186417d40b45054ec5f0b4ea9da9))
+
 ## [1.52.0](https://github.com/RomanAgaltsev/bigo/compare/v1.51.1...v1.52.0) (2026-08-22)
 
 
