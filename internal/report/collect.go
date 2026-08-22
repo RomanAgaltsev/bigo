@@ -20,6 +20,7 @@ import (
 	"github.com/RomanAgaltsev/bigo/internal/costtable"
 	"github.com/RomanAgaltsev/bigo/internal/directive"
 	"github.com/RomanAgaltsev/bigo/internal/engine"
+	"github.com/RomanAgaltsev/bigo/internal/recognize"
 	"github.com/RomanAgaltsev/bigo/internal/smell"
 )
 
@@ -244,6 +245,22 @@ func (l *Loaded) Document(opts Options) (Document, error) {
 					}
 					doc.Smells = append(doc.Smells, sj)
 				}
+				for _, rg := range recognize.Detect(fn) {
+					rj := RecognitionJSON{
+						Package:    p.PkgPath,
+						Func:       fn.Name(),
+						Pattern:    rg.Pattern,
+						Kind:       string(rg.Kind),
+						Bound:      rg.Bound,
+						Assumption: rg.Assumption,
+					}
+					if rg.Pos.IsValid() {
+						rp := p.Fset.Position(rg.Pos)
+						rj.File = relPath(root, rp.Filename)
+						rj.Line = rp.Line
+					}
+					doc.Recognitions = append(doc.Recognitions, rj)
+				}
 			}
 			doc.Functions = append(doc.Functions, rec)
 		}
@@ -295,6 +312,16 @@ func (l *Loaded) Document(opts Options) (Document, error) {
 			return a.Line < b.Line
 		}
 		return a.Rule < b.Rule
+	})
+	sort.Slice(doc.Recognitions, func(i, j int) bool {
+		a, b := doc.Recognitions[i], doc.Recognitions[j]
+		if a.File != b.File {
+			return a.File < b.File
+		}
+		if a.Line != b.Line {
+			return a.Line < b.Line
+		}
+		return a.Pattern < b.Pattern
 	})
 	return doc, nil
 }

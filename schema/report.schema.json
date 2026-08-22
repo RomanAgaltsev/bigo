@@ -38,6 +38,11 @@
       "description": "Advisory smell findings (SM1..SM8), sorted by file, line, rule. Deliberately top-level and never attached to a function record: a smell is advisory and can never influence a verdict, and the schema mirrors that firewall. Added in schema 1.1.0; absent in 1.0.0 documents and omitted when empty. Entries carry package since 1.4.0.",
       "items": { "$ref": "#/$defs/smell" }
     },
+    "recognitions": {
+      "type": "array",
+      "description": "Advisory recognized shapes, sorted by file, line, pattern. Each is the conventional bound for a named algorithmic pattern, together with the assumption it rests on. Deliberately top-level and never attached to a function record, for the same reason smells are: a recognition can never influence a verdict, and the schema mirrors that firewall. A recognized bound is NOT a proved bound and may name a quantity the bound algebra cannot express. Added in schema 1.5.0; omitted when empty.",
+      "items": { "$ref": "#/$defs/recognition" }
+    },
     "assumptions": {
       "type": "array",
       "description": "External assumptions (-assume file) in force during the run — the assumption analog of trusted: any entry may have influenced any verdict; audit these when auditing a document. Added in schema 1.2.0; omitted when no assumption file was supplied.",
@@ -45,6 +50,45 @@
     }
   },
   "$defs": {
+    "recognition": {
+      "type": "object",
+      "required": ["func", "pattern", "kind", "bound", "assumption", "file", "line"],
+      "properties": {
+        "package": {
+          "type": "string",
+          "description": "Go package path owning the recognized function."
+        },
+        "func": {
+          "type": "string",
+          "description": "Name of the function the shape was matched in."
+        },
+        "pattern": {
+          "type": "string",
+          "description": "Stable identifier for the matched shape, e.g. \"amortized two-pointer scan\". Consumers may count coverage by this value."
+        },
+        "kind": {
+          "type": "string",
+          "description": "Which case the bound describes. Carried explicitly because labelling an amortized bound as expected would ship a false statement.",
+          "enum": ["worst", "amortized", "expected"]
+        },
+        "bound": {
+          "type": "string",
+          "description": "The conventional bound for this pattern, as RENDERED TEXT rather than a serialized bound. It may name a quantity the bound algebra cannot express, such as the number of nodes reachable from a pointer, which is sound only because a recognition carries no verdict power."
+        },
+        "assumption": {
+          "type": "string",
+          "description": "The preconditions the bound rests on, including any bigo cannot itself verify. This is what makes an advisory claim honest rather than merely unproved, and consumers must not present the bound without it."
+        },
+        "file": {
+          "type": "string",
+          "description": "Module-relative path, forward slashes."
+        },
+        "line": {
+          "type": "integer",
+          "description": "1-based line of the loop that justifies the claim."
+        }
+      }
+    },
     "smell": {
       "type": "object",
       "required": ["rule", "message", "file", "line"],

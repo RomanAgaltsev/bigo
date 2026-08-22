@@ -300,3 +300,35 @@ func TestKataModeAppliesTheOverlay(t *testing.T) {
 		}
 	})
 }
+
+// The recognition channel is ADVISORY. This test asserts both halves of that
+// at once: the line is printed, and the budget it would satisfy still fails.
+//
+// The fixture's budget is O(len(xs)), which is exactly the bound R-A reports.
+// If a recognition could reach a verdict, the budget would pass and the
+// fixture's `want` comment would fail the test. analysistest also fails on any
+// unexpected diagnostic, so the two directions are both pinned.
+func TestRecognitionIsReportedAndAdvisory(t *testing.T) {
+	out := runKataReport(t, "recognized", false)
+
+	for _, want := range []string{
+		"Scan: recognized O(len(xs))",
+		"amortized two-pointer scan",
+		"[advisory]",
+	} {
+		if !strings.Contains(out, want) {
+			t.Errorf("report missing %q\ngot:\n%s", want, out)
+		}
+	}
+	// The assumption travels with the claim, or the claim is not honest.
+	for _, want := range []string{"in range", "advancing a pointer"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("reported assumption missing %q\ngot:\n%s", want, out)
+		}
+	}
+	// The proved channel is untouched: the loop still has no provable trip
+	// count, so the function is still unverifiable.
+	if !strings.Contains(out, "Scan: unverifiable") {
+		t.Errorf("the proved bound must be unchanged\ngot:\n%s", out)
+	}
+}
