@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.51.1](https://github.com/RomanAgaltsev/bigo/compare/v1.51.0...v1.51.1) (2026-08-22)
+
+
+### Bug Fixes
+
+* **cli:** -kata defaults -test to false, so -report stops repeating itself ([#169](https://github.com/RomanAgaltsev/bigo/issues/169)) ([333fe77](https://github.com/RomanAgaltsev/bigo/commit/333fe7772aafd396a51b132137671e2226721d93))
+
 ## [1.51.0](https://github.com/RomanAgaltsev/bigo/compare/v1.50.0...v1.51.0) (2026-08-20)
 
 
