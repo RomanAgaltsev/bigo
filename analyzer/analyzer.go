@@ -23,6 +23,7 @@ import (
 	"github.com/RomanAgaltsev/bigo/internal/engine"
 	"github.com/RomanAgaltsev/bigo/internal/kata"
 	"github.com/RomanAgaltsev/bigo/internal/normalize"
+	"github.com/RomanAgaltsev/bigo/internal/recognize"
 	"github.com/RomanAgaltsev/bigo/internal/smell"
 )
 
@@ -195,6 +196,17 @@ func run(pass *analysis.Pass) (any, error) {
 			p := pass.Fset.Position(r.decl.Pos())
 			_, _ = fmt.Fprintf(os.Stdout, "%s:%d: %s: space %s\n",
 				p.Filename, p.Line, r.decl.Name.Name, sp.Heap.Join(sp.Stack).String())
+			for _, rec := range recognize.Detect(r.fn) {
+				// [advisory] is not decoration: it is the one place the reader
+				// learns this line cannot gate anything. Never omit it.
+				//
+				// rec is printed and then dropped. It is never passed to
+				// checkBudget, bound.Check, or anything that produces a
+				// verdict. That is the firewall, and it is structural: a
+				// Recognition carries rendered text, never a bound.Bound.
+				_, _ = fmt.Fprintf(os.Stdout, "%s:%d: %s: recognized %s — %s; %s [advisory]\n",
+					p.Filename, p.Line, r.decl.Name.Name, rec.Bound, rec.Pattern, rec.Assumption)
+			}
 		}
 		if r.fd == nil {
 			continue
