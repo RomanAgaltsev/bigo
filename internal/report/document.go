@@ -20,8 +20,9 @@ import (
 // SchemaVersion is the version of the document format.
 // 1.1.0 added the top-level smells array. 1.2.0 added provenance and the
 // top-level assumptions array. 1.3.0 added cause.callee. 1.4.0 added
-// smells[].package (all additive; earlier documents remain valid).
-const SchemaVersion = "1.4.0"
+// smells[].package. 1.5.0 added the top-level recognitions array (all
+// additive; earlier documents remain valid).
+const SchemaVersion = "1.5.0"
 
 // Provenance values. Absence means "inferred" — the field is omitted for
 // every function no assumption influenced, which is what keeps documents
@@ -49,6 +50,13 @@ type Document struct {
 	// a field on Function: the document mirrors the engine's firewall, where a
 	// smell can never influence a verdict. Present since schema 1.1.0.
 	Smells []SmellJSON `json:"smells,omitempty"`
+
+	// Recognitions are advisory bounds from matched algorithmic shapes: the
+	// conventional bound for a named pattern, with the assumption it rests on.
+	// Top level for the same reason Smells are — the document mirrors the
+	// engine's firewall, where an advisory finding can never influence a
+	// verdict. Present since schema 1.5.0.
+	Recognitions []RecognitionJSON `json:"recognitions,omitempty"`
 }
 
 // Function is one analyzed function or method.
@@ -147,6 +155,27 @@ type SmellJSON struct {
 	Message string `json:"message"`
 	File    string `json:"file"` // module-relative, forward slashes
 	Line    int    `json:"line"`
+}
+
+// RecognitionJSON is one advisory recognized shape. Like SmellJSON this is
+// carried in a TOP-LEVEL array rather than on Function, because a recognition
+// can never influence a verdict and the document is built to make that
+// structural rather than a convention.
+//
+// Bound is rendered text, not a serialized bound: it may name a quantity the
+// bound algebra cannot express, such as the number of nodes reachable from a
+// pointer. Assumption states the preconditions the bound rests on, including
+// any bigo cannot itself verify, and is what makes the claim honest rather
+// than merely unproved. Present since schema 1.5.0.
+type RecognitionJSON struct {
+	Package    string `json:"package,omitempty"`
+	Func       string `json:"func"`
+	Pattern    string `json:"pattern"`
+	Kind       string `json:"kind"` // worst | amortized | expected
+	Bound      string `json:"bound"`
+	Assumption string `json:"assumption"`
+	File       string `json:"file"` // module-relative, forward slashes
+	Line       int    `json:"line"`
 }
 
 // boundJSON serializes a bound. Terms are sorted by canonical monomial string

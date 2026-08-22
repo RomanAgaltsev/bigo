@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.4.0",
+  "schema_version": "1.5.0",
   "bigo_version": "test",
   "module": "example.com/reportfix",
   "generated": "2026-01-02T03:04:05Z",

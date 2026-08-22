@@ -381,3 +381,33 @@ func TestDiffWarnsWhenTrustSurfaceMoves(t *testing.T) {
 		t.Errorf("warning = %q, want it to name the added entry", warn)
 	}
 }
+
+// A recognition is advisory, so a change in pattern matching must never
+// surface as a complexity regression. Without this, adding a recognizer would
+// break the shipped CI gate's contract: a run that newly recognizes a shape
+// would report a finding even though no verdict moved.
+//
+// This passes because diff.go was NOT modified. The exclusion is obtained by
+// construction -- Diff walks Functions, and recognitions live in a top-level
+// array it never reads -- and this test is what pins that property so a later
+// edit cannot quietly undo it.
+func TestDiffIgnoresRecognitions(t *testing.T) {
+	base := doc(Function{
+		Package: "p", Func: "F", File: "p.go", Line: 1,
+		Time: BoundJSON{Str: "O(1)"},
+	})
+	head := base
+	head.Recognitions = []RecognitionJSON{{
+		Package: "p", Func: "F", Pattern: "amortized two-pointer scan",
+		Kind: "amortized", Bound: "O(n)", Assumption: "stated here",
+		File: "p.go", Line: 1,
+	}}
+
+	fs, _, err := Diff(base, head)
+	if err != nil {
+		t.Fatalf("Diff = %v, want nil", err)
+	}
+	if len(fs) != 0 {
+		t.Errorf("recognitions must not produce diff findings, got %+v", fs)
+	}
+}

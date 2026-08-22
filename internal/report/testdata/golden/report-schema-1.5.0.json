@@ -1,0 +1,47 @@
+{
+  "schema_version": "1.5.0",
+  "bigo_version": "test",
+  "module": "example.com/reportfix",
+  "generated": "2026-01-02T03:04:05Z",
+  "functions": [
+    {
+      "package": "example.com/reportfix",
+      "func": "Partition",
+      "file": "fix.go",
+      "line": 10,
+      "time": {
+        "top": true
+      },
+      "causes": [
+        {
+          "kind": "loop",
+          "detail": "loop with unrecognized trip count",
+          "file": "fix.go",
+          "line": 12
+        }
+      ]
+    }
+  ],
+  "recognitions": [
+    {
+      "package": "example.com/reportfix",
+      "func": "Partition",
+      "pattern": "amortized two-pointer scan",
+      "kind": "amortized",
+      "bound": "O(len(xs))",
+      "assumption": "both indices advance monotonically toward each other and never reset, and both stay in range because the scan guards read len(xs) at the current index, so the pair makes at most len(xs) moves in total; and no outer iteration passes without advancing a pointer (true when the comparison is strict on distinct elements)",
+      "file": "fix.go",
+      "line": 12
+    },
+    {
+      "package": "example.com/reportfix",
+      "func": "Walk",
+      "pattern": "linked-structure traversal",
+      "kind": "worst",
+      "bound": "O(n)",
+      "assumption": "the traversal follows the single self-referential link .next and visits each node at most once; n is the number of nodes reachable from the entry pointer",
+      "file": "fix.go",
+      "line": 30
+    }
+  ]
+}
