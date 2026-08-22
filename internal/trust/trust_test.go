@@ -16,7 +16,7 @@ import (
 // ROADMAP §1's most-repeated principle at the point a user reads a number:
 // fmt was 8,367 sites, 744 sole-blocker functions, 298 truthfully priceable.
 func TestTrustInitRanksByGraduationCount(t *testing.T) {
-	out, _, err := trustInit("../report/testdata/trustinit")
+	out, _, err := trustInit("../report/testdata/trustinit", false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -32,7 +32,7 @@ func TestTrustInitRanksByGraduationCount(t *testing.T) {
 // trust file, so it must not be offered. The generator filters on the presence
 // of the callee key rather than on a hand-maintained list.
 func TestTrustInitOmitsUnkeyableBlockers(t *testing.T) {
-	out, _, err := trustInit("../report/testdata/trustinit")
+	out, _, err := trustInit("../report/testdata/trustinit", false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -45,7 +45,7 @@ func TestTrustInitOmitsUnkeyableBlockers(t *testing.T) {
 // would be inventing the thing it exists to check, so the placeholder must not
 // parse if someone uncomments a line without editing it.
 func TestTrustInitProposesNoBound(t *testing.T) {
-	out, _, err := trustInit("../report/testdata/trustinit")
+	out, _, err := trustInit("../report/testdata/trustinit", false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -61,7 +61,7 @@ func TestTrustInitProposesNoBound(t *testing.T) {
 // emitting something its own loader rejects: uncomment everything, fill in any
 // bound, and the result must parse.
 func TestTrustInitRoundTrips(t *testing.T) {
-	out, _, err := trustInit("../report/testdata/trustinit")
+	out, _, err := trustInit("../report/testdata/trustinit", false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -84,11 +84,11 @@ func TestTrustInitRoundTrips(t *testing.T) {
 // TestTrustInitIsDeterministic: two runs over one module are byte-identical, so
 // a regenerated file produces a reviewable diff rather than noise.
 func TestTrustInitIsDeterministic(t *testing.T) {
-	a, _, err := trustInit("../report/testdata/trustinit")
+	a, _, err := trustInit("../report/testdata/trustinit", false)
 	if err != nil {
 		t.Fatal(err)
 	}
-	b, _, err := trustInit("../report/testdata/trustinit")
+	b, _, err := trustInit("../report/testdata/trustinit", false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -142,7 +142,7 @@ func TestInitMainRefusesToClobber(t *testing.T) {
 // parsing the cause sentence: parsing prose is what the callee key was added to
 // avoid, and a table-driven answer stays correct as entries are added.
 func TestTrustInitOmitsAlreadyCuratedKeys(t *testing.T) {
-	out, _, err := trustInit("../report/testdata/trustinit")
+	out, _, err := trustInit("../report/testdata/trustinit", false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -168,7 +168,7 @@ func TestTrustInitOmitsAlreadyCuratedKeys(t *testing.T) {
 // The control matters as much as the assertion: os.Getenv must still be
 // offered, or a fix that suppressed every first-party-looking key would pass.
 func TestTrustInitOmitsFirstPartyGenerics(t *testing.T) {
-	out, _, err := trustInit("../report/testdata/trustinit")
+	out, _, err := trustInit("../report/testdata/trustinit", false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -191,7 +191,7 @@ func TestTrustInitOmitsFirstPartyGenerics(t *testing.T) {
 func TestTrustInitCountsAreMeasuredNotPredicted(t *testing.T) {
 	const dir = "../report/testdata/trustinit"
 
-	out, _, err := trustInit(dir)
+	out, _, err := trustInit(dir, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -338,5 +338,41 @@ func TestHeaderSaysWhichNumberItCarries(t *testing.T) {
 		if !strings.Contains(h, "GENERATED CODE COUNTS") {
 			t.Error("header does not warn that generated code is scored (review F6)")
 		}
+	}
+}
+
+// bigo trust init -kata used to fail outright with "flag provided but not
+// defined", and that was the smaller half of the defect: trustInit built its
+// resolver with no overlay, so even once the flag parsed, the blocker ranking
+// answered the DEFAULT cost model. A kata user was being told which keys to
+// reason about under a model they had explicitly not chosen.
+func TestInitMainAcceptsKata(t *testing.T) {
+	if code := InitMain([]string{"-kata", "-C", "../report/testdata/trustinitkata"}); code != 0 {
+		t.Errorf("exit = %d with -kata, want 0", code)
+	}
+}
+
+// The ranking must answer the model the user asked for. Under the default
+// model the bufio write is a real, offerable trust candidate. Under -kata the
+// profile already prices it, so the function is not blocked at all and offering
+// the key would spend the user's reasoning on a line that changes nothing --
+// exactly what TestTrustInitOmitsAlreadyCuratedKeys refuses for curated keys.
+func TestTrustInitUnderKataOmitsProfiledKeys(t *testing.T) {
+	const key = "(*bufio.Writer).WriteString"
+
+	base, _, err := trustInit("../report/testdata/trustinitkata", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(base, key) {
+		t.Fatalf("default model must offer %s, got:\n%s", key, base)
+	}
+
+	kataText, _, err := trustInit("../report/testdata/trustinitkata", true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(kataText, key) {
+		t.Errorf("-kata must not offer %s: the profile already prices it\ngot:\n%s", key, kataText)
 	}
 }

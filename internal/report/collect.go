@@ -37,6 +37,24 @@ type Options struct {
 	// Warn receives shadowing warnings (deduplicated); nil drops them.
 	Warn func(string)
 
+	// Overlay is a cost-model overlay that OUTRANKS the curated cost table,
+	// the mechanism the -kata profile uses. It is separate from Assume because
+	// the two answer different questions: an assumption is a claim about code
+	// bigo cannot see, while an overlay REPLACES an answer bigo already has
+	// with the one a different cost model gives. `strings.Compare` is
+	// O(len(a)) because that is true, and O(1) because one record comparison
+	// is one element operation; both are correct, for different questions.
+	//
+	// SpaceOverlay is the same mechanism on the heap axis, and is deliberately
+	// a SEPARATE field rather than a second column on Overlay: what a call
+	// costs and what it allocates are two assertions, and one field asserting
+	// both would leave half of every entry unreasoned.
+	//
+	// A consumer applying a cost model must set BOTH, or the document carries
+	// one axis under the chosen model and the other under the default.
+	Overlay      *assume.Set
+	SpaceOverlay *assume.Set
+
 	// AssumeUnmatchedKeys, when non-nil, receives the assumption keys that
 	// matched no function in THIS module instead of failing the run. Only a
 	// multi-module consumer may set it: over one module an unmatched key is a
@@ -167,7 +185,13 @@ func (l *Loaded) Document(opts Options) (Document, error) {
 		if opts.Assume != nil {
 			resolver.UseAssumptions(opts.Assume)
 		}
+		if opts.Overlay != nil {
+			resolver.UseOverlay(opts.Overlay)
+		}
 		spaceResolver := callsummary.NewSpace(nil)
+		if opts.SpaceOverlay != nil {
+			spaceResolver.UseOverlay(opts.SpaceOverlay)
+		}
 
 		// Ignored decls are skipped for smells exactly as for verdicts, so the
 		// document never contradicts the analyzer (metrics.go:95-100 does the same).

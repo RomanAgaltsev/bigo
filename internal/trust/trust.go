@@ -38,6 +38,7 @@ import (
 	"github.com/RomanAgaltsev/bigo/internal/assume"
 	"github.com/RomanAgaltsev/bigo/internal/costtable"
 	"github.com/RomanAgaltsev/bigo/internal/frontier"
+	"github.com/RomanAgaltsev/bigo/internal/kata"
 	"github.com/RomanAgaltsev/bigo/internal/report"
 )
 
@@ -110,12 +111,31 @@ func headerFor(measured bool) string {
 // it is meant to suggest.
 // measured is false when the probe pass could not run, so the caller can warn
 // and the header can say which number the reader is holding.
-func trustInit(dir string) (text string, measured bool, err error) {
+func trustInit(dir string, kataMode bool) (text string, measured bool, err error) {
 	l, err := report.LoadModule(dir, nil)
 	if err != nil {
 		return "", false, err
 	}
-	doc, err := l.Document(report.Options{Version: "trust-init"})
+	// The overlay must reach BOTH passes below: the ranking that decides which
+	// keys are offered, and measureCandidates' re-analysis that prices them.
+	// Applying it to one and not the other would rank under one cost model and
+	// count under another, which is worse than answering the wrong model
+	// consistently, because nothing in the output would show the split.
+	opts := report.Options{Version: "trust-init"}
+	if kataMode {
+		profile, perr := kata.Profile()
+		if perr != nil {
+			// Hard error, never a skip. Ranking blockers under a cost model the
+			// user did not get is exactly the defect this flag exists to fix.
+			return "", false, fmt.Errorf("kata profile: %w", perr)
+		}
+		spaceProfile, perr := kata.SpaceProfile()
+		if perr != nil {
+			return "", false, fmt.Errorf("kata space profile: %w", perr)
+		}
+		opts.Overlay, opts.SpaceOverlay = profile, spaceProfile
+	}
+	doc, err := l.Document(opts)
 	if err != nil {
 		return "", false, err
 	}
@@ -143,7 +163,7 @@ func trustInit(dir string) (text string, measured bool, err error) {
 	// warning that matters.
 	measured = true
 	if len(cands) > 0 {
-		m, ok := measureCandidates(l, doc, cands)
+		m, ok := measureCandidates(l, doc, cands, opts)
 		if !ok {
 			measured = false
 		} else {
@@ -178,10 +198,16 @@ func InitMain(args []string) int {
 	dir := fs.String("C", ".", "analyze the module in this directory")
 	out := fs.String("o", "", "write to this file instead of stdout")
 	force := fs.Bool("force", false, "overwrite an existing -o file")
+	// Without this the command failed outright with "flag provided but not
+	// defined" for a kata user — and parsing it is only half the fix. The
+	// ranking must also be MEASURED under the model the user asked for, or it
+	// recommends keys for a cost model they explicitly did not choose.
+	kataMode := fs.Bool("kata", false,
+		"rank blockers under the algorithm-kata cost model, matching `bigo -kata`")
 	if err := fs.Parse(args); err != nil {
 		return 2
 	}
-	text, measured, err := trustInit(*dir)
+	text, measured, err := trustInit(*dir, *kataMode)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "bigo trust init:", err)
 		return 1
@@ -239,7 +265,7 @@ type candidate struct {
 // and the caller keeps the predicted counts rather than failing the command.
 // Scaffolding a file is worth doing with a worse number; it is not worth
 // refusing to do.
-func measureCandidates(l *report.Loaded, base report.Document, cands []candidate) ([]candidate, bool) {
+func measureCandidates(l *report.Loaded, base report.Document, cands []candidate, opts report.Options) ([]candidate, bool) {
 	if len(cands) == 0 {
 		return cands, false
 	}
@@ -251,7 +277,11 @@ func measureCandidates(l *report.Loaded, base report.Document, cands []candidate
 	if err != nil {
 		return nil, false
 	}
-	probe, err := l.Document(report.Options{Version: "trust-init", Assume: assume.NewSet(entries)})
+	// Inherit the caller's cost model, then add the probe set: the measurement
+	// is only meaningful against the same model the ranking used.
+	probeOpts := opts
+	probeOpts.Assume = assume.NewSet(entries)
+	probe, err := l.Document(probeOpts)
 	if err != nil {
 		return nil, false
 	}
