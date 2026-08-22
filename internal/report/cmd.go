@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 
 	"github.com/RomanAgaltsev/bigo/internal/assume"
+	"github.com/RomanAgaltsev/bigo/internal/kata"
 )
 
 // Main runs the `bigo json` subcommand. Exit codes: 0 success (verdicts never
@@ -20,6 +21,8 @@ func Main(version string, args []string) int {
 	out := fs.String("o", "", "write the report to this file instead of stdout")
 	assumeFile := fs.String("assume", "", "load external assumptions from this file (path is process-relative, not -C-relative)")
 	trustFile := fs.String("trust", "", "load a trust file: bounds you assert for code you cannot edit (path is process-relative, not -C-relative)")
+	kataMode := fs.Bool("kata", false,
+		"apply the algorithm-kata cost model, matching `bigo -kata`: I/O is not work and an element operation costs unit")
 	if err := fs.Parse(args); err != nil {
 		return 2
 	}
@@ -36,6 +39,26 @@ func Main(version string, args []string) int {
 		*assumeFile = *trustFile
 	}
 	opts := Options{Version: version}
+	// The overlay and -assume are different mechanisms and compose, exactly as
+	// they do in the analyzer: the overlay says which cost model to answer
+	// under, an assumption is a claim about one callee. Both axes are attached
+	// or neither, since a document with kata time and default space would carry
+	// two cost models and say so nowhere.
+	if *kataMode {
+		profile, err := kata.Profile()
+		if err != nil {
+			// Hard error, never a skip: emitting a document under a cost model
+			// the user did not get is worse than refusing to emit one.
+			fmt.Fprintln(os.Stderr, "bigo json: kata profile:", err)
+			return 1
+		}
+		spaceProfile, err := kata.SpaceProfile()
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "bigo json: kata space profile:", err)
+			return 1
+		}
+		opts.Overlay, opts.SpaceOverlay = profile, spaceProfile
+	}
 	if *assumeFile != "" {
 		set, err := assume.Load(*assumeFile)
 		if err != nil {

@@ -108,3 +108,50 @@ func TestTrustAndAssumeTogetherIsAUsageError(t *testing.T) {
 		t.Errorf("exit = %d, want 2 (usage error)", code)
 	}
 }
+
+// bigo json had no way to ask for the kata cost model, so a kata user could
+// get -report under their model but not the document. That split is what
+// produced the trust init -kata defect: the report path could not apply an
+// overlay at all.
+//
+// The fixture's only blocker is a bufio write, which the kata profile prices
+// because K-1 says input and output are not graded work.
+func TestMainKataFlag(t *testing.T) {
+	load := func(args ...string) Document {
+		t.Helper()
+		out := filepath.Join(t.TempDir(), "doc.json")
+		code := Main("test", append(args, "-o", out))
+		if code != 0 {
+			t.Fatalf("exit = %d, want 0", code)
+		}
+		data, err := os.ReadFile(out)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var doc Document
+		if err := json.Unmarshal(data, &doc); err != nil {
+			t.Fatal(err)
+		}
+		return doc
+	}
+	topFor := func(doc Document, name string) bool {
+		t.Helper()
+		for _, f := range doc.Functions {
+			if f.Func == name {
+				return f.Time.Top
+			}
+		}
+		t.Fatalf("%s not in the document", name)
+		return false
+	}
+
+	base := load("-C", "testdata/trustinitkata")
+	if !topFor(base, "Write") {
+		t.Fatal("Write must be unverifiable under the default cost model, or the fixture proves nothing")
+	}
+
+	kataDoc := load("-C", "testdata/trustinitkata", "-kata")
+	if topFor(kataDoc, "Write") {
+		t.Error("Write must be bounded under -kata: the profile prices the write")
+	}
+}
