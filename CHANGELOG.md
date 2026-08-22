@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.52.0](https://github.com/RomanAgaltsev/bigo/compare/v1.51.1...v1.52.0) (2026-08-22)
+
+
+### Features
+
+* report recognized algorithmic shapes as advisory bounds ([#171](https://github.com/RomanAgaltsev/bigo/issues/171)) ([701ba18](https://github.com/RomanAgaltsev/bigo/commit/701ba18bb7e5a030854dffc98fd8815b5aee40bd))
+
 ## [1.51.1](https://github.com/RomanAgaltsev/bigo/compare/v1.51.0...v1.51.1) (2026-08-22)
 
 
