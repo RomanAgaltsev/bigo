@@ -64,6 +64,54 @@ func splitChdir(args []string) (dir string, rest []string, err error) {
 	return args[1], args[2:], nil
 }
 
+// withKataTestDefault injects -test=false when -kata is given and -test is not,
+// returning args unchanged otherwise.
+//
+// singlechecker loads with Tests: true, so go/packages returns both `p` and
+// `p [p.test]` as initial packages and the analyzer's -report pass, which
+// prints to stdout rather than emitting diagnostics, runs once per package —
+// reporting every function of the solution TWICE. It also reports the test
+// functions and the generated test main, whose file name is a build-cache path.
+// Diagnostics are unaffected: x/tools deduplicates identical ones, and
+// `bigo json`/`diff`/`badge` load without Tests at all.
+//
+// A kata's test file is not the solution and is never budgeted, so -kata
+// choosing a different default is the honest behaviour rather than a
+// convenience. An explicit -test always wins, in either direction.
+//
+// The flag is inserted at the FRONT: flag parsing stops at the first package
+// pattern, so appending it would leave it parsed as a pattern instead.
+func withKataTestDefault(args []string) []string {
+	name := func(s string) (flag string, ok bool) {
+		if s == "--" || !strings.HasPrefix(s, "-") {
+			return "", false
+		}
+		flag = strings.TrimPrefix(strings.TrimPrefix(s, "-"), "-")
+		flag, _, _ = strings.Cut(flag, "=")
+		return flag, true
+	}
+	kata := false
+	for _, a := range args {
+		flag, ok := name(a)
+		if !ok {
+			break // a package pattern: flag parsing stops here, and so do we
+		}
+		switch flag {
+		case "test":
+			return args // an explicit -test wins, whichever way it points
+		case "kata":
+			// -kata=false turns the mode off, so it must not change the default.
+			kata = !strings.HasSuffix(a, "=false") && !strings.HasSuffix(a, "=0")
+		}
+	}
+	if !kata {
+		return args
+	}
+	out := make([]string, 0, len(args)+1)
+	out = append(out, "-test=false")
+	return append(out, args...)
+}
+
 func main() {
 	// singlechecker owns the flag set, so handle -version before delegating.
 	if len(os.Args) == 2 && (os.Args[1] == "-version" || os.Args[1] == "--version") {
@@ -122,7 +170,7 @@ func main() {
 			fmt.Fprintln(os.Stderr, "bigo:", err)
 			os.Exit(1)
 		}
-		os.Args = append(os.Args[:1], rest...)
 	}
+	os.Args = append(os.Args[:1], withKataTestDefault(rest)...)
 	singlechecker.Main(analyzer.Analyzer)
 }
