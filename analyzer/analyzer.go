@@ -54,7 +54,8 @@ func newAnalyzer() *analysis.Analyzer {
 	a.Flags.StringVar(&trustFile, "trust", "",
 		"load a trust file: bounds you assert for code you cannot edit (whole-module key validation runs only under `bigo json`/survey)")
 	a.Flags.BoolVar(&kataMode, "kata", false,
-		"apply the algorithm-kata cost model: I/O is not work and an element operation costs unit (deliberately overrides curated stdlib costs)")
+		"apply the algorithm-kata cost model: I/O is not work and an element operation costs unit (deliberately overrides curated stdlib costs); "+
+			"implies -test=false, since a kata test file is not the solution, unless -test is given explicitly")
 	return a
 }
 
