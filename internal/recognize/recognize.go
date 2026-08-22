@@ -48,7 +48,7 @@ type Recognition struct {
 // recognizer analyzes one function and returns its recognitions.
 type recognizer func(fn *ssa.Function) []Recognition
 
-var recognizers = []recognizer{twoPointer}
+var recognizers = []recognizer{twoPointer, linkedTraversal}
 
 // Detect runs every recognizer over fn.
 func Detect(fn *ssa.Function) []Recognition {
