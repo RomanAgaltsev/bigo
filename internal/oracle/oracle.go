@@ -49,7 +49,7 @@ type WrongBound struct {
 type Report struct {
 	// Corpus selects the golden's preamble; empty for the canonical corpus, so
 	// that file's JSON is unchanged by this field existing.
-	Corpus Kind `json:"corpus,omitempty"`
+	Corpus        Kind           `json:"corpus,omitempty"`
 	Total         int            `json:"total"`
 	TimeByStatus  map[string]int `json:"time_by_status"`
 	SpaceByStatus map[string]int `json:"space_by_status"`
