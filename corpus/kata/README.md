@@ -61,4 +61,4 @@ A kata with no separable algorithm function — everything inside `main` — is 
 than reshaped, and listed here with the reason. A fixture rewritten until it is
 bigo-friendly would pin the rewrite, not the solution.
 
-*(None yet; this list is filled in as the corpus grows.)*
+**`sprint7/final2` equalSums (subset-sum partition).** Not excluded for lacking a separable function — `canBePartitioned` is perfectly separable. Excluded because the author's claim is `O(n * halfSum)`, and `halfSum` is a VALUE derived from the elements rather than a size any parameter can name. The pin grammar binds size variables to parameter-rooted expressions, so the claim is inexpressible, and the only expressible pins would state something the author did not claim. A pseudo-polynomial bound is a real limitation of this instrument and is recorded rather than rounded off.
