@@ -9,6 +9,9 @@ appears here: it fails the build. Algorithms considered and kept out are in
 [EXCLUSIONS.md](EXCLUSIONS.md). **This is not a coverage metric** — read
 composition, not a percentage.
 
+Sibling: [KATA.md](KATA.md) pins human-claimed bounds on real kata solutions
+under the kata cost model. The two are never summed.
+
 **Entries: 56**
 
 ## Time statuses

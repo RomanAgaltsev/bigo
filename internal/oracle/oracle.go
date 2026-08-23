@@ -47,6 +47,9 @@ type WrongBound struct {
 // Report is the golden document. Deterministic by construction: sorted
 // entries, sorted map keys (encoding/json), no timestamps, no absolute paths.
 type Report struct {
+	// Corpus selects the golden's preamble; empty for the canonical corpus, so
+	// that file's JSON is unchanged by this field existing.
+	Corpus Kind `json:"corpus,omitempty"`
 	Total         int            `json:"total"`
 	TimeByStatus  map[string]int `json:"time_by_status"`
 	SpaceByStatus map[string]int `json:"space_by_status"`
@@ -87,6 +90,7 @@ func CollectWith(srcRoot string, opts Options) (Report, []WrongBound, error) {
 	prog.Build()
 
 	r := Report{
+		Corpus:        opts.Corpus,
 		TimeByStatus:  map[string]int{},
 		SpaceByStatus: map[string]int{},
 		PerFamily:     map[string]int{},
