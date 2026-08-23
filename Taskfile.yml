@@ -26,6 +26,11 @@ tasks:
     cmds:
       - go test ./internal/oracle/ -run TestGolden -update
 
+  kata-corpus:
+    desc: Regenerate the kata-corpus golden (corpus/kata.json + corpus/KATA.md)
+    cmds:
+      - go test ./internal/oracle/ -run TestKataGolden -update
+
   report-golden:
     desc: Regenerate the report schema golden (internal/report/testdata/golden/report.json)
     cmds:

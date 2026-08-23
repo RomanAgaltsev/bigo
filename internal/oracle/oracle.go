@@ -47,6 +47,9 @@ type WrongBound struct {
 // Report is the golden document. Deterministic by construction: sorted
 // entries, sorted map keys (encoding/json), no timestamps, no absolute paths.
 type Report struct {
+	// Corpus selects the golden's preamble; empty for the canonical corpus, so
+	// that file's JSON is unchanged by this field existing.
+	Corpus        Kind           `json:"corpus,omitempty"`
 	Total         int            `json:"total"`
 	TimeByStatus  map[string]int `json:"time_by_status"`
 	SpaceByStatus map[string]int `json:"space_by_status"`
@@ -60,6 +63,11 @@ type Report struct {
 // logged: a pinned function that fails to load, resolve to SSA, or normalize
 // its pin is an error, never a skip.
 func Collect(srcRoot string) (Report, []WrongBound, error) {
+	return CollectWith(srcRoot, Options{})
+}
+
+// CollectWith is Collect under an explicit cost model. See Options.
+func CollectWith(srcRoot string, opts Options) (Report, []WrongBound, error) {
 	cfg := &packages.Config{
 		Mode: packages.NeedName | packages.NeedFiles | packages.NeedSyntax |
 			packages.NeedTypes | packages.NeedTypesInfo | packages.NeedDeps | packages.NeedImports,
@@ -82,6 +90,7 @@ func Collect(srcRoot string) (Report, []WrongBound, error) {
 	prog.Build()
 
 	r := Report{
+		Corpus:        opts.Corpus,
 		TimeByStatus:  map[string]int{},
 		SpaceByStatus: map[string]int{},
 		PerFamily:     map[string]int{},
@@ -105,6 +114,12 @@ func Collect(srcRoot string) (Report, []WrongBound, error) {
 		}
 		resolver := callsummary.NewWithMethods(fns.Overrides, fns.MethodCosts)
 		spaceResolver := callsummary.NewSpace(nil)
+		if opts.Overlay != nil {
+			resolver.UseOverlay(opts.Overlay)
+		}
+		if opts.SpaceOverlay != nil {
+			spaceResolver.UseOverlay(opts.SpaceOverlay)
+		}
 
 		for _, file := range p.Syntax {
 			pins, err := ExtractPins(file)

@@ -194,9 +194,13 @@
       "file": "fix.go",
       "line": 102,
       "time": {
-        "str": "O(1)",
+        "str": "O(len(xs))",
         "terms": [
-          {}
+          {
+            "len(xs)": {
+              "pow": 1
+            }
+          }
         ]
       },
       "space": {
