@@ -181,10 +181,11 @@ func Priced(c *ssa.CallCommon) bool {
 // An entry may still decline (ok=false) for operand types it cannot price
 // soundly — see orderedBuiltin and clearBuiltin.
 var builtins = map[string]func(args []ssa.Value) (bound.Bound, bool){
-	// append/delete are amortized O(1); the rest are genuinely O(1).
+	// delete is amortized O(1); the rest are genuinely O(1). append is NOT in
+	// this group — see appendBuiltin.
 	"len":     constBuiltin,
 	"cap":     constBuiltin,
-	"append":  constBuiltin,
+	"append":  appendBuiltin,
 	"delete":  constBuiltin,
 	"close":   constBuiltin,
 	"panic":   constBuiltin,
@@ -202,6 +203,56 @@ var builtins = map[string]func(args []ssa.Value) (bound.Bound, bool){
 }
 
 func constBuiltin([]ssa.Value) (bound.Bound, bool) { return bound.Constant(), true }
+
+// appendBuiltin prices append(a, b...): O(len(b)) when the spread argument has
+// a nameable extent, because appending a whole slice COPIES its elements.
+//
+// The amortized-O(1) licence covers appending ONE element, and go/ssa lowers
+// every append to the spread form — packing a scalar append(a, x) into a fresh
+// one-element varargs slice. Charging O(1) for both shapes therefore
+// under-approximated every bulk copy in the program.
+//
+// This mirrors engine.appendSpace, which already charges O(len(b)) on the space
+// axis. That fix was made after an ORACLE-CONFIRMED WRONG SPACE BOUND (#87
+// probe, B3); the time axis kept the constant, so `append([]T{{}}, xs...)`
+// reported O(1) time and O(len(xs)) space for the same instruction. The kata
+// corpus caught it on its first pass.
+//
+// An unknown spread DECLINES rather than falling back to O(1): unpriced yields
+// top, which is safe, where a constant would under-approximate. That is the
+// same choice orderedBuiltin makes for string min/max.
+func appendBuiltin(args []ssa.Value) (bound.Bound, bool) {
+	if len(args) < 2 {
+		return bound.Constant(), true
+	}
+	last := args[len(args)-1]
+	if b := linear(args, len(args)-1); !b.IsTop() {
+		return b, true
+	}
+	// The packed one-element varargs slice go/ssa emits for a scalar append:
+	// a fresh allocation of compile-time-constant length, which is the shape
+	// the amortization licence is actually about.
+	if isPackedScalarVarargs(last) {
+		return bound.Constant(), true
+	}
+	return bound.Bound{}, false
+}
+
+// isPackedScalarVarargs reports whether v is the fresh, constant-length slice
+// go/ssa builds to pass scalar variadic arguments — as opposed to a caller's
+// slice being spread.
+func isPackedScalarVarargs(v ssa.Value) bool {
+	sl, ok := v.(*ssa.Slice)
+	if !ok {
+		return false
+	}
+	alloc, ok := sl.X.(*ssa.Alloc)
+	if !ok {
+		return false
+	}
+	arr, ok := alloc.Type().(*types.Pointer).Elem().(*types.Array)
+	return ok && arr.Len() >= 0
+}
 
 // orderedBuiltin prices min/max. For numeric operands each comparison is O(1)
 // and the argument count is fixed at the call site, so the call is O(1). For
