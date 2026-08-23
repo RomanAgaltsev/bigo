@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.54.0](https://github.com/RomanAgaltsev/bigo/compare/v1.53.0...v1.54.0) (2026-08-23)
+
+
+### Features
+
+* pin the kata corpus as a second oracle gate ([#177](https://github.com/RomanAgaltsev/bigo/issues/177)) ([b455ec6](https://github.com/RomanAgaltsev/bigo/commit/b455ec636cc7d794f1ab99ed253078d1938a5c43))
+
 ## [1.53.0](https://github.com/RomanAgaltsev/bigo/compare/v1.52.1...v1.53.0) (2026-08-23)
 
 
