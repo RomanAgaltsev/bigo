@@ -1,19 +1,26 @@
 {
   "corpus": "kata",
-  "total": 31,
+  "total": 61,
   "time_by_status": {
-    "exact": 19,
-    "top": 12
+    "exact": 37,
+    "top": 24
   },
   "space_by_status": {
-    "exact": 20,
-    "top": 11
+    "exact": 39,
+    "top": 22
   },
   "per_family": {
     "brokensearch": 1,
+    "cheatsheet": 3,
     "deque": 10,
+    "expensivenetwork": 7,
     "hashtable": 7,
+    "heapsort": 9,
+    "levenshtein": 1,
+    "packedprefix": 4,
     "quicksort": 3,
+    "railroads": 4,
+    "removenode": 2,
     "rpncalc": 5,
     "searchengine": 5
   },
@@ -28,6 +35,39 @@
       "space_got": "O(1)",
       "space_status": "exact",
       "source": "ya_algo sprint 3 final 1; author's claim \"В решении используется только бинарный поиск, который работает за O(log n)\", auxiliary space \"O(1) - можно сказать, что почти не используется\""
+    },
+    {
+      "pkg": "cheatsheet",
+      "func": "Insert",
+      "time_pin": "O(len(word))",
+      "time_got": "O(len(word))",
+      "time_status": "exact",
+      "space_pin": "O(len(word))",
+      "space_got": "O(len(word))",
+      "space_status": "exact",
+      "source": "ya_algo sprint 8 final 2; author's claim \"Сложность формирования префиксного дерева составляет O(L)\" over the total length of all words — one word contributes its own length"
+    },
+    {
+      "pkg": "cheatsheet",
+      "func": "IsLineSplitable",
+      "time_pin": "O(len(line)^2)",
+      "time_got": "O(len(line)^2)",
+      "time_status": "exact",
+      "space_pin": "O(len(line))",
+      "space_got": "O(len(line))",
+      "space_status": "exact",
+      "source": "ya_algo sprint 8 final 2; author's claim \"Проверка возможности разбивки строки составляет O(T * M)\", T the line length and M the longest word. M is not a size this function's parameters can name, so the pin states the author's own bound with M \u003c= T substituted — a word longer than the line can never match, so the substitution is sound and does not weaken the claim."
+    },
+    {
+      "pkg": "cheatsheet",
+      "func": "NewNode",
+      "time_pin": "O(1)",
+      "time_got": "O(1)",
+      "time_status": "exact",
+      "space_pin": "O(1)",
+      "space_got": "O(1)",
+      "space_status": "exact",
+      "source": "ya_algo sprint 8 final 2; map construction, constant by inspection"
     },
     {
       "pkg": "deque",
@@ -140,6 +180,84 @@
       "source": "ya_algo sprint 2 final 1; author's claim \"Выполнение одной команды - O(1)\""
     },
     {
+      "pkg": "expensivenetwork",
+      "func": "AddEdge",
+      "time_pin": "O(1)",
+      "time_got": "O(1)",
+      "time_status": "exact",
+      "space_pin": "O(1)",
+      "space_got": "O(1)",
+      "space_status": "exact",
+      "source": "ya_algo sprint 6 final 1; two single-element appends, riding the amortization licence"
+    },
+    {
+      "pkg": "expensivenetwork",
+      "func": "Len",
+      "time_pin": "O(1)",
+      "time_got": "O(1)",
+      "time_status": "exact",
+      "space_pin": "O(1)",
+      "space_got": "O(1)",
+      "space_status": "exact",
+      "source": "ya_algo sprint 6 final 1; one len, constant by inspection"
+    },
+    {
+      "pkg": "expensivenetwork",
+      "func": "Less",
+      "time_pin": "O(1)",
+      "time_got": "O(1)",
+      "time_status": "exact",
+      "space_pin": "O(1)",
+      "space_got": "O(1)",
+      "space_status": "exact",
+      "source": "ya_algo sprint 6 final 1; one comparison, constant by inspection"
+    },
+    {
+      "pkg": "expensivenetwork",
+      "func": "Max",
+      "time_pin": "O(g.edgesCount log(g.edgesCount))",
+      "time_got": "unverifiable",
+      "time_status": "top",
+      "space_pin": "O(g.edgesCount)",
+      "space_got": "unverifiable",
+      "space_status": "top",
+      "cause": "call",
+      "source": "ya_algo sprint 6 final 1; author's claim \"Оценка для алгоритма Прима - O(E*log(V))\". Pinned against the edge count, the only one of E and V this function names as a size; every edge enters the queue at most once and each queue operation is logarithmic."
+    },
+    {
+      "pkg": "expensivenetwork",
+      "func": "Pop",
+      "time_pin": "O(1)",
+      "time_got": "O(1)",
+      "time_status": "exact",
+      "space_pin": "O(1)",
+      "space_got": "O(1)",
+      "space_status": "exact",
+      "source": "ya_algo sprint 6 final 1; a reslice and an index, constant by inspection"
+    },
+    {
+      "pkg": "expensivenetwork",
+      "func": "Push",
+      "time_pin": "O(1)",
+      "time_got": "O(1)",
+      "time_status": "exact",
+      "space_pin": "O(1)",
+      "space_got": "O(1)",
+      "space_status": "exact",
+      "source": "ya_algo sprint 6 final 1; one single-element append, riding the amortization licence"
+    },
+    {
+      "pkg": "expensivenetwork",
+      "func": "Swap",
+      "time_pin": "O(1)",
+      "time_got": "O(1)",
+      "time_status": "exact",
+      "space_pin": "O(1)",
+      "space_got": "O(1)",
+      "space_status": "exact",
+      "source": "ya_algo sprint 6 final 1; one exchange, constant by inspection"
+    },
+    {
       "pkg": "hashtable",
       "func": "Delete",
       "time_pin": "O(ht.capacity)",
@@ -223,6 +341,167 @@
       "source": "ya_algo sprint 4 final 2; author's average case \"O(1+N/M) или O(1+α)\", worst case O(N) when every key lands in one bucket. The worst case is pinned, since that is the question bigo answers."
     },
     {
+      "pkg": "heapsort",
+      "func": "Build",
+      "time_pin": "O(h.length)",
+      "time_got": "unverifiable",
+      "time_status": "top",
+      "space_pin": "O(1)",
+      "space_got": "unverifiable",
+      "space_status": "top",
+      "cause": "call",
+      "source": "ya_algo sprint 5 final 1; author's claim \"Построение кучи - O(n) - при построении кучи обрабатываются все элементы исходного массива\""
+    },
+    {
+      "pkg": "heapsort",
+      "func": "HeapifyIterative",
+      "time_pin": "O(log(h.length))",
+      "time_got": "unverifiable",
+      "time_status": "top",
+      "space_pin": "O(1)",
+      "space_got": "unverifiable",
+      "space_status": "top",
+      "cause": "loop",
+      "source": "ya_algo sprint 5 final 1; author's claim \"просеивание ... зависит от высоты кучи, это O(log n)\", no recursion stack in this form"
+    },
+    {
+      "pkg": "heapsort",
+      "func": "HeapifyRecursive",
+      "time_pin": "O(log(h.length))",
+      "time_got": "unverifiable",
+      "time_status": "top",
+      "space_pin": "O(log(h.length))",
+      "space_got": "unverifiable",
+      "space_status": "top",
+      "cause": "call",
+      "source": "ya_algo sprint 5 final 1; author's claim \"перестановка (просеивание) элемент зависит от высоты кучи, это O(log n)\". Space is the recursion stack, one frame per level."
+    },
+    {
+      "pkg": "heapsort",
+      "func": "Largest",
+      "time_pin": "O(1)",
+      "time_got": "unverifiable",
+      "time_status": "top",
+      "space_pin": "O(1)",
+      "space_got": "unverifiable",
+      "space_status": "top",
+      "cause": "call",
+      "source": "ya_algo sprint 5 final 1; two comparisons through the stored comparator, constant per call under the kata cost model"
+    },
+    {
+      "pkg": "heapsort",
+      "func": "Left",
+      "time_pin": "O(1)",
+      "time_got": "O(1)",
+      "time_status": "exact",
+      "space_pin": "O(1)",
+      "space_got": "O(1)",
+      "space_status": "exact",
+      "source": "ya_algo sprint 5 final 1; index arithmetic, constant by inspection"
+    },
+    {
+      "pkg": "heapsort",
+      "func": "NewHeap",
+      "time_pin": "O(len(arr))",
+      "time_got": "O(len(arr))",
+      "time_status": "exact",
+      "space_pin": "O(len(arr))",
+      "space_got": "O(len(arr))",
+      "space_status": "exact",
+      "source": "ya_algo sprint 5 final 1; the array is copied once into the one-indexed backing slice"
+    },
+    {
+      "pkg": "heapsort",
+      "func": "Right",
+      "time_pin": "O(1)",
+      "time_got": "O(1)",
+      "time_status": "exact",
+      "space_pin": "O(1)",
+      "space_got": "O(1)",
+      "space_status": "exact",
+      "source": "ya_algo sprint 5 final 1; index arithmetic, constant by inspection"
+    },
+    {
+      "pkg": "heapsort",
+      "func": "Sort",
+      "time_pin": "O(h.length log(h.length))",
+      "time_got": "unverifiable",
+      "time_status": "top",
+      "space_pin": "O(log(h.length))",
+      "space_got": "unverifiable",
+      "space_status": "top",
+      "cause": "call",
+      "source": "ya_algo sprint 5 final 1; author's claim \"получаем O(n + n * log n) или O(n * log n)\". Space is the sift recursion; the array itself is the input, not auxiliary."
+    },
+    {
+      "pkg": "heapsort",
+      "func": "Swap",
+      "time_pin": "O(1)",
+      "time_got": "O(1)",
+      "time_status": "exact",
+      "space_pin": "O(1)",
+      "space_got": "O(1)",
+      "space_status": "exact",
+      "source": "ya_algo sprint 5 final 1; one exchange, constant by inspection"
+    },
+    {
+      "pkg": "levenshtein",
+      "func": "LevenshteinDistance",
+      "time_pin": "O(len(s) len(t))",
+      "time_got": "unverifiable",
+      "time_status": "top",
+      "space_pin": "O(len(s))",
+      "space_got": "unverifiable",
+      "space_status": "top",
+      "cause": "loop",
+      "source": "ya_algo sprint 7 final 1; author's claim \"для решения необходимо выполнить M * N операций. Получается оценка O(M * N)\", space \"создается два слайса размера N+1 ... получаем оценку по памяти - O(N)\""
+    },
+    {
+      "pkg": "packedprefix",
+      "func": "Pop",
+      "time_pin": "O(1)",
+      "time_got": "O(1)",
+      "time_status": "exact",
+      "space_pin": "O(1)",
+      "space_got": "O(1)",
+      "space_status": "exact",
+      "source": "ya_algo sprint 8 final 1; a reslice and an index, constant by inspection"
+    },
+    {
+      "pkg": "packedprefix",
+      "func": "Push",
+      "time_pin": "O(1)",
+      "time_got": "O(1)",
+      "time_status": "exact",
+      "space_pin": "O(1)",
+      "space_got": "O(1)",
+      "space_status": "exact",
+      "source": "ya_algo sprint 8 final 1; one append of a single element, riding the amortization licence"
+    },
+    {
+      "pkg": "packedprefix",
+      "func": "Size",
+      "time_pin": "O(1)",
+      "time_got": "O(1)",
+      "time_status": "exact",
+      "space_pin": "O(1)",
+      "space_got": "O(1)",
+      "space_status": "exact",
+      "source": "ya_algo sprint 8 final 1; one len, constant by inspection"
+    },
+    {
+      "pkg": "packedprefix",
+      "func": "Unpack",
+      "time_pin": "O(len(packedLine))",
+      "time_got": "unverifiable",
+      "time_status": "top",
+      "space_pin": "O(len(packedLine))",
+      "space_got": "unverifiable",
+      "space_status": "top",
+      "cause": "call",
+      "source": "ya_algo sprint 8 final 1; author's claim \"Функция распаковки работает за O(M) для каждой строки - обрабатывается каждый символ строки\", after his own correction from O(n * M^2) to O(n * M) for the whole solution"
+    },
+    {
       "pkg": "quicksort",
       "func": "Less",
       "time_pin": "O(1)",
@@ -256,6 +535,76 @@
       "space_status": "top",
       "cause": "call",
       "source": "ya_algo sprint 3 final 2; author's claim \"решение работает за O(n * log n), свойственное среднему случаю быстрой сортировки\", auxiliary space \"O(log n) дополнительной памяти\" for the recursion stack"
+    },
+    {
+      "pkg": "railroads",
+      "func": "AddRoad",
+      "time_pin": "O(1)",
+      "time_got": "O(1)",
+      "time_status": "exact",
+      "space_pin": "O(1)",
+      "space_got": "O(1)",
+      "space_status": "exact",
+      "source": "ya_algo sprint 6 final 2; one append of a single element, riding the amortization licence"
+    },
+    {
+      "pkg": "railroads",
+      "func": "MapIsOptimal",
+      "time_pin": "O(g.verticesCount)",
+      "time_got": "unverifiable",
+      "time_status": "top",
+      "space_pin": "O(g.verticesCount)",
+      "space_got": "unverifiable",
+      "space_status": "top",
+      "cause": "loop",
+      "source": "ya_algo sprint 6 final 2; author's claim \"фактически используется DFS, то и сложность алгоритма будет такой же - O(V + E)\". Pinned against the vertex count, the only one of V and E this function names as a size."
+    },
+    {
+      "pkg": "railroads",
+      "func": "NewGraph",
+      "time_pin": "O(1)",
+      "time_got": "O(1)",
+      "time_status": "exact",
+      "space_pin": "O(1)",
+      "space_got": "O(1)",
+      "space_status": "exact",
+      "source": "ya_algo sprint 6 final 2; struct construction, constant by inspection"
+    },
+    {
+      "pkg": "railroads",
+      "func": "PathHasCycles",
+      "time_pin": "O(g.verticesCount)",
+      "time_got": "unverifiable",
+      "time_status": "top",
+      "space_pin": "O(g.verticesCount)",
+      "space_got": "unverifiable",
+      "space_status": "top",
+      "cause": "loop",
+      "source": "ya_algo sprint 6 final 2; the DFS visit of the author's O(V + E) claim; space is the recursion stack, at most one frame per vertex"
+    },
+    {
+      "pkg": "removenode",
+      "func": "Remove",
+      "time_pin": "O(n)",
+      "time_got": "unverifiable",
+      "time_status": "top",
+      "space_pin": "O(n)",
+      "space_got": "unverifiable",
+      "space_status": "top",
+      "cause": "call",
+      "source": "ya_algo sprint 5 final 2; author's claim \"получаем сложность решения O(h)\" for the average case, with O(n) named as the worst case when the tree is one chain. Space is the recursion stack, author's \"для хранения стека рекурсивных вызовов требуется O(h)\"."
+    },
+    {
+      "pkg": "removenode",
+      "func": "Successor",
+      "time_pin": "O(n)",
+      "time_got": "unverifiable",
+      "time_status": "top",
+      "space_pin": "O(1)",
+      "space_got": "O(1)",
+      "space_status": "exact",
+      "cause": "loop",
+      "source": "ya_algo sprint 5 final 2; author's claim \"найти его преемника - O(n) в худшем, O(h) в среднем случае\". The worst case is pinned: h = n when the tree degenerates to a chain, and that is the question bigo answers."
     },
     {
       "pkg": "rpncalc",

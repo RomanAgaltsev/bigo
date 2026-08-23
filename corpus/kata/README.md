@@ -62,3 +62,10 @@ than reshaped, and listed here with the reason. A fixture rewritten until it is
 bigo-friendly would pin the rewrite, not the solution.
 
 **`sprint7/final2` equalSums (subset-sum partition).** Not excluded for lacking a separable function — `canBePartitioned` is perfectly separable. Excluded because the author's claim is `O(n * halfSum)`, and `halfSum` is a VALUE derived from the elements rather than a size any parameter can name. The pin grammar binds size variables to parameter-rooted expressions, so the claim is inexpressible, and the only expressible pins would state something the author did not claim. A pseudo-polynomial bound is a real limitation of this instrument and is recorded rather than rounded off.
+
+**`sprint8/final1` packedPrefix — `(*Stack).String` only.** The kata is in the corpus; this
+one method is not pinned. Its cost is one pass over the receiver, and the receiver is a
+`*Stack` — a pointer to a named slice type. Size variables bind to parameter-rooted `len()`
+expressions, and neither `len(*s)` nor `len(s)` is one, so the honest bound is
+inexpressible. The method contributes no row rather than a row about a different quantity.
+The same limitation in a larger form is why equalSums is excluded outright.
