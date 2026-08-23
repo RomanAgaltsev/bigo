@@ -24,18 +24,30 @@ type shape struct {
 // most-specific-first; order never affects soundness (each rule is
 // independently sound), only which equivalent answer is produced.
 func Of(loop *loopnest.Loop, stab *fieldpath.Stability) bound.Bound {
+	b, _ := OfExplained(loop, stab)
+	return b
+}
+
+// OfExplained is Of plus the name of the rule that produced the bound, for the
+// derivation `-report -v` prints. The name is "" when no rule matched, and a
+// caller must render that as "no rule matched" rather than inventing one.
+//
+// This is the ONLY implementation; Of delegates to it. A second walk that
+// re-derived the rule could disagree with the verdict, which is the failure
+// this whole design is shaped to prevent.
+func OfExplained(loop *loopnest.Loop, stab *fieldpath.Stability) (bound.Bound, string) {
 	h := loop.Header
 	if len(h.Instrs) == 0 {
-		return bound.Top()
+		return bound.Top(), ""
 	}
 	ifi, ok := h.Instrs[len(h.Instrs)-1].(*ssa.If)
 	if !ok {
-		return bound.Top()
+		return bound.Top(), ""
 	}
 	// The true branch must stay in the loop; otherwise the condition is an
 	// exit test and the bound side would be misread.
 	if len(ifi.Block().Succs) != 2 || !loop.Blocks[ifi.Block().Succs[0]] {
-		return bound.Top()
+		return bound.Top(), ""
 	}
 	// The false branch must LEAVE the loop. Every rule below argues, in some
 	// form, "the guard fails => the loop ends": R1 exits once the comparand
@@ -53,26 +65,34 @@ func Of(loop *loopnest.Loop, stab *fieldpath.Stability) bound.Bound {
 	// accident: its exactly-one-end rule rejects the stalling path. Both
 	// goldens are blind to this family — the pins live in edge/.
 	if loop.Blocks[ifi.Block().Succs[1]] {
-		return bound.Top()
+		return bound.Top(), ""
 	}
 	sh := &shape{loop: loop, ifi: ifi, f: &sizefacts.Facts{Stab: stab}}
 	sh.cmp, _ = ifi.Cond.(*ssa.BinOp)
 
 	for _, rule := range rules {
-		if b, ok := rule(sh); ok {
-			return b
+		if b, ok := rule.fn(sh); ok {
+			return b, rule.name
 		}
 	}
-	return bound.Top()
+	return bound.Top(), ""
+}
+
+// namedRule pairs an evolution rule with the name the derivation reports for
+// it. The name is PRESENTATION TEXT for a reader learning why a loop is
+// bounded; nothing may bucket or switch on it.
+type namedRule struct {
+	name string
+	fn   func(*shape) (bound.Bound, bool)
 }
 
 // rules in most-specific-first order.
-var rules = []func(*shape) (bound.Bound, bool){
-	ruleRangeNext,
-	ruleBisection,
-	ruleGeometricUp,
-	ruleGeometricDown,
-	ruleDecreasing,
-	ruleTwoPointer,
-	ruleIncreasing,
+var rules = []namedRule{
+	{"range-over-next", ruleRangeNext},
+	{"bisection", ruleBisection},
+	{"geometric-up (doubling)", ruleGeometricUp},
+	{"geometric-down (halving)", ruleGeometricDown},
+	{"decreasing", ruleDecreasing},
+	{"two-pointer", ruleTwoPointer},
+	{"increasing (unit step)", ruleIncreasing},
 }
