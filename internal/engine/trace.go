@@ -49,7 +49,7 @@ type TermStep struct {
 	Loops []token.Pos
 }
 
-// Trace is the derivation `-report -v` renders. A nil *Trace disables tracing
+// Trace is the derivation `-report -explain` renders. A nil *Trace disables tracing
 // entirely and leaves every walk exactly as it is without one.
 //
 // A Trace records what the REAL derivation did. Nothing here re-derives, so a

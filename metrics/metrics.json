@@ -1,12 +1,12 @@
 {
-  "total": 252,
-  "bounded": 141,
-  "coverage_pct": "56.0",
+  "total": 255,
+  "bounded": 143,
+  "coverage_pct": "56.1",
   "by_cause": {
     "call": 60,
     "go": 3,
     "irreducible": 1,
-    "loop": 39,
+    "loop": 40,
     "nobody": 8
   },
   "per_package": {
@@ -29,6 +29,10 @@
     "edge": {
       "total": 59,
       "bounded": 27
+    },
+    "explain": {
+      "total": 3,
+      "bounded": 2
     },
     "fieldsize": {
       "total": 15,
@@ -639,6 +643,24 @@
     {
       "pkg": "edge",
       "func": "ZeroStep",
+      "verdict": "unverifiable",
+      "cause": "loop"
+    },
+    {
+      "pkg": "explain",
+      "func": "Bounded",
+      "verdict": "bounded",
+      "bound": "O(len(xs))"
+    },
+    {
+      "pkg": "explain",
+      "func": "Recursive",
+      "verdict": "bounded",
+      "bound": "O(n)"
+    },
+    {
+      "pkg": "explain",
+      "func": "Unbounded",
       "verdict": "unverifiable",
       "cause": "loop"
     },

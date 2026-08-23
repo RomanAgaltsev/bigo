@@ -198,7 +198,7 @@ func (r *Resolver) CallCost(c *ssa.CallCommon) bound.Bound {
 }
 
 // CallCostExplained is CallCost plus WHICH SOURCE answered, for the derivation
-// `-report -v` prints. The tag is "" when the call is unresolved, and a caller
+// `-report -explain` prints. The tag is "" when the call is unresolved, and a caller
 // must render that as no tag rather than as a source.
 //
 // The tag matters more than it looks: the same call is priced differently under

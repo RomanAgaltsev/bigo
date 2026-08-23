@@ -110,7 +110,7 @@ func InferDetailed(fn *ssa.Function, model CostModel) (bound.Bound, []Cause) {
 // nil check on a path that already runs per block.
 //
 // The trace is a BYPRODUCT of this walk, never a reconstruction of it. That is
-// why `-report -v` cannot print a derivation the verdict disagrees with.
+// why `-report -explain` cannot print a derivation the verdict disagrees with.
 func InferTraced(fn *ssa.Function, model CostModel, tr *Trace) (bound.Bound, []Cause) {
 	if fn == nil || len(fn.Blocks) == 0 {
 		return bound.Top(), []Cause{{Kind: CauseNoBody, What: "function has no analyzable body"}}

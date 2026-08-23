@@ -29,7 +29,7 @@ func Of(loop *loopnest.Loop, stab *fieldpath.Stability) bound.Bound {
 }
 
 // OfExplained is Of plus the name of the rule that produced the bound, for the
-// derivation `-report -v` prints. The name is "" when no rule matched, and a
+// derivation `-report -explain` prints. The name is "" when no rule matched, and a
 // caller must render that as "no rule matched" rather than inventing one.
 //
 // This is the ONLY implementation; Of delegates to it. A second walk that

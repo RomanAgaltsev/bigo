@@ -5,10 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"go/ast"
+	"go/token"
 	"go/types"
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"sync"
 
 	"golang.org/x/tools/go/analysis"
@@ -28,6 +30,17 @@ import (
 )
 
 var reportMode bool
+
+// explainMode turns -report's one line per function into a derivation. It
+// changes no verdict: everything it prints is a fact the walk already
+// computed, rendered rather than recomputed.
+//
+// NOT named -v: x/tools registers "v" as a legacy vet shim inside
+// analysisflags.Parse, and our flag lands on flag.CommandLine first, so the
+// shipped binary panicked with "flag redefined: v" on startup. analysistest
+// drives Analyzer.Flags directly and never sees it, so only running the real
+// binary found this.
+var explainMode bool
 
 var smellsFlag string
 
@@ -49,6 +62,8 @@ func newAnalyzer() *analysis.Analyzer {
 		Run:      run,
 	}
 	a.Flags.BoolVar(&reportMode, "report", false, "report inferred complexity for every function")
+	a.Flags.BoolVar(&explainMode, "explain", false,
+		"with -report, also print the derivation: which rule bounded each loop, what each priced call cost and where that price came from, and which work produced each term")
 	a.Flags.StringVar(&smellsFlag, "smells", "all", "smell rules to run: all, none, or comma-separated (SM1..SM8)")
 	a.Flags.StringVar(&assumeFile, "assume", "",
 		"load external assumptions from this file (whole-module key validation runs only under `bigo json`/survey)")
@@ -196,6 +211,25 @@ func run(pass *analysis.Pass) (any, error) {
 			p := pass.Fset.Position(r.decl.Pos())
 			_, _ = fmt.Fprintf(os.Stdout, "%s:%d: %s: space %s\n",
 				p.Filename, p.Line, r.decl.Name.Name, sp.Heap.Join(sp.Stack).String())
+			if explainMode {
+				var tr engine.Trace
+				traced, _ := engine.InferTraced(r.fn, resolver, &tr)
+				// STOP-WORK GUARD, and not a nicety. InferTop does NOT always
+				// go through InferDetailed: for a self-recursive or mutually
+				// recursive function it returns the RECURRENCE SOLVER's answer
+				// and never walks the body that way. A term line built from this
+				// trace would then explain a bound the verdict did not use — a
+				// derivation contradicting its own verdict, which is the one
+				// failure this design exists to prevent.
+				//
+				// Loop and call lines stay: they are true statements about the
+				// body either way, and spec §5 already says a recursion gets its
+				// loop and call lines and no term line.
+				if !traced.Equal(inferred) {
+					tr.Terms = nil
+				}
+				printDerivation(&tr, pass.Fset)
+			}
 			for _, rec := range recognize.Detect(r.fn) {
 				// [advisory] is not decoration: it is the one place the reader
 				// learns this line cannot gate anything. Never omit it.
@@ -333,4 +367,84 @@ func causeText(pass *analysis.Pass, causes []engine.Cause, fn *ssa.Function) str
 	}
 	p := pass.Fset.Position(c.Pos)
 	return fmt.Sprintf("%s (%s:%d)", c.What, filepath.Base(p.Filename), p.Line)
+}
+
+// printDerivation renders one function's trace beneath its verdict. Loop and
+// call lines interleave by position; term lines come last (spec §2).
+//
+// Every string here is presentation text. Nothing downstream parses it, and
+// nothing may: the rule names and source tags are written for a reader, and
+// the same rule CauseKind already carries against Cause.What applies to them.
+func printDerivation(tr *engine.Trace, fset *token.FileSet) {
+	type row struct {
+		pos  token.Pos
+		text string
+	}
+	rows := make([]row, 0, len(tr.Loops)+len(tr.Calls))
+	for _, l := range tr.Loops {
+		rule := l.Rule
+		if rule == "" {
+			// Never a plausible-looking name for a loop nothing bounded.
+			rule = "no rule matched"
+		}
+		count := "unverifiable"
+		if !l.Count.IsTop() {
+			count = l.Count.String()
+		}
+		rows = append(rows, row{l.Pos, fmt.Sprintf("  loop at :%d → %s → %s", lineOf(fset, l.Pos), rule, count)})
+	}
+	for _, c := range tr.Calls {
+		cost := "unresolved"
+		if !c.Cost.IsTop() {
+			cost = c.Cost.String()
+		}
+		tag := ""
+		if c.Source != "" {
+			tag = " [" + c.Source + "]"
+		}
+		// A desugared call — the len(xs) a `range xs` compiles to — carries no
+		// position. "call at :0" is a line number that does not exist, so the
+		// call is still reported and only the false precision is dropped.
+		where := "  call"
+		if c.Pos.IsValid() {
+			where = fmt.Sprintf("  call at :%d", lineOf(fset, c.Pos))
+		}
+		rows = append(rows, row{c.Pos, fmt.Sprintf("%s → %s → %s%s", where, c.Callee, cost, tag)})
+	}
+	sort.Slice(rows, func(i, j int) bool { return rows[i].pos < rows[j].pos })
+	for _, r := range rows {
+		_, _ = fmt.Fprintln(os.Stdout, r.text)
+	}
+	for _, t := range tr.Terms {
+		_, _ = fmt.Fprintf(os.Stdout, "  %s comes from the work inside %s\n", t.Term, loopList(fset, t.Loops))
+	}
+}
+
+// lineOf renders a position's line, or 0 when the position is invalid.
+func lineOf(fset *token.FileSet, p token.Pos) int {
+	if !p.IsValid() {
+		return 0
+	}
+	return fset.Position(p).Line
+}
+
+// loopList names the loops enclosing a term's work, or the function body when
+// there are none.
+func loopList(fset *token.FileSet, ps []token.Pos) string {
+	if len(ps) == 0 {
+		return "the function body"
+	}
+	parts := make([]string, 0, len(ps))
+	for _, p := range ps {
+		parts = append(parts, fmt.Sprintf(":%d", lineOf(fset, p)))
+	}
+	switch len(parts) {
+	case 1:
+		return "the loop at " + parts[0]
+	case 2:
+		return "both loops at " + strings.Join(parts, " and ")
+	default:
+		// "both loops at :a and :b and :c" is wrong for three or more.
+		return "the loops at " + strings.Join(parts, ", ")
+	}
 }
