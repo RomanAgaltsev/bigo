@@ -332,3 +332,96 @@ func TestRecognitionIsReportedAndAdvisory(t *testing.T) {
 		t.Errorf("the proved bound must be unchanged\ngot:\n%s", out)
 	}
 }
+
+// -explain prints the derivation beneath the verdict: which rule bounded each loop,
+// what each priced call cost, and which work produced each surviving term.
+func TestReportExplainShowsTheDerivation(t *testing.T) {
+	if err := Analyzer.Flags.Set("explain", "true"); err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = Analyzer.Flags.Set("explain", "false") }()
+
+	out := runKataReport(t, "explain", false)
+
+	for _, want := range []string{
+		"Bounded: inferred complexity",
+		"increasing (unit step)",
+		"comes from the work inside",
+	} {
+		if !strings.Contains(out, want) {
+			t.Errorf("report missing %q\ngot:\n%s", want, out)
+		}
+	}
+	// The load-bearing negative: an unbounded loop must not be handed a rule
+	// name (spec 2.3).
+	if !strings.Contains(out, "no rule matched") {
+		t.Errorf("an unbounded loop must say so\ngot:\n%s", out)
+	}
+}
+
+// -explain is verbosity, not a verdict change. Without it the output is exactly
+// what it always was.
+func TestReportWithoutExplainIsUnchanged(t *testing.T) {
+	out := runKataReport(t, "explain", false)
+	for _, unwanted := range []string{"increasing (unit step)", "no rule matched", "comes from the work"} {
+		if strings.Contains(out, unwanted) {
+			t.Errorf("-report without -explain must not print %q\ngot:\n%s", unwanted, out)
+		}
+	}
+}
+
+// A recursion gets its loop and call lines and NO term line (spec §5).
+//
+// InferTop answers a self-recursive function from the recurrence solver rather
+// than from the body walk, so a term line built from the traced walk would
+// explain a bound the verdict never used. The renderer drops term lines
+// whenever the traced bound differs from the reported one.
+//
+// Honest about what this pins: with today's engine the traced walk of a
+// recursive function is itself ⊤ (the self-call is unresolved), and attribute
+// already returns early on ⊤ — so the guard is currently redundant with that
+// suppression. This test pins the CONTRACT, which holds either way, and the
+// guard remains as the thing that keeps it holding if a future solver and body
+// walk both produce bounded, differing answers.
+func TestReportExplainGivesARecursionNoTermLine(t *testing.T) {
+	if err := Analyzer.Flags.Set("explain", "true"); err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = Analyzer.Flags.Set("explain", "false") }()
+
+	out := runKataReport(t, "explain", false)
+
+	// The verdict for Recursive is bounded — it comes from the solver — so a
+	// term line would look entirely plausible here.
+	seg := segmentFor(out, "Recursive")
+	if seg == "" {
+		t.Fatalf("no report segment for Recursive\ngot:\n%s", out)
+	}
+	if !strings.Contains(seg, "call") {
+		t.Errorf("a recursion must still get its call lines\ngot:\n%s", seg)
+	}
+	if strings.Contains(seg, "comes from the work") {
+		t.Errorf("a recursion must get NO term line\ngot:\n%s", seg)
+	}
+}
+
+// segmentFor returns the report lines belonging to fname: its own verdict lines
+// plus the indented derivation beneath them, up to the next function's block.
+func segmentFor(out, fname string) string {
+	var b strings.Builder
+	in := false
+	for _, line := range strings.Split(out, "\n") {
+		switch {
+		case strings.Contains(line, ": "+fname+": "):
+			in = true
+		case in && strings.HasPrefix(line, "  "):
+		case in:
+			in = false
+		}
+		if in {
+			b.WriteString(line)
+			b.WriteString("\n")
+		}
+	}
+	return b.String()
+}

@@ -39,7 +39,7 @@ func InferSpace(fn *ssa.Function, model SpaceModel) (Space, []Cause) {
 	stab := fieldpath.Analyze(fn)
 	var causes []Cause
 	total, started := bound.Constant(), false
-	lf := newLoopFactor(fn, stab)
+	lf := newLoopFactor(fn, stab, nil)
 	for _, b := range fn.Blocks {
 		bc, allocated, bcauses := blockAlloc(b, model, stab)
 		causes = append(causes, bcauses...)

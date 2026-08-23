@@ -26,16 +26,34 @@ import (
 type loopFactor struct {
 	fn   *ssa.Function
 	stab *fieldpath.Stability
+	tr   *Trace
 	seen map[*loopnest.Loop]bool
+	// traced is separate from seen ON PURPOSE: seen is populated only for ⊤
+	// loops, so reusing it would record bounded loops once per enclosing block
+	// and unbounded ones exactly once.
+	traced map[*loopnest.Loop]bool
 }
 
-func newLoopFactor(fn *ssa.Function, stab *fieldpath.Stability) *loopFactor {
-	return &loopFactor{fn: fn, stab: stab, seen: map[*loopnest.Loop]bool{}}
+func newLoopFactor(fn *ssa.Function, stab *fieldpath.Stability, tr *Trace) *loopFactor {
+	return &loopFactor{
+		fn: fn, stab: stab, tr: tr,
+		seen:   map[*loopnest.Loop]bool{},
+		traced: map[*loopnest.Loop]bool{},
+	}
 }
 
-// of returns lp's trip count, appending a CauseLoop the first time lp is seen ⊤.
+// of returns lp's trip count, appending a CauseLoop the first time lp is seen
+// ⊤, and recording one LoopStep per loop when tracing.
 func (lf *loopFactor) of(lp *loopnest.Loop, causes *[]Cause) bound.Bound {
-	tc := tripcount.Of(lp, lf.stab)
+	tc, rule := tripcount.OfExplained(lp, lf.stab)
+	if lf.tr != nil && !lf.traced[lp] {
+		lf.traced[lp] = true
+		lf.tr.Loops = append(lf.tr.Loops, LoopStep{
+			Pos:   loopPos(lf.fn, lp),
+			Rule:  rule,
+			Count: tc,
+		})
+	}
 	if tc.IsTop() && !lf.seen[lp] {
 		lf.seen[lp] = true
 		*causes = append(*causes, Cause{

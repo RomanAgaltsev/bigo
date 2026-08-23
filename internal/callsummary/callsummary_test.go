@@ -4,6 +4,7 @@ import (
 	"go/types"
 	"testing"
 
+	"github.com/RomanAgaltsev/bigo/internal/assume"
 	"github.com/RomanAgaltsev/bigo/internal/bound"
 	"github.com/RomanAgaltsev/bigo/internal/engine"
 	"github.com/RomanAgaltsev/bigo/internal/ssasupport"
@@ -201,4 +202,72 @@ func f(s *S) int { return sum(s) }`
 	if got := inferF(t, src); got != "unverifiable" {
 		t.Errorf("Infer = %q, want unverifiable — a callee field var leaked into the caller", got)
 	}
+}
+
+// The provenance tag is what makes -v honest under -kata: the same call is
+// priced differently under different models, and an untagged O(1) does not say
+// which question was answered (spec 3).
+func TestCallCostExplainedNamesTheSource(t *testing.T) {
+	const src = `package input
+import "strconv"
+func f(s string) int { n, _ := strconv.Atoi(s); return n }`
+
+	pkg, _, err := ssasupport.Build(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fn := ssasupport.Func(pkg, "f")
+	call := firstStaticCall(t, fn)
+
+	r := New(nil)
+	_, source := r.CallCostExplained(call)
+	if source != "curated" {
+		t.Errorf("source = %q, want curated", source)
+	}
+
+	// An overlay outranks the curated table, and the tag must follow the
+	// answer rather than the key.
+	es, err := assume.ParseText("strconv.Atoi O(1)\n")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ro := New(nil)
+	ro.UseOverlay(assume.NewSet(es))
+	_, overlaySource := ro.CallCostExplained(call)
+	if overlaySource != "kata profile" {
+		t.Errorf("overlay source = %q, want kata profile", overlaySource)
+	}
+}
+
+// CallCost and CallCostExplained must never disagree: there is one chain and
+// CallCost drops the tag.
+func TestCallCostDelegatesToCallCostExplained(t *testing.T) {
+	const src = `package input
+import "strconv"
+func f(s string) int { n, _ := strconv.Atoi(s); return n }`
+	pkg, _, err := ssasupport.Build(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	call := firstStaticCall(t, ssasupport.Func(pkg, "f"))
+	r := New(nil)
+	plain := r.CallCost(call)
+	explained, _ := r.CallCostExplained(call)
+	if plain.String() != explained.String() {
+		t.Errorf("CallCost = %s, CallCostExplained = %s", plain.String(), explained.String())
+	}
+}
+
+// firstStaticCall returns the first call in fn that has a static callee.
+func firstStaticCall(t *testing.T, fn *ssa.Function) *ssa.CallCommon {
+	t.Helper()
+	for _, b := range fn.Blocks {
+		for _, instr := range b.Instrs {
+			if c, ok := instr.(*ssa.Call); ok && c.Call.StaticCallee() != nil {
+				return &c.Call
+			}
+		}
+	}
+	t.Fatal("no static call in fixture")
+	return nil
 }

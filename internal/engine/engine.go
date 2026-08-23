@@ -102,6 +102,16 @@ func Infer(fn *ssa.Function, model CostModel) bound.Bound {
 // InferDetailed is Infer plus the reasons the bound (when ⊤) is unverifiable.
 // Causes are nil when the bound is not ⊤.
 func InferDetailed(fn *ssa.Function, model CostModel) (bound.Bound, []Cause) {
+	return InferTraced(fn, model, nil)
+}
+
+// InferTraced is InferDetailed plus an optional derivation trace. A nil trace
+// leaves the walk exactly as it is without one: every tracing branch below is a
+// nil check on a path that already runs per block.
+//
+// The trace is a BYPRODUCT of this walk, never a reconstruction of it. That is
+// why `-report -explain` cannot print a derivation the verdict disagrees with.
+func InferTraced(fn *ssa.Function, model CostModel, tr *Trace) (bound.Bound, []Cause) {
 	if fn == nil || len(fn.Blocks) == 0 {
 		return bound.Top(), []Cause{{Kind: CauseNoBody, What: "function has no analyzable body"}}
 	}
@@ -114,15 +124,24 @@ func InferDetailed(fn *ssa.Function, model CostModel) (bound.Bound, []Cause) {
 	var causes []Cause
 	total := bound.Constant()
 	started := false
-	lf := newLoopFactor(fn, stab)
+	lf := newLoopFactor(fn, stab, tr)
+	var contribs []contribution
 	for _, b := range fn.Blocks {
 		factor := bound.Constant()
+		var enclosing []token.Pos
 		for _, lp := range forest.EnclosingLoops(b) {
 			factor = factor.Mul(lf.of(lp, &causes))
+			if tr != nil {
+				enclosing = append(enclosing, loopPos(fn, lp))
+			}
 		}
 		bc, bcauses := blockCost(b, model)
 		causes = append(causes, bcauses...)
 		contrib := bc.Mul(factor)
+		if tr != nil {
+			traceCalls(tr, b, model)
+			contribs = append(contribs, contribution{cost: contrib, loops: enclosing})
+		}
 		if !started {
 			total = contrib
 			started = true
@@ -131,9 +150,29 @@ func InferDetailed(fn *ssa.Function, model CostModel) (bound.Bound, []Cause) {
 		total = total.Join(contrib)
 	}
 	if !total.IsTop() {
+		tr.attribute(total, contribs)
 		return total, nil
 	}
 	return total, causes
+}
+
+// traceCalls records one CallStep per call-shaped instruction in b, using the
+// model's own answer so the trace cannot diverge from the cost the walk used.
+func traceCalls(tr *Trace, b *ssa.BasicBlock, model CostModel) {
+	ex, _ := model.(CostExplainer)
+	for _, instr := range b.Instrs {
+		c, ok := instr.(*ssa.Call)
+		if !ok {
+			continue
+		}
+		step := CallStep{Pos: c.Pos(), Callee: calleeName(&c.Call)}
+		if ex != nil {
+			step.Cost, step.Source = ex.CallCostExplained(&c.Call)
+		} else {
+			step.Cost = model.CallCost(&c.Call)
+		}
+		tr.Calls = append(tr.Calls, step)
+	}
 }
 
 // blockCost is O(1) plus the model's cost for each call-shaped instruction.
