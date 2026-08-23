@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.53.0](https://github.com/RomanAgaltsev/bigo/compare/v1.52.1...v1.53.0) (2026-08-23)
+
+
+### Features
+
+* -report -explain explains the derivation behind a verdict ([#175](https://github.com/RomanAgaltsev/bigo/issues/175)) ([84ec4ef](https://github.com/RomanAgaltsev/bigo/commit/84ec4efcac2dc4969da5709522f4268fd49dc94d))
+
 ## [1.52.1](https://github.com/RomanAgaltsev/bigo/compare/v1.52.0...v1.52.1) (2026-08-22)
 
 
