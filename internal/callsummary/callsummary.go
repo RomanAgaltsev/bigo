@@ -191,8 +191,33 @@ func (r *Resolver) override(fn *ssa.Function) (bound.Bound, bool) {
 }
 
 // CallCost resolves a call's cost: cost table first, then user-function summary,
-// else ⊤ (unverifiable).
+// else ⊤ (unverifiable). See callCost for the precedence chain.
 func (r *Resolver) CallCost(c *ssa.CallCommon) bound.Bound {
+	b, _ := r.callCost(c)
+	return b
+}
+
+// CallCostExplained is CallCost plus WHICH SOURCE answered, for the derivation
+// `-report -v` prints. The tag is "" when the call is unresolved, and a caller
+// must render that as no tag rather than as a source.
+//
+// The tag matters more than it looks: the same call is priced differently under
+// different cost models. strings.Compare is O(len(a)) because that is true, and
+// O(1) under -kata because one record comparison is one element operation. A
+// reader seeing O(1) with no tag cannot tell which question was answered.
+//
+// One limitation the tag cannot express today: -trust and -assume load through
+// the same mechanism into one set, so both report "assumed". Separating them
+// means threading the intent from loadAssumptions, which is a separate change.
+func (r *Resolver) CallCostExplained(c *ssa.CallCommon) (bound.Bound, string) {
+	return r.callCost(c)
+}
+
+// callCost is the ONE precedence chain, returning both the cost and the source
+// that produced it. CallCost and CallCostExplained are two views of it; a
+// second chain that re-resolved a call could disagree with the verdict, which
+// is the failure this design is shaped to prevent.
+func (r *Resolver) callCost(c *ssa.CallCommon) (bound.Bound, string) {
 	// Precedence (assumption spec §2): in-source directive > curated cost
 	// table > assumption > inference. The plain table outranks directives in
 	// this walk order, but their key spaces cannot collide (directives sit on
@@ -203,13 +228,13 @@ func (r *Resolver) CallCost(c *ssa.CallCommon) bound.Bound {
 	// UseOverlay. With no overlay this call is a nil check and the chain below
 	// is exactly what it has always been.
 	if b, ok := r.overlayCost(c); ok {
-		return b
+		return b, "kata profile"
 	}
 	if b, ok := costtable.Lookup(c); ok {
 		if key, kok := costtable.CalleeKey(c); kok {
 			r.noteShadow("curated cost-table entry", key)
 		}
-		return b
+		return b, "curated"
 	}
 	callee := c.StaticCallee()
 	if callee == nil {
@@ -220,19 +245,19 @@ func (r *Resolver) CallCost(c *ssa.CallCommon) bound.Bound {
 				for i := range names {
 					names[i] = sig.Params().At(i).Name()
 				}
-				return substArgs(summary, names, c.Args)
+				return substArgs(summary, names, c.Args), "interface directive"
 			}
 		}
 		if b, ok := r.rangeFuncCost(c); ok { // range-over-func: seq(body) call
-			return b
+			return b, "inferred"
 		}
-		return bound.Top() // closure / func value / unannotated interface
+		return bound.Top(), "" // closure / func value / unannotated interface
 	}
 	if _, ok := r.override(callee); ok {
 		if key, kok := costtable.FuncKey(callee); kok {
 			r.noteShadow("//bigo: directive", key)
 		}
-		return r.callUser(callee, c.Args) // summary() will return the override
+		return r.callUser(callee, c.Args), "directive" // summary() will return the override
 	}
 	// No body to analyze: external (declared from export data) or an
 	// instantiation of one. Pkg is not a proxy for this: instances always have
@@ -249,20 +274,20 @@ func (r *Resolver) CallCost(c *ssa.CallCommon) bound.Bound {
 			if key, kok := costtable.CalleeKey(c); kok {
 				r.noteShadow("parametric cost-table entry", key)
 			}
-			return b
+			return b, "curated (parametric)"
 		}
 		if b, ok := r.assumeCost(c, callee); ok {
-			return b
+			return b, "assumed"
 		}
-		return bound.Top()
+		return bound.Top(), ""
 	}
 	if b, ok := r.assumeCost(c, callee); ok {
-		return b
+		return b, "assumed"
 	}
 	if b, ok := r.parametricCallCost(callee, c); ok {
-		return b
+		return b, "inferred"
 	}
-	return r.callUser(callee, c.Args)
+	return r.callUser(callee, c.Args), "inferred"
 }
 
 // InferTop returns fn's own asymptotic bound with diagnostic causes, for the
