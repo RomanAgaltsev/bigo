@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.56.2](https://github.com/RomanAgaltsev/bigo/compare/v1.56.1...v1.56.2) (2026-08-29)
+
+
+### Bug Fixes
+
+* **corpus:** unpin Partition's time - the function does not always terminate ([#188](https://github.com/RomanAgaltsev/bigo/issues/188)) ([d90cff7](https://github.com/RomanAgaltsev/bigo/commit/d90cff78aa38e7a8cb01495586d68ab7a270a964))
+
 ## [1.56.1](https://github.com/RomanAgaltsev/bigo/compare/v1.56.0...v1.56.1) (2026-08-29)
 
 
