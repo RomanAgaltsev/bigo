@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.56.3](https://github.com/RomanAgaltsev/bigo/compare/v1.56.2...v1.56.3) (2026-08-29)
+
+
+### Bug Fixes
+
+* **smell:** SM3 now recognises make([]T, 0) and appends guarded by an if ([#190](https://github.com/RomanAgaltsev/bigo/issues/190)) ([489645d](https://github.com/RomanAgaltsev/bigo/commit/489645dd83ce06d0b0f123ae891e2917ab5ae5cf))
+
 ## [1.56.2](https://github.com/RomanAgaltsev/bigo/compare/v1.56.1...v1.56.2) (2026-08-29)
 
 
