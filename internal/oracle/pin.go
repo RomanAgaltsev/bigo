@@ -16,8 +16,16 @@ import (
 
 // Pin is one corpus entry's parsed ground truth.
 type Pin struct {
-	// Time is the literature worst-case time bound (Budget + where-Bindings).
-	Time annotation.Directive
+	// Time is the literature worst-case time bound (Budget + where-Bindings);
+	// nil when the honest bound is inexpressible in the pin grammar, exactly as
+	// Space is nil when the literature states none. AT LEAST ONE axis must be
+	// present — a pin naming neither states nothing.
+	//
+	// Made optional 2026-08-29. It was mandatory, which forced an all-or-nothing
+	// choice: a function whose time bound cannot be named honestly had to be
+	// unpinned entirely, discarding a SOUND space claim to remove an unsound time
+	// one. See corpus/kata/README.md on the hashtable chain walk.
+	Time *annotation.Directive
 	// Space is the literature auxiliary-space/stack bound; nil when the
 	// literature states none (then only time is scored).
 	Space *annotation.Directive
@@ -71,7 +79,7 @@ func parseDoc(doc *ast.CommentGroup) (Pin, bool, error) {
 			if err != nil {
 				return Pin{}, true, fmt.Errorf("//oracle:time: %w", err)
 			}
-			pin.Time, hasTime = d, true
+			pin.Time, hasTime = &d, true
 		case "space":
 			if pin.Space != nil {
 				return Pin{}, true, fmt.Errorf("duplicate //oracle:space")
@@ -96,8 +104,8 @@ func parseDoc(doc *ast.CommentGroup) (Pin, bool, error) {
 	if !found {
 		return Pin{}, false, nil
 	}
-	if !hasTime {
-		return Pin{}, true, fmt.Errorf("//oracle:time is mandatory")
+	if !hasTime && pin.Space == nil {
+		return Pin{}, true, fmt.Errorf("a pin must state //oracle:time, //oracle:space, or both")
 	}
 	if pin.Source == "" {
 		return Pin{}, true, fmt.Errorf("//oracle:source is mandatory")

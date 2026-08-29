@@ -3,7 +3,7 @@
   "total": 61,
   "time_by_status": {
     "exact": 39,
-    "top": 22
+    "top": 17
   },
   "space_by_status": {
     "exact": 44,
@@ -260,50 +260,42 @@
     {
       "pkg": "hashtable",
       "func": "Delete",
-      "time_pin": "O(ht.capacity)",
-      "time_got": "unverifiable",
-      "time_status": "top",
+      "time_got": "",
+      "time_status": "",
       "space_pin": "O(1)",
       "space_got": "O(1)",
       "space_status": "exact",
-      "cause": "call",
-      "source": "ya_algo sprint 4 final 2; author's worst case O(N) for the chain walk"
+      "source": "ya_algo sprint 4 final 2; author's worst case O(N) for the chain walk; N is the element count, unnameable, so time is unpinned and space O(1) is pinned"
     },
     {
       "pkg": "hashtable",
       "func": "DeleteNode",
-      "time_pin": "O(ht.capacity)",
-      "time_got": "unverifiable",
-      "time_status": "top",
+      "time_got": "",
+      "time_status": "",
       "space_pin": "O(1)",
       "space_got": "O(1)",
       "space_status": "exact",
-      "cause": "call",
-      "source": "ya_algo sprint 4 final 2; same chain walk as FindNode, which it calls"
+      "source": "ya_algo sprint 4 final 2; same chain walk as FindNode, which it calls; time unpinned for the same reason, space O(1) pinned"
     },
     {
       "pkg": "hashtable",
       "func": "FindNode",
-      "time_pin": "O(ht.capacity)",
-      "time_got": "unverifiable",
-      "time_status": "top",
+      "time_got": "",
+      "time_status": "",
       "space_pin": "O(1)",
       "space_got": "O(1)",
       "space_status": "exact",
-      "cause": "loop",
-      "source": "ya_algo sprint 4 final 2; author's worst case \"когда вообще все значения попадут в одну ячейку таблицы ХТ, сложность операций будет O(N)\" — the chain walk is the N term. Pinned against capacity as the only size in scope; the element count N is not a size bigo can name here."
+      "source": "ya_algo sprint 4 final 2; author's worst case \"когда вообще все значения попадут в одну ячейку таблицы ХТ, сложность операций будет O(N)\" — the chain walk is the N term. The N is the ELEMENT count, which no parameter names, so TIME is unpinned; space O(1) is pinned and sound."
     },
     {
       "pkg": "hashtable",
       "func": "Get",
-      "time_pin": "O(ht.capacity)",
-      "time_got": "unverifiable",
-      "time_status": "top",
+      "time_got": "",
+      "time_status": "",
       "space_pin": "O(1)",
       "space_got": "O(1)",
       "space_status": "exact",
-      "cause": "call",
-      "source": "ya_algo sprint 4 final 2; author's worst case O(N) for the chain walk"
+      "source": "ya_algo sprint 4 final 2; author's worst case O(N) for the chain walk; N is the element count, unnameable, so time is unpinned and space O(1) is pinned"
     },
     {
       "pkg": "hashtable",
@@ -330,14 +322,12 @@
     {
       "pkg": "hashtable",
       "func": "Put",
-      "time_pin": "O(ht.capacity)",
-      "time_got": "unverifiable",
-      "time_status": "top",
+      "time_got": "",
+      "time_status": "",
       "space_pin": "O(1)",
       "space_got": "O(1)",
       "space_status": "exact",
-      "cause": "call",
-      "source": "ya_algo sprint 4 final 2; author's average case \"O(1+N/M) или O(1+α)\", worst case O(N) when every key lands in one bucket. The worst case is pinned, since that is the question bigo answers."
+      "source": "ya_algo sprint 4 final 2; author's average case \"O(1+N/M) или O(1+α)\", worst case O(N) when every key lands in one bucket. That N is the element count, which no parameter names, so time is unpinned; space O(1) is pinned and sound."
     },
     {
       "pkg": "heapsort",

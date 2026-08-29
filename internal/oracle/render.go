@@ -77,8 +77,19 @@ func (r Report) Markdown() []byte {
 	b.WriteString("|---|---|---|---|---|---|---|---|---|\n")
 	for _, e := range r.Entries {
 		fmt.Fprintf(&b, "| %s.%s | %s | %s | %s | %s | %s | %s | %s | %s |\n",
-			e.Pkg, e.Func, e.TimePin, e.TimeGot, e.TimeStatus,
-			e.SpacePin, e.SpaceGot, e.SpaceStatus, e.Cause, e.Source)
+			e.Pkg, e.Func, unpinned(e.TimePin), unpinned(e.TimeGot), unpinned(e.TimeStatus),
+			unpinned(e.SpacePin), unpinned(e.SpaceGot), unpinned(e.SpaceStatus), e.Cause, e.Source)
 	}
 	return b.Bytes()
+}
+
+// unpinned renders an axis that carries no pin. Either axis may be absent —
+// space always could be, time since 2026-08-29 — and an empty table cell reads
+// as missing data rather than as a deliberate refusal to state a claim the pin
+// grammar cannot express. The dash says the row is partial on purpose.
+func unpinned(s string) string {
+	if s == "" {
+		return "—"
+	}
+	return s
 }

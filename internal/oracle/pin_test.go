@@ -89,3 +89,35 @@ func TestExtractPinsErrors(t *testing.T) {
 		}
 	}
 }
+
+// TIME is optional, exactly as SPACE already was. A function whose honest time
+// bound is inexpressible in the pin grammar can still contribute its space
+// claim, instead of being unpinned entirely and losing a true row along with
+// the false one.
+//
+// Added 2026-08-29 for the five `hashtable` rows: their chain walk is bounded
+// by the element count, which no parameter names, while their space really is
+// O(1). Before this, `//oracle:time` was mandatory, so the only way to drop the
+// unsound time pin was to drop the sound space pin with it.
+func TestExtractPinsTimeOptional(t *testing.T) {
+	src := `package p
+
+//oracle:space O(1)
+//oracle:source somewhere
+func F(s []int) {}
+`
+	pins, err := pinsOf(t, src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	p, ok := pins["F"]
+	if !ok {
+		t.Fatal("F not pinned")
+	}
+	if p.Time != nil {
+		t.Error("Time should be nil when unpinned")
+	}
+	if p.Space == nil {
+		t.Error("Space should be present")
+	}
+}
