@@ -10,8 +10,13 @@ import (
 // parseWhere parses a comma-separated list of size bindings, e.g.
 // "n=len(a), m=cap(b), k=count".
 func parseWhere(s string) (map[bound.Var]SizeRef, error) {
-	out := make(map[bound.Var]SizeRef)
-	for _, part := range strings.Split(s, ",") {
+	// Preallocated with the binding count. bigo's own SM6 flagged this on the
+	// 2026-08-29 result-size branch: until len(strings.Split(s, sep)) was
+	// curated as O(len(s)) the loop had no trip count, so the rule could not
+	// fire. First finding the result-size model produced on bigo itself.
+	parts := strings.Split(s, ",")
+	out := make(map[bound.Var]SizeRef, len(parts))
+	for _, part := range parts {
 		name, val, ok := strings.Cut(part, "=")
 		if !ok {
 			return nil, fmt.Errorf("bad binding %q: expected name=source", part)
