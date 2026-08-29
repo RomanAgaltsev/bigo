@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.55.1](https://github.com/RomanAgaltsev/bigo/compare/v1.55.0...v1.55.1) (2026-08-29)
+
+
+### Bug Fixes
+
+* **annotation:** drop the where-bindings size hint, it was a measured regression ([#182](https://github.com/RomanAgaltsev/bigo/issues/182)) ([2e91eca](https://github.com/RomanAgaltsev/bigo/commit/2e91ecadace7b5b3107987ea6837bae2c7be6db7))
+
 ## [1.55.0](https://github.com/RomanAgaltsev/bigo/compare/v1.54.0...v1.55.0) (2026-08-29)
 
 
