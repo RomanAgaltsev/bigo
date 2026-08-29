@@ -10,13 +10,25 @@ import (
 // parseWhere parses a comma-separated list of size bindings, e.g.
 // "n=len(a), m=cap(b), k=count".
 func parseWhere(s string) (map[bound.Var]SizeRef, error) {
-	// Preallocated with the binding count. bigo's own SM6 flagged this on the
-	// 2026-08-29 result-size branch: until len(strings.Split(s, sep)) was
-	// curated as O(len(s)) the loop had no trip count, so the rule could not
-	// fire. First finding the result-size model produced on bigo itself.
-	parts := strings.Split(s, ",")
-	out := make(map[bound.Var]SizeRef, len(parts))
-	for _, part := range parts {
+	// NO SIZE HINT, deliberately. bigo's own SM6 fires here — the result-size
+	// model (2026-08-29) gave the loop a trip count, so the rule could finally
+	// see it — and taking its advice was MEASURED as a regression:
+	//
+	//	input            no hint              make(map, len(parts))
+	//	1,000 commas     14.5us   16.5 KB     31.2us    115 KB   (2.1x, 7.0x)
+	//	100,000 commas   1.32ms   1.61 MB     2.65ms   7.90 MB   (2.0x, 4.9x)
+	//
+	// SM6 assumes the loop RUNS TO COMPLETION, so the entry count equals the
+	// trip count. This loop returns an error on the first malformed binding, so
+	// on hostile input it stores nothing while the hint reserves a bucket per
+	// comma — attacker-controlled amplification, and the input here is a source
+	// comment. The hint is right only for input already known valid, which is
+	// what the parse is deciding.
+	//
+	// Found by CI's fuzz-smoke after the hinted version was merged; SM6's
+	// early-exit blindness is filed as a rule finding.
+	out := make(map[bound.Var]SizeRef) //nolint:bigo // SM6: loop exits early on the error path; see above
+	for _, part := range strings.Split(s, ",") {
 		name, val, ok := strings.Cut(part, "=")
 		if !ok {
 			return nil, fmt.Errorf("bad binding %q: expected name=source", part)
