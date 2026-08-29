@@ -21,7 +21,7 @@ model. The two are never summed.
 |---|---|
 | exact | 39 |
 | loose | 0 |
-| top | 22 |
+| top | 17 |
 
 ## Space statuses (pinned entries only)
 
@@ -74,13 +74,13 @@ model. The two are never summed.
 | expensivenetwork.Pop | O(1) | O(1) | exact | O(1) | O(1) | exact |  | ya_algo sprint 6 final 1; a reslice and an index, constant by inspection |
 | expensivenetwork.Push | O(1) | O(1) | exact | O(1) | O(1) | exact |  | ya_algo sprint 6 final 1; one single-element append, riding the amortization licence |
 | expensivenetwork.Swap | O(1) | O(1) | exact | O(1) | O(1) | exact |  | ya_algo sprint 6 final 1; one exchange, constant by inspection |
-| hashtable.Delete | O(ht.capacity) | unverifiable | top | O(1) | O(1) | exact | call | ya_algo sprint 4 final 2; author's worst case O(N) for the chain walk |
-| hashtable.DeleteNode | O(ht.capacity) | unverifiable | top | O(1) | O(1) | exact | call | ya_algo sprint 4 final 2; same chain walk as FindNode, which it calls |
-| hashtable.FindNode | O(ht.capacity) | unverifiable | top | O(1) | O(1) | exact | loop | ya_algo sprint 4 final 2; author's worst case "когда вообще все значения попадут в одну ячейку таблицы ХТ, сложность операций будет O(N)" — the chain walk is the N term. Pinned against capacity as the only size in scope; the element count N is not a size bigo can name here. |
-| hashtable.Get | O(ht.capacity) | unverifiable | top | O(1) | O(1) | exact | call | ya_algo sprint 4 final 2; author's worst case O(N) for the chain walk |
+| hashtable.Delete | — | — | — | O(1) | O(1) | exact |  | ya_algo sprint 4 final 2; author's worst case O(N) for the chain walk; N is the element count, unnameable, so time is unpinned and space O(1) is pinned |
+| hashtable.DeleteNode | — | — | — | O(1) | O(1) | exact |  | ya_algo sprint 4 final 2; same chain walk as FindNode, which it calls; time unpinned for the same reason, space O(1) pinned |
+| hashtable.FindNode | — | — | — | O(1) | O(1) | exact |  | ya_algo sprint 4 final 2; author's worst case "когда вообще все значения попадут в одну ячейку таблицы ХТ, сложность операций будет O(N)" — the chain walk is the N term. The N is the ELEMENT count, which no parameter names, so TIME is unpinned; space O(1) is pinned and sound. |
+| hashtable.Get | — | — | — | O(1) | O(1) | exact |  | ya_algo sprint 4 final 2; author's worst case O(N) for the chain walk; N is the element count, unnameable, so time is unpinned and space O(1) is pinned |
 | hashtable.Index | O(1) | O(1) | exact | O(1) | O(1) | exact |  | ya_algo sprint 4 final 2; author's claim "Вычисление хеша ключа - O(1)" and "Вычисление номера ячейки таблицы ХТ - O(1)" |
 | hashtable.NewHashTable | O(1) | O(1) | exact | O(hashTableCapacity) | unverifiable | top |  | ya_algo sprint 4 final 2; the table slice is allocated at capacity M whether or not anything is stored |
-| hashtable.Put | O(ht.capacity) | unverifiable | top | O(1) | O(1) | exact | call | ya_algo sprint 4 final 2; author's average case "O(1+N/M) или O(1+α)", worst case O(N) when every key lands in one bucket. The worst case is pinned, since that is the question bigo answers. |
+| hashtable.Put | — | — | — | O(1) | O(1) | exact |  | ya_algo sprint 4 final 2; author's average case "O(1+N/M) или O(1+α)", worst case O(N) when every key lands in one bucket. That N is the element count, which no parameter names, so time is unpinned; space O(1) is pinned and sound. |
 | heapsort.Build | O(h.length) | unverifiable | top | O(1) | unverifiable | top | call | ya_algo sprint 5 final 1; author's claim "Построение кучи - O(n) - при построении кучи обрабатываются все элементы исходного массива" |
 | heapsort.HeapifyIterative | O(log(h.length)) | unverifiable | top | O(1) | unverifiable | top | loop | ya_algo sprint 5 final 1; author's claim "просеивание ... зависит от высоты кучи, это O(log n)", no recursion stack in this form |
 | heapsort.HeapifyRecursive | O(log(h.length)) | unverifiable | top | O(log(h.length)) | unverifiable | top | call | ya_algo sprint 5 final 1; author's claim "перестановка (просеивание) элемент зависит от высоты кучи, это O(log n)". Space is the recursion stack, one frame per level. |

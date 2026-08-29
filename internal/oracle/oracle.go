@@ -23,7 +23,7 @@ import (
 type Entry struct {
 	Pkg         string `json:"pkg"`
 	Func        string `json:"func"`
-	TimePin     string `json:"time_pin"`
+	TimePin     string `json:"time_pin,omitempty"`
 	TimeGot     string `json:"time_got"`
 	TimeStatus  string `json:"time_status"`
 	SpacePin    string `json:"space_pin,omitempty"`
@@ -133,18 +133,23 @@ func CollectWith(srcRoot string, opts Options) (Report, []WrongBound, error) {
 				}
 				e := Entry{Pkg: p.PkgPath, Func: decl.Name.Name, Source: pin.Source}
 
-				timePin, err := normalize.Budget(pin.Time, fn)
-				if err != nil {
-					return Report{}, nil, fmt.Errorf("%s.%s: time pin: %w", p.PkgPath, decl.Name.Name, err)
-				}
-				emitted, causes := resolver.InferTop(fn)
-				st := Classify(emitted, timePin)
-				e.TimePin, e.TimeGot, e.TimeStatus = timePin.String(), emitted.String(), st.String()
-				if st == Wrong {
-					wrongs = append(wrongs, WrongBound{p.PkgPath, decl.Name.Name, "time", timePin.String(), emitted.String()})
-				}
-				if st == Top && len(causes) > 0 {
-					e.Cause = causes[0].Kind.String()
+				// Mirrors the space branch below: an axis with no pin is not
+				// scored and contributes no status count.
+				if pin.Time != nil {
+					timePin, err := normalize.Budget(*pin.Time, fn)
+					if err != nil {
+						return Report{}, nil, fmt.Errorf("%s.%s: time pin: %w", p.PkgPath, decl.Name.Name, err)
+					}
+					emitted, causes := resolver.InferTop(fn)
+					st := Classify(emitted, timePin)
+					e.TimePin, e.TimeGot, e.TimeStatus = timePin.String(), emitted.String(), st.String()
+					if st == Wrong {
+						wrongs = append(wrongs, WrongBound{p.PkgPath, decl.Name.Name, "time", timePin.String(), emitted.String()})
+					}
+					if st == Top && len(causes) > 0 {
+						e.Cause = causes[0].Kind.String()
+					}
+					r.TimeByStatus[st.String()]++
 				}
 
 				if pin.Space != nil {
@@ -165,7 +170,6 @@ func CollectWith(srcRoot string, opts Options) (Report, []WrongBound, error) {
 				}
 
 				r.Entries = append(r.Entries, e)
-				r.TimeByStatus[st.String()]++
 				r.PerFamily[p.PkgPath]++
 				r.Total++
 			}
