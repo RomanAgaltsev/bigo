@@ -3,7 +3,7 @@
   "total": 61,
   "time_by_status": {
     "exact": 39,
-    "top": 17
+    "top": 16
   },
   "space_by_status": {
     "exact": 44,
@@ -504,14 +504,12 @@
     {
       "pkg": "quicksort",
       "func": "Partition",
-      "time_pin": "O(len(participants))",
-      "time_got": "unverifiable",
-      "time_status": "top",
+      "time_got": "",
+      "time_status": "",
       "space_pin": "O(1)",
       "space_got": "unverifiable",
       "space_status": "top",
-      "cause": "loop",
-      "source": "ya_algo sprint 3 final 2; the author's claim counts partition as the O(n) per-level element work inside quicksort's O(n log n)"
+      "source": "ya_algo sprint 3 final 2; the author's claim counts partition as the O(n) per-level element work inside quicksort's O(n log n). That claim holds only for pairwise-distinct participants; see the note above."
     },
     {
       "pkg": "quicksort",

@@ -21,7 +21,7 @@ model. The two are never summed.
 |---|---|
 | exact | 39 |
 | loose | 0 |
-| top | 17 |
+| top | 16 |
 
 ## Space statuses (pinned entries only)
 
@@ -96,7 +96,7 @@ model. The two are never summed.
 | packedprefix.Size | O(1) | O(1) | exact | O(1) | O(1) | exact |  | ya_algo sprint 8 final 1; one len, constant by inspection |
 | packedprefix.Unpack | O(len(packedLine)) | unverifiable | top | O(len(packedLine)) | unverifiable | top | call | ya_algo sprint 8 final 1; author's claim "Функция распаковки работает за O(M) для каждой строки - обрабатывается каждый символ строки", after his own correction from O(n * M^2) to O(n * M) for the whole solution |
 | quicksort.Less | O(1) | O(1) | exact | O(1) | O(1) | exact |  | ya_algo sprint 3 final 2; the author's claim states "сравнение структур-участников - это O(1)" — one participant comparison is one element operation under the kata cost model |
-| quicksort.Partition | O(len(participants)) | unverifiable | top | O(1) | unverifiable | top | loop | ya_algo sprint 3 final 2; the author's claim counts partition as the O(n) per-level element work inside quicksort's O(n log n) |
+| quicksort.Partition | — | — | — | O(1) | unverifiable | top |  | ya_algo sprint 3 final 2; the author's claim counts partition as the O(n) per-level element work inside quicksort's O(n log n). That claim holds only for pairwise-distinct participants; see the note above. |
 | quicksort.QuickSort | O(len(participants) log(len(participants))) | unverifiable | top | O(log(len(participants))) | unverifiable | top | call | ya_algo sprint 3 final 2; author's claim "решение работает за O(n * log n), свойственное среднему случаю быстрой сортировки", auxiliary space "O(log n) дополнительной памяти" for the recursion stack |
 | railroads.AddRoad | O(1) | O(1) | exact | O(1) | O(1) | exact |  | ya_algo sprint 6 final 2; one append of a single element, riding the amortization licence |
 | railroads.MapIsOptimal | O(g.verticesCount) | unverifiable | top | O(g.verticesCount) | unverifiable | top | loop | ya_algo sprint 6 final 2; author's claim "фактически используется DFS, то и сложность алгоритма будет такой же - O(V + E)". Pinned against the vertex count, the only one of V and E this function names as a size. |
