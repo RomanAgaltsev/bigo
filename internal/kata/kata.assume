@@ -55,3 +55,23 @@ math/rand.Intn O(1)
 # is an EXPECTED iteration count and no worst-case one. Randomized pivot
 # selection is conventionally O(1). The expected-versus-worst-case split is a
 # separate feature and is not smuggled in here.
+
+# --- K-2: hashing an element --------------------------------------------
+#
+# These two are INTERFACE dispatches, not concrete methods: fnv.New32 returns a
+# hash.Hash32, so h.Write resolves to (io.Writer).Write and h.Sum32 to
+# (hash.Hash32).Sum32. The curated table cannot price either — an interface
+# names no implementation, and a worst-case claim about every io.Writer that
+# will ever exist is not one bigo may make. A profile may, because a profile is
+# an asserted model and taints the bound it produces. hash/fnv's CONSTRUCTOR is
+# curated O(1) and needs no entry here.
+(io.Writer).Write O(1)
+# Two rubric rules land on the same answer, and both are in scope for a kata:
+# writing a RESULT is output, which K-1 puts outside the graded region; writing
+# an ELEMENT into a hash is one element operation under K-2. This is the
+# interface-level counterpart of (*bufio.Writer).WriteString above, which the
+# profile already neutralizes for the K-1 half.
+(hash.Hash32).Sum32 O(1)
+# Returns the sum Write has already accumulated — for FNV a single word read.
+# Under K-2, taking the hash of one element is one element operation, which is
+# what the ya_algo solutions assert by hand: "Вычисление хеша ключа - O(1)".

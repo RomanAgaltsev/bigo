@@ -43,3 +43,28 @@ strings.Split O(1)
 # Allocates a slice of substrings, linear in the input line being split.
 strings.Fields O(1)
 # The other common way the same input line gets split.
+
+# --- constant on ANY model: the hashing path -----------------------------
+(hash.Hash32).Sum32 O(1)
+# Returns a uint32. Allocates nothing, K-1/K-2 or not.
+(io.Writer).Write O(1)
+# Writes into storage the writer already holds — a bufio buffer, a hash's
+# accumulator. Growth, where a writer grows at all, is bounded by that
+# writer's own configured capacity and not by a size in the program.
+hash/fnv.New32 O(1)
+# Allocates a sum32: one 32-bit word. The companion time entries are CURATED
+# rather than profile entries, so the coverage invariant does not demand these
+# — they are here because a call priced O(1) for time and left ⊤ for space
+# leaves the row unverifiable anyway, which is the half-fix the two-file split
+# exists to make visible.
+hash/fnv.New32a O(1)
+hash/fnv.New64 O(1)
+hash/fnv.New64a O(1)
+hash/fnv.New128 O(1)
+hash/fnv.New128a O(1)
+# One or two fixed-width words each; New128/New128a allocate a two-word struct.
+strconv.Itoa O(1)
+# Allocates the formatted string, which the curated TIME table already reasons
+# is constant-bounded: at most 20 digits for an int64 in base 10. Not an fnv
+# entry, but the last thing standing between a hashing Index and its O(1)
+# space claim, and true on any model rather than only under K-1.

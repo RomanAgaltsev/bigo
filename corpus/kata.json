@@ -2,12 +2,12 @@
   "corpus": "kata",
   "total": 61,
   "time_by_status": {
-    "exact": 37,
-    "top": 24
+    "exact": 38,
+    "top": 23
   },
   "space_by_status": {
-    "exact": 39,
-    "top": 22
+    "exact": 43,
+    "top": 18
   },
   "per_family": {
     "brokensearch": 1,
@@ -264,8 +264,8 @@
       "time_got": "unverifiable",
       "time_status": "top",
       "space_pin": "O(1)",
-      "space_got": "unverifiable",
-      "space_status": "top",
+      "space_got": "O(1)",
+      "space_status": "exact",
       "cause": "call",
       "source": "ya_algo sprint 4 final 2; author's worst case O(N) for the chain walk"
     },
@@ -300,8 +300,8 @@
       "time_got": "unverifiable",
       "time_status": "top",
       "space_pin": "O(1)",
-      "space_got": "unverifiable",
-      "space_status": "top",
+      "space_got": "O(1)",
+      "space_status": "exact",
       "cause": "call",
       "source": "ya_algo sprint 4 final 2; author's worst case O(N) for the chain walk"
     },
@@ -309,12 +309,11 @@
       "pkg": "hashtable",
       "func": "Index",
       "time_pin": "O(1)",
-      "time_got": "unverifiable",
-      "time_status": "top",
+      "time_got": "O(1)",
+      "time_status": "exact",
       "space_pin": "O(1)",
-      "space_got": "unverifiable",
-      "space_status": "top",
-      "cause": "call",
+      "space_got": "O(1)",
+      "space_status": "exact",
       "source": "ya_algo sprint 4 final 2; author's claim \"Вычисление хеша ключа - O(1)\" and \"Вычисление номера ячейки таблицы ХТ - O(1)\""
     },
     {
@@ -335,8 +334,8 @@
       "time_got": "unverifiable",
       "time_status": "top",
       "space_pin": "O(1)",
-      "space_got": "unverifiable",
-      "space_status": "top",
+      "space_got": "O(1)",
+      "space_status": "exact",
       "cause": "call",
       "source": "ya_algo sprint 4 final 2; author's average case \"O(1+N/M) или O(1+α)\", worst case O(N) when every key lands in one bucket. The worst case is pinned, since that is the question bigo answers."
     },

@@ -105,7 +105,39 @@ func calleeKey(c *ssa.CallCommon) (string, bool) {
 
 // CalleeKey is calleeKey for consumers outside the table (the assumption
 // mechanism keys its entries in exactly this vocabulary).
+//
+// It answers only for a STATIC callee. An interface dispatch has no static
+// target, and the consumers here — the assumption set, the shadow warnings, the
+// cause's Callee field that `bigo trust init` filters on — all mean "a function
+// whose cost could be asserted", which an unresolved interface method is not
+// (the trust-file spec pins that an interface-method blocker emits no line).
+// A consumer that DOES want to name the dispatch wants CallKey.
 func CalleeKey(c *ssa.CallCommon) (string, bool) { return calleeKey(c) }
+
+// CallKey is CalleeKey widened to invoke mode: an interface dispatch keys on
+// the interface method itself, rendered "(pkg.Iface).Method" — the same
+// vocabulary FuncKey gives a concrete method, and the same text calleeName
+// already prints in a cause and in -explain.
+//
+// It exists for the cost-model OVERLAY, which is a deliberate re-pricing of
+// named callees rather than an inference: a model that neutralizes a method
+// must reach the half of its call sites that arrive through an interface, or
+// it silently prices only some of them. overlayCost documented that it did
+// this while keying through CalleeKey, so its invoke-mode branch was
+// unreachable — see TestOverlayReachesInterfaceDispatch.
+//
+// It is deliberately NOT used by the curated table. A curated entry is a
+// worst-case claim about all implementations, and an interface names none:
+// (io.Writer).Write is whatever an arbitrary implementer does. Only an
+// explicitly asserted model — the kata profile, a trust file — may make a
+// claim about an interface, and it does so as an assertion, tainting the
+// bound.
+func CallKey(c *ssa.CallCommon) (string, bool) {
+	if c.Method != nil {
+		return c.Method.FullName(), true
+	}
+	return calleeKey(c)
+}
 
 // FuncKey is the key of a function itself rather than of a call to it.
 func FuncKey(fn *ssa.Function) (string, bool) {
@@ -541,6 +573,30 @@ var stdlib = map[string]func(args []ssa.Value) bound.Bound{
 
 	// errors.New allocates a struct holding the string; it does not copy it.
 	"errors.New": constCost,
+
+	// hash/fnv constructors. Read from hash/fnv/fnv.go (the Trim rule — not
+	// inherited from the neighbours): each is a two-line function that sets a
+	// sum to its offset basis and returns its address. New128/New128a write
+	// two words instead of one. There is no input to scan and no allocation
+	// proportional to anything.
+	//
+	// This prices the CONSTRUCTOR only, which is all that is soundly available
+	// here. The hashing itself — h.Write and h.Sum32 — arrives as an INTERFACE
+	// dispatch on hash.Hash32, and an interface names no implementation: a
+	// curated entry there would be a claim about every hash.Hash32 that will
+	// ever exist. Those two stay ⊤ in the default model and are priced only
+	// where a model is explicitly asserted (the kata profile, a trust file).
+	// So a bare fnv.New32() no longer blocks a bound, and a function that
+	// actually hashes still needs an assertion to be verifiable.
+	//
+	// New64/New64a/New128/New128a are UNMEASURED: a consistency fix on one
+	// shape, not a coverage claim — the same posture as sync/atomic.Yield.
+	"hash/fnv.New32":   constCost,
+	"hash/fnv.New32a":  constCost,
+	"hash/fnv.New64":   constCost,
+	"hash/fnv.New64a":  constCost,
+	"hash/fnv.New128":  constCost,
+	"hash/fnv.New128a": constCost,
 
 	// One clock read; Since is Now() minus its argument.
 	"time.Now":   constCost,

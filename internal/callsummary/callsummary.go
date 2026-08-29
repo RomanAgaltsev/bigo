@@ -110,21 +110,32 @@ func (r *Resolver) overlayCost(c *ssa.CallCommon) (bound.Bound, bool) {
 	if r.overlay == nil {
 		return bound.Bound{}, false
 	}
-	key, ok := costtable.CalleeKey(c)
+	// CallKey, not CalleeKey: the latter has no answer for an interface
+	// dispatch, which made the c.Method branch below unreachable and this
+	// function's contract false for every invoke-mode call site.
+	key, ok := costtable.CallKey(c)
 	if !ok {
 		return bound.Bound{}, false
 	}
-	var sig *types.Signature
+	var (
+		sig    *types.Signature
+		invoke bool
+	)
 	switch {
 	case c.StaticCallee() != nil:
 		sig = c.StaticCallee().Signature
 	case c.Method != nil:
 		sig, _ = c.Method.Type().(*types.Signature)
+		invoke = true
 	}
 	if sig == nil {
 		return bound.Bound{}, false
 	}
-	b, names, ok := r.overlay.For(key, sig)
+	lookup := r.overlay.For
+	if invoke {
+		lookup = r.overlay.ForInvoke // Args excludes the receiver — see ForInvoke
+	}
+	b, names, ok := lookup(key, sig)
 	if !ok {
 		return bound.Bound{}, false
 	}
