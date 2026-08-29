@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.55.0](https://github.com/RomanAgaltsev/bigo/compare/v1.54.0...v1.55.0) (2026-08-29)
+
+
+### Features
+
+* price hash/fnv, and make the cost-model overlay reach interface dispatch ([#179](https://github.com/RomanAgaltsev/bigo/issues/179)) ([1890501](https://github.com/RomanAgaltsev/bigo/commit/1890501e7793596217a298f63b8ca93359dd9328))
+
 ## [1.54.0](https://github.com/RomanAgaltsev/bigo/compare/v1.53.0...v1.54.0) (2026-08-23)
 
 
