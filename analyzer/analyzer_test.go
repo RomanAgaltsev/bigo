@@ -292,11 +292,42 @@ func TestKataModeAppliesTheOverlay(t *testing.T) {
 	// The overlay answers call COSTS and does not invent SIZES: a loop over a
 	// call result has no nameable trip count either way. Pinned so a later
 	// widening of the profile cannot be mistaken for fixing this class.
+	//
+	// The fixture moved 2026-08-29. ParseLine used to carry this pin, and
+	// stopped being an example of itself when internal/resultsize curated
+	// len(strings.Split(s, sep)): a CURATED SIZE FACT resolved it, which is not
+	// the overlay and is exactly the distinction this test exists to keep
+	// visible. ParseUser ranges over a USER function's result, which nothing
+	// curates and nothing will.
 	t.Run("the overlay does not resolve sizes", func(t *testing.T) {
 		for _, kata := range []bool{false, true} {
-			if out := run(t, kata); !strings.Contains(out, "ParseLine: unverifiable") {
-				t.Errorf("ParseLine should be unverifiable with kata=%v\ngot:\n%s", kata, out)
+			if out := run(t, kata); !strings.Contains(out, "ParseUser: unverifiable") {
+				t.Errorf("ParseUser should be unverifiable with kata=%v\ngot:\n%s", kata, out)
 			}
+		}
+	})
+
+	// The other half of that distinction, and the reason ParseLine was kept.
+	//
+	// The curated result size resolves ParseLine's LOOP in both modes — it is a
+	// property of the stdlib, not of a cost model. What differs afterwards is
+	// the next blocker, and the difference is the overlay doing its actual job:
+	//
+	//   - without -kata, strconv.Atoi is curated linear in its string, and that
+	//     string is parts[i], an ELEMENT of the split result. An element's
+	//     length has no name in the grammar (costtable's unit-element axiom), so
+	//     the row is ⊤ on an argument size — a different and correct refusal.
+	//   - with -kata, K-1 prices Atoi O(1) because that string is an input
+	//     token, and the row lands on the loop bound the result size supplied.
+	//
+	// Pinning both halves keeps the two mechanisms from being confused for each
+	// other, which is what this whole test exists to prevent.
+	t.Run("a curated result size resolves the loop in both modes", func(t *testing.T) {
+		if out := run(t, false); !strings.Contains(out, "ParseLine: unverifiable — unresolved argument size at call to strconv.Atoi") {
+			t.Errorf("without -kata, ParseLine should be ⊤ on Atoi's ARGUMENT SIZE, not on the loop\ngot:\n%s", out)
+		}
+		if out := run(t, true); !strings.Contains(out, "ParseLine: inferred complexity O(len(line))") {
+			t.Errorf("with -kata, ParseLine should be O(len(line))\ngot:\n%s", out)
 		}
 	})
 }
