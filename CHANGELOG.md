@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.56.1](https://github.com/RomanAgaltsev/bigo/compare/v1.56.0...v1.56.1) (2026-08-29)
+
+
+### Bug Fixes
+
+* **oracle:** make //oracle:time optional, and unpin five unsound hashtable pins ([#186](https://github.com/RomanAgaltsev/bigo/issues/186)) ([7b889ab](https://github.com/RomanAgaltsev/bigo/commit/7b889ab2be44020a5d25b330b6ed397778698b74))
+
 ## [1.56.0](https://github.com/RomanAgaltsev/bigo/compare/v1.55.1...v1.56.0) (2026-08-29)
 
 
