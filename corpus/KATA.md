@@ -19,17 +19,17 @@ model. The two are never summed.
 
 | Status | Count |
 |---|---|
-| exact | 38 |
+| exact | 39 |
 | loose | 0 |
-| top | 23 |
+| top | 22 |
 
 ## Space statuses (pinned entries only)
 
 | Status | Count |
 |---|---|
-| exact | 43 |
+| exact | 44 |
 | loose | 0 |
-| top | 18 |
+| top | 17 |
 
 ## Per family
 
@@ -104,7 +104,7 @@ model. The two are never summed.
 | railroads.PathHasCycles | O(g.verticesCount) | unverifiable | top | O(g.verticesCount) | unverifiable | top | loop | ya_algo sprint 6 final 2; the DFS visit of the author's O(V + E) claim; space is the recursion stack, at most one frame per vertex |
 | removenode.Remove | O(n) | unverifiable | top | O(n) | unverifiable | top | call | ya_algo sprint 5 final 2; author's claim "получаем сложность решения O(h)" for the average case, with O(n) named as the worst case when the tree is one chain. Space is the recursion stack, author's "для хранения стека рекурсивных вызовов требуется O(h)". |
 | removenode.Successor | O(n) | unverifiable | top | O(1) | O(1) | exact | loop | ya_algo sprint 5 final 2; author's claim "найти его преемника - O(n) в худшем, O(h) в среднем случае". The worst case is pinned: h = n when the tree degenerates to a chain, and that is the question bigo answers. |
-| rpncalc.Calculate | O(len(c.exp)) | unverifiable | top | O(len(c.exp)) | unverifiable | top | loop | ya_algo sprint 2 final 2; author's claim "Общее время - O(n+n) - O(2n) - O(n)", where n is the token count. Pinned against len(c.exp) because the token count is not a size bigo can name; tokens ≤ characters, so the pin is sound in the direction that matters. |
+| rpncalc.Calculate | O(len(c.exp)) | unverifiable | top | O(len(c.exp)) | unverifiable | top | call | ya_algo sprint 2 final 2; author's claim "Общее время - O(n+n) - O(2n) - O(n)", where n is the token count. Pinned against len(c.exp) because the token count is not a size bigo can name; tokens ≤ characters, so the pin is sound in the direction that matters. |
 | rpncalc.NewCalculator | O(1) | O(1) | exact | O(1) | O(1) | exact |  | ya_algo sprint 2 final 2; struct construction, constant by inspection |
 | rpncalc.NewStack | O(1) | O(1) | exact | O(1) | O(1) | exact |  | ya_algo sprint 2 final 2; allocation of an empty slice, constant by inspection |
 | rpncalc.Pop | O(1) | O(1) | exact | O(1) | O(1) | exact |  | ya_algo sprint 2 final 2; author's claim "извлечение двух операндов из стека - O(1)" |
@@ -113,4 +113,4 @@ model. The two are never summed.
 | searchengine.Less | O(1) | O(1) | exact | O(1) | O(1) | exact |  | ya_algo sprint 4 final 1; comparator, constant work per call under the kata cost model |
 | searchengine.NewSearchEngine | O(1) | O(1) | exact | O(1) | O(1) | exact |  | ya_algo sprint 4 final 1; map construction, constant by inspection |
 | searchengine.ProcessQuery | O(len(query)^2) | unverifiable | top | O(len(query)) | unverifiable | top | call | ya_algo sprint 4 final 1; author's claim "O(N + M + K*L)" for the whole solution, of which this function is the M + K*L part. Pinned against len(query) as the only size bigo can name here: both the unique-word count K and the candidate-document count are bounded by the query length in this fixture's terms, and the squared term covers the limited bubble sort. |
-| searchengine.UpdateIndex | O(len(doc)) | unverifiable | top | O(len(doc)) | unverifiable | top | loop | ya_algo sprint 4 final 1; author's claim "Построение поискового индекса - O(N)" over the words of the documents. Pinned against len(doc) because the word count is not a size bigo can name; words ≤ characters, so the pin is sound in the direction that matters. |
+| searchengine.UpdateIndex | O(len(doc)) | O(len(doc)) | exact | O(len(doc)) | O(len(doc)) | exact |  | ya_algo sprint 4 final 1; author's claim "Построение поискового индекса - O(N)" over the words of the documents. Pinned against len(doc) because the word count is not a size bigo can name; words ≤ characters, so the pin is sound in the direction that matters. |

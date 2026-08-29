@@ -22,13 +22,43 @@ func Compare(a, b string) int {
 	return strings.Compare(a, b)
 }
 
-// ParseLine pins the OVERLAY'S BOUNDARY, and it is unverifiable either way.
-// The overlay answers call COSTS; it does not invent SIZES. Here parts is the
-// result of a call, so the loop over it has no nameable trip count, and that
-// blocker is untouched by any cost model. Recorded deliberately: clearing one
-// blocker reveals the next, and this is what the next one looks like.
+// ParseLine WAS the overlay-boundary fixture and is now bounded, O(len(line)),
+// identically with and without -kata. internal/resultsize curates
+// len(strings.Split(s, sep)) as O(len(s)) (2026-08-29), so the loop finally has
+// a nameable trip count.
+//
+// It is kept, and its assertion inverted, because it now pins something
+// sharper than it did as a refusal: a curated SIZE fact is not a cost model, so
+// it must apply in BOTH modes. See ParseUser for the boundary this used to
+// illustrate.
 func ParseLine(line string) []int {
 	parts := strings.Split(line, " ")
+	out := make([]int, len(parts))
+	for i := range parts {
+		out[i], _ = strconv.Atoi(parts[i])
+	}
+	return out
+}
+
+// tokenize is a USER function returning a slice. Nothing curates its result
+// length and nothing ever will, which is what makes it the durable example.
+func tokenize(line string) []string {
+	if line == "" {
+		return nil
+	}
+	return strings.Fields(line)
+}
+
+// ParseUser is what ParseLine used to be: a loop over a call result with no
+// nameable trip count, unverifiable under every cost model. It replaces
+// ParseLine as the overlay's-boundary fixture because ParseLine graduated when
+// internal/resultsize curated strings.Split (2026-08-29) — the shape it was
+// written to illustrate stopped being an example of itself.
+//
+// The boundary it pins is unchanged: a cost model answers what a call COSTS
+// and never what its result MEASURES.
+func ParseUser(line string) []int {
+	parts := tokenize(line)
 	out := make([]int, len(parts))
 	for i := range parts {
 		out[i], _ = strconv.Atoi(parts[i])

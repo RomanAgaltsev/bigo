@@ -2,12 +2,12 @@
   "corpus": "kata",
   "total": 61,
   "time_by_status": {
-    "exact": 38,
-    "top": 23
+    "exact": 39,
+    "top": 22
   },
   "space_by_status": {
-    "exact": 43,
-    "top": 18
+    "exact": 44,
+    "top": 17
   },
   "per_family": {
     "brokensearch": 1,
@@ -614,7 +614,7 @@
       "space_pin": "O(len(c.exp))",
       "space_got": "unverifiable",
       "space_status": "top",
-      "cause": "loop",
+      "cause": "call",
       "source": "ya_algo sprint 2 final 2; author's claim \"Общее время - O(n+n) - O(2n) - O(n)\", where n is the token count. Pinned against len(c.exp) because the token count is not a size bigo can name; tokens ≤ characters, so the pin is sound in the direction that matters."
     },
     {
@@ -711,12 +711,11 @@
       "pkg": "searchengine",
       "func": "UpdateIndex",
       "time_pin": "O(len(doc))",
-      "time_got": "unverifiable",
-      "time_status": "top",
+      "time_got": "O(len(doc))",
+      "time_status": "exact",
       "space_pin": "O(len(doc))",
-      "space_got": "unverifiable",
-      "space_status": "top",
-      "cause": "loop",
+      "space_got": "O(len(doc))",
+      "space_status": "exact",
       "source": "ya_algo sprint 4 final 1; author's claim \"Построение поискового индекса - O(N)\" over the words of the documents. Pinned against len(doc) because the word count is not a size bigo can name; words ≤ characters, so the pin is sound in the direction that matters."
     }
   ]

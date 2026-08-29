@@ -1,9 +1,9 @@
 {
-  "total": 255,
-  "bounded": 143,
-  "coverage_pct": "56.1",
+  "total": 257,
+  "bounded": 144,
+  "coverage_pct": "56.0",
   "by_cause": {
-    "call": 60,
+    "call": 61,
     "go": 3,
     "irreducible": 1,
     "loop": 40,
@@ -51,8 +51,8 @@
       "bounded": 4
     },
     "katamode": {
-      "total": 3,
-      "bounded": 2
+      "total": 5,
+      "bounded": 3
     },
     "multivar": {
       "total": 3,
@@ -956,7 +956,19 @@
       "pkg": "katamode",
       "func": "ParseLine",
       "verdict": "unverifiable",
+      "cause": "call"
+    },
+    {
+      "pkg": "katamode",
+      "func": "ParseUser",
+      "verdict": "unverifiable",
       "cause": "loop"
+    },
+    {
+      "pkg": "katamode",
+      "func": "tokenize",
+      "verdict": "bounded",
+      "bound": "O(len(line))"
     },
     {
       "pkg": "multivar",

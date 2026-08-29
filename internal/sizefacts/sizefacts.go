@@ -12,6 +12,7 @@ import (
 
 	"github.com/RomanAgaltsev/bigo/internal/bound"
 	"github.com/RomanAgaltsev/bigo/internal/fieldpath"
+	"github.com/RomanAgaltsev/bigo/internal/resultsize"
 	"github.com/RomanAgaltsev/bigo/internal/size"
 )
 
@@ -431,6 +432,16 @@ func (f *Facts) lenExtent(v ssa.Value, depth int) (bound.Var, bool) {
 				return "", false
 			}
 			return f.lenOf(t.Call.Args[1], depth+1)
+		}
+		// A curated stdlib call whose result length is bounded by one of its
+		// arguments: len(strings.Split(s, sep)) is O(len(s)). Without this,
+		// `for range strings.Split(s, " ")` is a loop over a value with no
+		// nameable size, which is the D8 "range-over-call-result" shape.
+		//
+		// resultsize is a leaf package on purpose — costtable already imports
+		// THIS package, so the table cannot live there.
+		if i, ok := resultsize.ArgIndex(&t.Call); ok && i < len(t.Call.Args) {
+			return f.lenOf(t.Call.Args[i], depth+1)
 		}
 	}
 	return "", false
