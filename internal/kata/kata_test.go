@@ -24,6 +24,11 @@ func TestProfileParses(t *testing.T) {
 		"strings.Compare",
 		"cmp.Compare",
 		"math/rand.Intn",
+		// The hashing pair, measured against the hashtable kata 2026-08-29.
+		// Both are INTERFACE dispatches, and the overlay reached neither until
+		// costtable.CallKey existed.
+		"(io.Writer).Write",
+		"(hash.Hash32).Sum32",
 	} {
 		if !s.Has(key) {
 			t.Errorf("kata profile is missing measured key %q", key)

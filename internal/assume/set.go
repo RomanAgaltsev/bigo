@@ -99,6 +99,29 @@ func (s *Set) For(key string, sig *types.Signature) (bound.Bound, []string, bool
 	return b, names, true
 }
 
+// ForInvoke is For for an INVOKE-MODE call site — an interface dispatch.
+//
+// The difference is the receiver. go/ssa puts the receiver of an interface
+// call in CallCommon.Value, NOT in Args, while a static method call has it as
+// Args[0]. An interface method's signature still reports a non-nil Recv(), so
+// For prepends its $recv placeholder and every name lands one position to the
+// right of the argument it names. substArgs then refuses the whole bound at
+// its `i >= len(args)` guard, which reads as "no assumption matched" — the
+// entry is silently inert rather than wrong, and that is the failure mode this
+// method exists to remove.
+//
+// The names slice is the cached one minus its head; it is never written to.
+func (s *Set) ForInvoke(key string, sig *types.Signature) (bound.Bound, []string, bool) {
+	b, names, ok := s.For(key, sig)
+	if !ok {
+		return bound.Bound{}, nil, false
+	}
+	if sig.Recv() != nil && len(names) > 0 {
+		names = names[1:]
+	}
+	return b, names, true
+}
+
 // compile normalizes the entry against sig and then insists every variable in
 // the result is a plain size of one of sig's parameters. normalize does not
 // check that a where-binding names a real parameter — a directive with a bogus

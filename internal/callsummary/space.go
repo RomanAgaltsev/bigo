@@ -45,21 +45,32 @@ func (r *SpaceResolver) overlaySpace(c *ssa.CallCommon) (bound.Bound, bool) {
 	if r.overlay == nil {
 		return bound.Bound{}, false
 	}
-	key, ok := costtable.CalleeKey(c)
+	// CallKey, not CalleeKey — same reason as overlayCost: the space overlay is
+	// attached with the time one or not at all, so a method the time model
+	// prices through an interface must be priceable on this axis too.
+	key, ok := costtable.CallKey(c)
 	if !ok {
 		return bound.Bound{}, false
 	}
-	var sig *types.Signature
+	var (
+		sig    *types.Signature
+		invoke bool
+	)
 	switch {
 	case c.StaticCallee() != nil:
 		sig = c.StaticCallee().Signature
 	case c.Method != nil:
 		sig, _ = c.Method.Type().(*types.Signature)
+		invoke = true
 	}
 	if sig == nil {
 		return bound.Bound{}, false
 	}
-	b, names, ok := r.overlay.For(key, sig)
+	lookup := r.overlay.For
+	if invoke {
+		lookup = r.overlay.ForInvoke // Args excludes the receiver — see ForInvoke
+	}
+	b, names, ok := lookup(key, sig)
 	if !ok {
 		return bound.Bound{}, false
 	}

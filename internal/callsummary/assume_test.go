@@ -321,3 +321,33 @@ func f(a, b string) int { return strings.Compare(a, b) }`
 		}
 	})
 }
+
+// An overlay must reach INVOKE-MODE call sites — interface dispatch — because a
+// cost model that means to neutralize a method must not silently miss the half
+// of its call sites that go through an interface. overlayCost documents exactly
+// this, and its `case c.Method != nil` signature branch was unreachable until
+// CallKey existed: it keyed through CalleeKey, which returns ok=false whenever
+// StaticCallee() is nil, so the branch below it could never run.
+//
+// Measured before the fix (bigo v1.54.0, kata profile + the hashtable kata):
+// `(hash.Hash32).Sum32 O(1)` in the profile changed nothing — the explain line
+// still read `call at :48 → (hash.Hash32).Sum32 → unresolved`.
+func TestOverlayReachesInterfaceDispatch(t *testing.T) {
+	const src = `package input
+type Hasher interface{ Sum32() uint32 }
+func f(h Hasher) uint32 { return h.Sum32() }`
+
+	t.Run("no overlay: an unannotated interface method is Top", func(t *testing.T) {
+		got, _ := inferWith(t, src, "")
+		if got != "unverifiable" {
+			t.Fatalf("got %q, want unverifiable", got)
+		}
+	})
+
+	t.Run("overlay entry prices the dispatch", func(t *testing.T) {
+		got, _ := inferWithOverlay(t, src, "(input.Hasher).Sum32 O(1)\n")
+		if got != "O(1)" {
+			t.Fatalf("got %q, want O(1) — the overlay did not reach the invoke-mode call", got)
+		}
+	})
+}

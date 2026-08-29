@@ -716,3 +716,85 @@ func f(a, b string) int { return strings.Compare(a, b) }`, "O(len(a))"},
 		})
 	}
 }
+
+// TestFNVConstructorsPriced: the constructor half of hash/fnv, which is the
+// half that has a sound worst-case bound. Each is a two-line function in
+// hash/fnv/fnv.go that sets a sum to its offset basis and returns its address.
+func TestFNVConstructorsPriced(t *testing.T) {
+	for _, name := range []string{"New32", "New32a", "New64", "New64a", "New128", "New128a"} {
+		t.Run(name, func(t *testing.T) {
+			src := "package input\nimport \"hash/fnv\"\nfunc f() any { return fnv." + name + "() }"
+			got, ok := costOf(t, src)
+			if !ok || got != "O(1)" {
+				t.Errorf("cost = %q (ok=%v), want O(1)", got, ok)
+			}
+		})
+	}
+}
+
+// TestHashingAndHeapStayTop is the no-fire half of the 2026-08-29 pricing pass,
+// and it is the one that keeps the curated table honest.
+//
+// hash/fnv's CONSTRUCTOR is priced (above). The hashing itself is not, and must
+// not be: fnv.New32 returns a hash.Hash32, so h.Write resolves to
+// (io.Writer).Write and h.Sum32 to (hash.Hash32).Sum32. An interface names no
+// implementation — a curated entry there is a worst-case claim about every
+// implementation that will ever exist, including ones in modules this analyzer
+// will never see (the interface-resolution investigation's §3 argument). Those
+// are priceable only by an explicitly asserted model, which taints its bound;
+// the kata profile carries them.
+//
+// container/heap is absent for TWO independent reasons, either sufficient:
+//
+//  1. Its cost is O(log n) in the heap's OWN length, and that length is not a
+//     nameable size. A heap is built by pushing — `eq := &EdgeQueue{}` then
+//     heap.Push in a loop — so it tracks no len() of any input.
+//  2. Every operation calls back into h.Less, h.Swap and h.Push, which are
+//     interface methods, i.e. arbitrary user code. Pricing the calls without
+//     the callbacks is the under-approximation that produces a false Within.
+//
+// MEASURED 2026-08-29, and this is why no entry was added: giving Push/Pop/Init
+// the most generous price possible (O(1) — itself a wrong bound) left
+// expensivenetwork.Max unverifiable anyway. Its cause simply moved from `call`
+// to `loop at :62`. The Prim traversal is bounded by its two loops, which are
+// genuine D8 inference work, so the entry would have bought a wrong bound and
+// zero rows.
+func TestHashingAndHeapStayTop(t *testing.T) {
+	tests := []struct{ name, src string }{
+		{"(hash.Hash32).Sum32", `package input
+import "hash/fnv"
+func f() uint32 { h := fnv.New32(); return h.Sum32() }`},
+
+		{"(io.Writer).Write via hash.Hash", `package input
+import "hash/fnv"
+func f(b []byte) int { h := fnv.New32(); n, _ := h.Write(b); return n }`},
+
+		{"heap.Push", `package input
+import "container/heap"
+func f(h heap.Interface, x any) { heap.Push(h, x) }`},
+
+		{"heap.Pop", `package input
+import "container/heap"
+func f(h heap.Interface) any { return heap.Pop(h) }`},
+
+		{"heap.Init", `package input
+import "container/heap"
+func f(h heap.Interface) { heap.Init(h) }`},
+
+		{"heap.Fix", `package input
+import "container/heap"
+func f(h heap.Interface, i int) { heap.Fix(h, i) }`},
+
+		{"heap.Remove", `package input
+import "container/heap"
+func f(h heap.Interface, i int) any { return heap.Remove(h, i) }`},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, ok := costOf(t, tt.src)
+			if ok && got != "unverifiable" {
+				t.Errorf("cost = %q, want unverifiable — this callee has no sound bound; pricing it would be a wrong bound", got)
+			}
+		})
+	}
+}
