@@ -41,13 +41,37 @@ func Less(a, b Participant) int {
 //
 // The shape is the classic amortized two-pointer partition: an outer loop that
 // runs while the pointers have not met, wrapping two inner scans that advance
-// them toward each other. Linear in total, although no single loop is
-// individually bounded — which is why this function is bigo's standing
-// inference commitment rather than a pricing question.
+// them toward each other.
 //
-//oracle:time O(n) where n=len(participants)
+// TIME IS DELIBERATELY UNPINNED, since 2026-08-29, and this closes bigo's
+// standing inference commitment with a measurement rather than a rule.
+//
+// THIS FUNCTION DOES NOT TERMINATE ON AN ALL-EQUAL SLICE. `Less` is a three-way
+// comparator, so `Less(x, x)` is 0, not -1. On a slice whose elements all
+// compare equal, neither inner scan advances, the `left < right` swap exchanges
+// an element with an equal one, and the outer loop repeats forever. Classic
+// Hoare partition advances both pointers after the swap; this one does not.
+//
+// PROVED by running it, 2026-08-29: three identical Participants, Partition
+// did not return within 5s, while the same test on three distinct Participants
+// returned immediately. The reduction is faithful — sprint3/final2's
+// `partition` is character-for-character the same loop.
+//
+// So the honest worst-case time is UNBOUNDED, and `O(n)` was a claim about the
+// function's INTENDED INPUT rather than about the function. On a real scoreboard
+// logins are unique, `Less` is then a strict total order, and the linear
+// amortized argument holds — which is exactly the caveat bigo's own recognition
+// channel already prints: "true when the comparison is strict on distinct
+// elements".
+//
+// **bigo's ⊤ here is the RIGHT ANSWER, not a gap.** The prime directive is a
+// worst-case upper bound; the worst case is non-termination. No rule should ever
+// be extended to bound this, and the pin had to go because it would have scored
+// such a rule `exact`. Space O(1) is sound and stays: the loop allocates nothing
+// however long it runs.
+//
 //oracle:space O(1) where n=len(participants)
-//oracle:source ya_algo sprint 3 final 2; the author's claim counts partition as the O(n) per-level element work inside quicksort's O(n log n)
+//oracle:source ya_algo sprint 3 final 2; the author's claim counts partition as the O(n) per-level element work inside quicksort's O(n log n). That claim holds only for pairwise-distinct participants; see the note above.
 func Partition(participants []Participant, left, right int) int {
 	pivotIndex := rand.Intn(right+1-left) + left
 	pivot := participants[pivotIndex]
@@ -73,6 +97,13 @@ func Partition(participants []Participant, left, right int) int {
 // pin and classifies as `loose`, not `wrong`: the two are answering different
 // questions, and the corpus README says so rather than letting a future reader
 // read `loose` as a graduation target.
+//
+// OPEN, 2026-08-29: this pin inherits Partition's non-termination on an
+// all-equal slice (see the note there), so O(n log n) rests on the same
+// unstated distinct-elements precondition. It is LEFT PINNED because it is
+// already labelled as answering a different question and bigo emits ⊤ for it
+// anyway — but whether an average-case pin may rest on an unstated precondition
+// is a corpus-policy question, not a measurement, and it is open.
 //
 //oracle:time O(n log n) where n=len(participants)
 //oracle:space O(log n) where n=len(participants)
