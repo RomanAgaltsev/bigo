@@ -488,3 +488,83 @@ func ReadOnlyScan(s []int, xs []int) int {
 	wantRuleCount(t, detectOne(t, src, "MutatedScan", ruleset("SM2")), "SM2", 0)
 	wantRuleCount(t, detectOne(t, src, "ReadOnlyScan", ruleset("SM2")), "SM2", 1)
 }
+
+// SM3's doc comment has always said it fires on "var s []T or make([]T, 0)".
+// The second half never worked: go/ssa lowers a constant-zero-length make to an
+// *ssa.Alloc of a ZERO-LENGTH ARRAY followed by a slice of it —
+//
+//	t0 = new [0]int (makeslice)     *[0]int
+//	t1 = slice t0[:0]               []int
+//
+// — not to an *ssa.MakeSlice, so zeroCapOrigin's MakeSlice arm never saw it.
+//
+// MEASURED 2026-08-29 on 144 real ya_algo learner files: the smell yield was
+// ZERO, and `make([]T, 0)` is the form the learner code overwhelmingly uses
+// (`smallerPrimes := make([]int, 0)`, `result := make([]string, 0)`, …). The
+// rules were not cold because learner code lacks the anti-pattern; they were
+// cold because the detector missed the spelling.
+func TestSM3RecognisesMakeZeroLen(t *testing.T) {
+	for _, tc := range []struct{ name, src string }{
+		{"make([]T, 0)", `package input
+func f(xs []int) []int {
+	out := make([]int, 0)
+	for _, x := range xs {
+		out = append(out, x)
+	}
+	return out
+}`},
+		{"make([]T, 0, 0)", `package input
+func f(xs []int) []int {
+	out := make([]int, 0, 0)
+	for _, x := range xs {
+		out = append(out, x)
+	}
+	return out
+}`},
+		// The ya_algo shape: a counted loop and an append guarded by an if.
+		{"counted loop, guarded append", `package input
+func pred(i int) bool { return i%2 == 0 }
+func f(n int) []int {
+	out := make([]int, 0)
+	for i := 2; i < n; i++ {
+		if pred(i) {
+			out = append(out, i)
+		}
+	}
+	return out
+}`},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			wantRuleCount(t, detectOne(t, tc.src, "f", ruleset("SM3")), "SM3", 1)
+		})
+	}
+}
+
+// The no-fire half: a slice that starts with real capacity must stay quiet,
+// however it is spelled. Widening zeroCapOrigin must not turn "preallocated
+// correctly" into a finding.
+func TestSM3IgnoresPreallocated(t *testing.T) {
+	for _, tc := range []struct{ name, src string }{
+		{"make([]T, 0, n) — the correct fix", `package input
+func f(xs []int) []int {
+	out := make([]int, 0, len(xs))
+	for _, x := range xs {
+		out = append(out, x)
+	}
+	return out
+}`},
+		{"slice of a NON-empty array", `package input
+func f(xs []int) []int {
+	var arr [16]int
+	out := arr[:0]
+	for _, x := range xs {
+		out = append(out, x)
+	}
+	return out
+}`},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			wantRuleCount(t, detectOne(t, tc.src, "f", ruleset("SM3")), "SM3", 0)
+		})
+	}
+}
