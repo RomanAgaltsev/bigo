@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.56.0](https://github.com/RomanAgaltsev/bigo/compare/v1.55.1...v1.56.0) (2026-08-29)
+
+
+### Features
+
+* record the result-size model, dropped from the v1.55.1 changelog ([#184](https://github.com/RomanAgaltsev/bigo/issues/184)) ([74125a9](https://github.com/RomanAgaltsev/bigo/commit/74125a9c088bf99afeddcfc749cd7ebdb7acfabe))
+
 ## [1.55.1](https://github.com/RomanAgaltsev/bigo/compare/v1.55.0...v1.55.1) (2026-08-29)
 
 
