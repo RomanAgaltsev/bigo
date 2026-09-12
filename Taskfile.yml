@@ -1,5 +1,19 @@
 version: "3"
 
+
+vars:
+  # -race needs cgo, and cgo needs a C toolchain -- which this workstation has no
+  # gcc for, so the native race tasks cannot even build here. The :docker tasks
+  # run the identical gate in a Linux container, which is also the platform CI
+  # runs on. `task toolchain:check` reports which of them you can use.
+  GO_IMAGE: "golang:1.26"
+  DOCKER_RUN: >-
+    docker run --rm
+    -v "{{.ROOT_DIR | replace "\\" "/"}}:/src"
+    -v go-race-modcache:/go/pkg/mod
+    -v go-race-buildcache:/root/.cache/go-build
+    -w /src {{.GO_IMAGE}}
+
 tasks:
   metrics:
     desc: Regenerate the coverage golden (metrics/metrics.json + metrics/METRICS.md)
@@ -70,3 +84,25 @@ tasks:
   ci:
     desc: Full local CI (tidy, lint, security, test)
     deps: [tidy, lint, security, test]
+
+  test:docker:
+    desc: race tests in a Linux container (no local C toolchain needed)
+    cmds:
+      - "{{.DOCKER_RUN}} go test ./... -race"
+
+  test:norace:
+    desc: tests WITHOUT the race detector -- a partial gate
+    cmds:
+      - echo "WARNING -- running without -race. This does NOT satisfy the gate."
+      - go test ./...
+
+  toolchain:check:
+    desc: report which of test / test:docker / test:norace can run here
+    silent: true
+    cmds:
+      - if command -v gcc >/dev/null 2>&1; then echo "C toolchain -- $(gcc --version | head -1)"; else echo "C toolchain -- none; the native race task cannot build, use the :docker one"; fi
+      - if docker version >/dev/null 2>&1; then echo "docker -- available"; else echo "docker -- none; only a no-race run is left, and it does NOT satisfy the gate"; fi
+
+  ci:docker:
+    desc: full local CI with the race step in a container
+    deps: [tidy, lint, security, test:docker]
