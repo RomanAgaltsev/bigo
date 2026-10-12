@@ -7,7 +7,7 @@ toolchain go1.26.6
 require (
 	github.com/golangci/plugin-module-register v0.1.2
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.3
-	golang.org/x/tools v0.50.0
+	golang.org/x/tools v0.51.0
 )
 
 require (
